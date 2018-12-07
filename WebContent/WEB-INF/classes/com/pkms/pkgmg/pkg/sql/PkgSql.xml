@@ -1,0 +1,817 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Pkg">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+
+	<select id="pkgDAO.read" parameterClass="PkgModel" resultClass="PkgModel">
+         SELECT 
+           A.PKG_SEQ, A.TITLE, A.ROAMING_LINK, A.VER, A.BYPASS_TRAFFIC,
+           A.VER_GUBUN, A.SER_YN, A.SER_CONTENT, 
+           A.CONTENT, 
+            A.PE_YN,
+            A.DEV_YN,
+            A.PE_EDIT_TITLE,
+            A.PE_CONTENT,   
+            TO_CHAR(A.PE_TEST_DATE, 'YYYY-MM-DD') AS PE_TEST_DATE,
+            A.PE_EQUIP_IP,  
+            A.PE_EQUIP_PORT,
+            A.PE_NO_1,      
+            A.PE_NO_2,      
+            A.PE_NO_3,      
+            A.PE_NO_4,      
+            A.PE_NO_5,      
+            A.PE_GUBUN,     
+           A.MASTER_FILE_ID, A.STATUS, A.STATUS_DEV, 
+           A.SYSTEM_SEQ, A.TPL_SEQ, A.USE_YN,
+           A.URGENCY_YN, A.URGENCY_VERIFI, 
+           DECODE(C.GROUP1_SEQ, '', '', C.GROUP1_NAME || '>' || C.GROUP2_NAME || '>' || C.GROUP3_NAME || '>' || C.SYSTEM_NAME) SYSTEM_NAME,
+           C.SYSTEM_NAME SYSTEM_NAME_ORG,
+           NVL(B.CNT, 0) PKG_DETAIL_COUNT,
+           A.REG_USER, A.REG_USER_GUBUN, 
+           TO_CHAR(A.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+           TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE,
+           A.UPDATE_USER, A.UPDATE_USER_GUBUN, 
+           D.MAX_STATUS,
+           (CASE WHEN A.REG_USER_GUBUN = 'M' THEN F.HNAME
+                ELSE E.BP_USER_NAME
+            END) AS REG_USER_NAME,
+           (CASE WHEN A.UPDATE_USER_GUBUN = 'M' THEN H.HNAME
+                ELSE G.BP_USER_NAME
+            END) AS UPDATE_USER_NAME,
+            NVL(A.SER_DOWNTIME, '0') AS SER_DOWNTIME,
+            (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = C.SYSTEM_USER_ID) AS SYSTEM_USER_NAME,
+            (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = C.DEV_SYSTEM_USER_ID) AS DEV_SYSTEM_USER_NAME,
+            A.PE_YN_COMMENT, A.ROAMING_LINK_COMMENT, NVL(A.RM_ISSUE_COMMENT, '내용 없음') AS RM_ISSUE_COMMENT,
+            A.DEV_YN,
+            A.VOL_YN, A.SEC_YN, A.CHA_YN, A.NON_YN, A.ON_YN,
+            C.GROUP1_SEQ, C.GROUP2_SEQ, C.GROUP3_SEQ,
+            C.SALES_USER_INFO
+        FROM PKMS.PKG_MASTER A, 
+             (SELECT PKG_SEQ, COUNT(1) CNT FROM PKMS.PKG_DETAIL GROUP BY PKG_SEQ) B,
+             (SELECT 
+                   G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                   G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                   G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                   S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                   S.SYSTEM_USER_ID, S.DEV_SYSTEM_USER_ID,
+                   S.SALES_USER_INFO
+              FROM PKMS.GROUP1 G1,
+                   PKMS.GROUP2 G2,
+                   PKMS.GROUP3 G3,
+                   PKMS.SYSTEM S
+              WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                AND G1.USE_YN = 'Y'
+                AND G2.USE_YN = 'Y'
+                AND G3.USE_YN = 'Y'
+           ) C,
+            (SELECT 
+               PKG_SEQ, MAX(STATUS) AS MAX_STATUS 
+            FROM PKMS.PKG_STATUS
+            GROUP BY PKG_SEQ) D,
+             PKMS.BP_USER E,
+             PKMS.INF_PERSON_INFO_RCV F,
+             PKMS.BP_USER G,
+             PKMS.INF_PERSON_INFO_RCV H
+        WHERE A.PKG_SEQ = B.PKG_SEQ(+)
+          AND A.SYSTEM_SEQ = C.SYSTEM_SEQ(+)
+          AND A.PKG_SEQ = D.PKG_SEQ(+)
+          AND A.REG_USER = E.BP_USER_ID(+)
+          AND A.REG_USER = F.EMPNO(+)
+          AND A.UPDATE_USER = G.BP_USER_ID(+)
+          AND A.UPDATE_USER = H.EMPNO(+)
+          AND A.PKG_SEQ = #pkg_seq#
+	</select>
+
+	<select id="pkgDAO.readList" parameterClass="PkgModel" resultClass="PkgModel">
+	 	<isEqual property="isPaging" compareValue="true">
+		<![CDATA[
+			SELECT
+				*
+	        FROM (
+            	SELECT 
+            		ROWNUM AS RNUM
+            		, A.* 
+            	FROM (
+		]]>
+		</isEqual>
+        SELECT 
+             PKG_SEQ, TITLE, VER, 
+             GROUP_DEPTH,
+             VER_GUBUN, SER_YN, SER_CONTENT, DEV_YN,
+             CONTENT, PE_YN, STATUS, STATUS_DEV, STATUS_NAME,
+             SYSTEM_SEQ, TPL_SEQ, USE_YN, 
+             REG_USER, REG_USER_GUBUN, REG_DATE, 
+             UPDATE_USER, UPDATE_USER_GUBUN, UPDATE_DATE,
+             REG_USER_NAME, VERIFY_DATE_START,
+             nvl((COL1 / decode(COL2,0,null,COL2) * 100),0) AS TOTAL_PROGRESS,
+             TOTAL_VERIFY, TOTAL_IMPROVE,
+             SYSTEM_USER_ID, SYSTEM_USER_NAME, DEV_SYSTEM_USER_NAME,
+             SYSTEM_NAME, URGENCY_YN, URGENCY_VERIFI, PKG_USER_STATUS
+        FROM (SELECT A.* FROM (
+                SELECT 
+                     A.PKG_SEQ, NVL(A.TITLE, '제목없음') TITLE, A.VER, 
+                     DECODE(B.GROUP1_SEQ, '', '', B.GROUP1_NAME || '>' || B.GROUP2_NAME || '>' || B.GROUP3_NAME || '>' || B.SYSTEM_NAME) GROUP_DEPTH,
+                     A.VER_GUBUN, A.SER_YN, A.SER_CONTENT, A.DEV_YN,
+                     A.CONTENT, A.PE_YN, A.STATUS, STATUS_DEV,
+                     (CASE WHEN A.STATUS = '9' THEN '완료'
+                           ELSE C.NAME
+                      END) AS STATUS_NAME, 
+                     A.SYSTEM_SEQ, A.TPL_SEQ, A.USE_YN, 
+                     A.REG_USER, A.REG_USER_GUBUN, TO_CHAR(A.REG_DATE, 'YYYY-MM-DD') REG_DATE, 
+                     A.UPDATE_USER, A.UPDATE_USER_GUBUN, TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD') UPDATE_DATE,
+                     (CASE WHEN REG_USER_GUBUN = 'M' THEN E.HNAME
+                          ELSE D.BP_USER_NAME
+                      END) AS REG_USER_NAME,
+                      TO_CHAR(A.VERIFY_DATE_START, 'YYYY-MM-DD') VERIFY_DATE_START,
+					   (select count(*) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK')) AS COL1,      
+			           (select count(*) from pkg_detail where pkg_seq = A.PKG_SEQ) AS COL2,     
+			           (select nvl(sum(content),0) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 17) AS TOTAL_VERIFY,       
+			           (select nvl(sum(content),0) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 18) AS TOTAL_IMPROVE,
+			           B.SYSTEM_USER_ID,
+			           (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = B.SYSTEM_USER_ID) AS SYSTEM_USER_NAME,
+			           (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = B.DEV_SYSTEM_USER_ID) AS DEV_SYSTEM_USER_NAME,
+			           B.SYSTEM_NAME,
+			           A.URGENCY_YN, A.URGENCY_VERIFI
+			           ,NVL(PU.STATUS, 'F') AS PKG_USER_STATUS
+                FROM
+                	PKMS.PKG_MASTER A, (
+                        SELECT 
+                             G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                             G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                             G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                             S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                             S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4,
+                             S.SYSTEM_USER_ID, S.DEV_SYSTEM_USER_ID
+                             , E.EQUIPMENT_SEQ
+                        FROM PKMS.GROUP1 G1,
+                             PKMS.GROUP2 G2,
+                             PKMS.GROUP3 G3,
+                             PKMS.SYSTEM S
+                             , (SELECT * FROM PKMS.EQUIPMENT WHERE USE_YN = 'Y') E
+                        WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                          AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                          AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                          AND S.SYSTEM_SEQ = E.SYSTEM_SEQ(+)
+                          AND G1.USE_YN = 'Y'
+                          AND G2.USE_YN = 'Y'
+                          AND G3.USE_YN = 'Y'
+						  AND S.USE_YN = 'Y'
+                     ) B,
+                     PKMS.COMMON_CODE C,
+                     PKMS.BP_USER D,
+                     PKMS.INF_PERSON_INFO_RCV E
+                     , PKMS.PKG_EQUIPMENT PE
+                     , (SELECT PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+                     	FROM PKG_USER PU,
+							(SELECT PKG_SEQ, CHARGE_GUBUN, STATUS, MIN(ORD) AS ORD
+							 FROM PKG_USER
+							 WHERE STATUS = 'R'
+							 GROUP BY PKG_SEQ, STATUS, CHARGE_GUBUN) PU_O
+						WHERE PU.PKG_SEQ = PU_O.PKG_SEQ
+							AND PU.ORD = PU_O.ORD
+							AND PU.CHARGE_GUBUN = PU_O.CHARGE_GUBUN
+							AND PU.STATUS = PU_O.STATUS
+							AND PU.USER_ID = #session_user_id#
+						GROUP BY PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+                     	) PU
+                WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+                  AND A.PKG_SEQ = PE.PKG_SEQ(+)
+                  AND A.STATUS = C.COMMON_CODE(+)
+                  AND A.REG_USER = D.BP_USER_ID(+)
+                  AND A.REG_USER = E.EMPNO(+)
+                  AND A.PKG_SEQ = PU.PKG_SEQ(+)
+                  AND C.GUBUN = 'PKS'
+                <isNotEmpty property="date_start">
+                	AND (A.REG_DATE >= TO_DATE(#date_start#, 'YYYY-MM-DD')
+                    OR PE.WORK_DATE >= TO_DATE(#date_start#, 'YYYY-MM-DD'))
+                    AND 1=1
+                </isNotEmpty>
+                <isNotEmpty property="date_end">
+                    AND (A.REG_DATE <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999
+					OR PE.WORK_DATE <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999)
+					AND 1=1
+                </isNotEmpty>
+                <isNotEmpty property="statusCondition">
+                    <isEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                        A.STATUS in (21,22,23,24,26,1, 2, 3, 4, 5, 6, 7, 8)
+                    </isEqual>
+                    <isNotEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                        A.STATUS = #statusCondition#
+                    </isNotEqual>
+                </isNotEmpty>
+
+                <isNotEmpty property="searchKeyword">
+                    AND (LOWER(A.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+					OR LOWER(B.SYSTEM_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%')
+                </isNotEmpty>
+
+				<isEqual property="session_user_type" compareValue="M">
+			        <isEqual prepend="AND" property="userCondition" compareValue="0">
+						  ((SELECT count(1) 
+						      FROM PKMS.SYSTEM_USER SU
+						      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+						      AND SU.USER_GUBUN = 'M' 
+						      AND SU.USER_ID = #session_user_id#)
+						      + 
+						    (SELECT count(1) 
+						      FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+						      WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+						      AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+						      AND EU.USER_ID = #session_user_id#)) 
+						      > 0
+			        </isEqual>
+				</isEqual>
+				<isEqual property="session_user_type" compareValue="B">
+			        <isEqual prepend="AND" property="userCondition" compareValue="0">
+						   (SELECT count(1) 
+						      FROM PKMS.SYSTEM_USER SU
+						      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+						      AND SU.USER_GUBUN = 'B' 
+						      AND SU.USER_ID = #session_user_id#)
+						      > 0
+			        </isEqual>
+			        <isEqual prepend="AND" property="userCondition" compareValue="1">
+							((SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM1 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM2 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM3 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM4 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                     ) > 0
+			        </isEqual>
+				</isEqual>
+
+                <isNotEmpty property="group1Condition" prepend="AND">
+                        B.GROUP1_SEQ = #group1Condition#
+                </isNotEmpty>
+                <isNotEmpty property="group2Condition" prepend="AND">
+                        B.GROUP2_SEQ = #group2Condition#
+                </isNotEmpty>
+                	GROUP BY 
+               		 A.PKG_SEQ, TITLE,  A.VER, A.DEV_YN,
+               		 B.GROUP1_SEQ, B.GROUP1_NAME, B.GROUP2_NAME, B.GROUP3_NAME, B.SYSTEM_NAME,
+                 	 A.VER_GUBUN, A.SER_YN, A.SER_CONTENT, A.CONTENT, A.PE_YN, A.STATUS, A.STATUS_DEV, C.NAME,
+                     A.SYSTEM_SEQ, A.TPL_SEQ, A.USE_YN, A.REG_USER, A.REG_USER_GUBUN, A.REG_DATE,
+                     A.UPDATE_USER, A.UPDATE_USER_GUBUN, A.UPDATE_DATE, E.HNAME, D.BP_USER_NAME, 
+                     A.VERIFY_DATE_START, B.SYSTEM_USER_ID, B.DEV_SYSTEM_USER_ID, A.URGENCY_YN, A.URGENCY_VERIFI, PU.STATUS
+                )A
+                ) 
+                ORDER BY PKG_USER_STATUS DESC, PKG_SEQ DESC
+           <isEqual property="isPaging" compareValue="true">
+	           <isNotEmpty property="statusCondition">
+		           <isEqual property="statusCondition" compareValue="MAIN">
+		           		<![CDATA[
+		           		) A WHERE ROWNUM  <=  #firstIndex# + 100
+		           		]]>
+		           </isEqual>
+	           </isNotEmpty>
+	           <isNotEqual property="statusCondition" compareValue="MAIN">
+	           		<![CDATA[
+	           		) A WHERE ROWNUM  <=  #firstIndex# + #recordCountPerPage#
+	           		]]>
+	           </isNotEqual>
+			<![CDATA[
+        ) WHERE RNUM > #firstIndex#
+        ]]>
+		</isEqual>  
+		
+	</select>
+
+	<select id="pkgDAO.readTotalCount" parameterClass="PkgModel" resultClass="int">
+        <isEqual property="dateCondition" compareValue="1">
+        	SELECT COUNT(1) totalCount FROM(
+        </isEqual>
+        	SELECT COUNT(1) totalCount FROM (
+                SELECT 
+                     A.PKG_SEQ, NVL(A.TITLE, '제목없음') TITLE, A.VER, 
+                     DECODE(B.GROUP1_SEQ, '', '', B.GROUP1_NAME || '>' || B.GROUP2_NAME || '>' || B.GROUP3_NAME || '>' || B.SYSTEM_NAME) GROUP_DEPTH,
+                     A.VER_GUBUN, A.SER_YN, A.SER_CONTENT, A.DEV_YN,
+                     A.CONTENT, A.PE_YN, A.STATUS, STATUS_DEV,
+                     (CASE WHEN A.STATUS = '9' THEN '완료'
+                           ELSE C.NAME
+                      END) AS STATUS_NAME, 
+                     A.SYSTEM_SEQ, A.TPL_SEQ, A.USE_YN, 
+                     A.REG_USER, A.REG_USER_GUBUN, TO_CHAR(A.REG_DATE, 'YYYY-MM-DD') REG_DATE, 
+                     A.UPDATE_USER, A.UPDATE_USER_GUBUN, TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD') UPDATE_DATE,
+                     (CASE WHEN REG_USER_GUBUN = 'M' THEN E.HNAME
+                          ELSE D.BP_USER_NAME
+                      END) AS REG_USER_NAME,
+                      TO_CHAR(A.VERIFY_DATE_START, 'YYYY-MM-DD') VERIFY_DATE_START,
+					   (select count(*) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK')) AS COL1,      
+			           (select count(*) from pkg_detail where pkg_seq = A.PKG_SEQ) AS COL2,     
+			           (select nvl(sum(content),0) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 17) AS TOTAL_VERIFY,       
+			           (select nvl(sum(content),0) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 18) AS TOTAL_IMPROVE,
+			           B.SYSTEM_USER_ID,
+			           (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = B.SYSTEM_USER_ID) AS SYSTEM_USER_NAME,
+			           (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = B.DEV_SYSTEM_USER_ID) AS DEV_SYSTEM_USER_NAME,
+			           B.SYSTEM_NAME,
+			           A.URGENCY_YN, A.URGENCY_VERIFI
+			           ,NVL(PU.STATUS, 'F') AS PKG_USER_STATUS
+                FROM
+                	PKMS.PKG_MASTER A, (
+                        SELECT 
+                             G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                             G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                             G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                             S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                             S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4,
+                             S.SYSTEM_USER_ID, S.DEV_SYSTEM_USER_ID
+                             , E.EQUIPMENT_SEQ
+                        FROM PKMS.GROUP1 G1,
+                             PKMS.GROUP2 G2,
+                             PKMS.GROUP3 G3,
+                             PKMS.SYSTEM S
+                             , (SELECT * FROM PKMS.EQUIPMENT WHERE USE_YN = 'Y') E
+                        WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                          AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                          AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                          AND S.SYSTEM_SEQ = E.SYSTEM_SEQ(+)
+                          AND G1.USE_YN = 'Y'
+                          AND G2.USE_YN = 'Y'
+                          AND G3.USE_YN = 'Y'
+						  AND S.USE_YN = 'Y'
+                     ) B,
+                     PKMS.COMMON_CODE C,
+                     PKMS.BP_USER D,
+                     PKMS.INF_PERSON_INFO_RCV E
+                     , PKMS.PKG_EQUIPMENT PE
+                     , (SELECT PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+                     	FROM PKG_USER PU,
+							(SELECT PKG_SEQ, CHARGE_GUBUN, STATUS, MIN(ORD) AS ORD
+							 FROM PKG_USER
+							 WHERE STATUS = 'R'
+							 GROUP BY PKG_SEQ, STATUS, CHARGE_GUBUN) PU_O
+						WHERE PU.PKG_SEQ = PU_O.PKG_SEQ
+							AND PU.ORD = PU_O.ORD
+							AND PU.CHARGE_GUBUN = PU_O.CHARGE_GUBUN
+							AND PU.STATUS = PU_O.STATUS
+							AND PU.USER_ID = #session_user_id#
+						GROUP BY PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+                     	) PU
+                WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+                  AND A.PKG_SEQ = PE.PKG_SEQ(+)
+                  AND A.STATUS = C.COMMON_CODE(+)
+                  AND A.REG_USER = D.BP_USER_ID(+)
+                  AND A.REG_USER = E.EMPNO(+)
+                  AND A.PKG_SEQ = PU.PKG_SEQ(+)
+                  AND C.GUBUN = 'PKS'
+                <isNotEmpty property="date_start">
+                	AND (A.REG_DATE >= TO_DATE(#date_start#, 'YYYY-MM-DD')
+                    OR PE.WORK_DATE >= TO_DATE(#date_start#, 'YYYY-MM-DD'))
+                    AND 1=1
+                </isNotEmpty>
+                <isNotEmpty property="date_end">
+                    AND (A.REG_DATE <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999
+					OR PE.WORK_DATE <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999)
+					AND 1=1
+                </isNotEmpty>
+                <isNotEmpty property="statusCondition">
+                    <isEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                        A.STATUS in (21,22,23,24,26,1, 2, 3, 4, 5, 6, 7, 8)
+                    </isEqual>
+                    <isNotEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                        A.STATUS = #statusCondition#
+                    </isNotEqual>
+                </isNotEmpty>
+
+                <isNotEmpty property="searchKeyword">
+                    AND (LOWER(A.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+					OR LOWER(B.SYSTEM_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%')
+                </isNotEmpty>
+
+				<isEqual property="session_user_type" compareValue="M">
+			        <isEqual prepend="AND" property="userCondition" compareValue="0">
+						  ((SELECT count(1) 
+						      FROM PKMS.SYSTEM_USER SU
+						      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+						      AND SU.USER_GUBUN = 'M' 
+						      AND SU.USER_ID = #session_user_id#)
+						      + 
+						    (SELECT count(1) 
+						      FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+						      WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+						      AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+						      AND EU.USER_ID = #session_user_id#)) 
+						      > 0
+			        </isEqual>
+				</isEqual>
+				<isEqual property="session_user_type" compareValue="B">
+			        <isEqual prepend="AND" property="userCondition" compareValue="0">
+						   (SELECT count(1) 
+						      FROM PKMS.SYSTEM_USER SU
+						      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+						      AND SU.USER_GUBUN = 'B' 
+						      AND SU.USER_ID = #session_user_id#)
+						      > 0
+			        </isEqual>
+			        <isEqual prepend="AND" property="userCondition" compareValue="1">
+							((SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM1 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM2 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM3 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                        +
+		                     (SELECT count(1) 
+		                        FROM PKMS.BP_MASTER BM
+		                        WHERE B.BP_NUM4 = BM.BP_NUM(+)
+		                        AND BM.BP_NUM = #session_user_group_id#)
+		                     ) > 0
+			        </isEqual>
+				</isEqual>
+
+                <isNotEmpty property="group1Condition" prepend="AND">
+                        B.GROUP1_SEQ = #group1Condition#
+                </isNotEmpty>
+                <isNotEmpty property="group2Condition" prepend="AND">
+                        B.GROUP2_SEQ = #group2Condition#
+                </isNotEmpty>
+                	GROUP BY 
+               		 A.PKG_SEQ, TITLE,  A.VER, A.DEV_YN,
+               		 B.GROUP1_SEQ, B.GROUP1_NAME, B.GROUP2_NAME, B.GROUP3_NAME, B.SYSTEM_NAME,
+                 	 A.VER_GUBUN, A.SER_YN, A.SER_CONTENT, A.CONTENT, A.PE_YN, A.STATUS, A.STATUS_DEV, C.NAME,
+                     A.SYSTEM_SEQ, A.TPL_SEQ, A.USE_YN, A.REG_USER, A.REG_USER_GUBUN, A.REG_DATE,
+                     A.UPDATE_USER, A.UPDATE_USER_GUBUN, A.UPDATE_DATE, E.HNAME, D.BP_USER_NAME, 
+                     A.VERIFY_DATE_START, B.SYSTEM_USER_ID, B.DEV_SYSTEM_USER_ID, A.URGENCY_YN, A.URGENCY_VERIFI, PU.STATUS
+                )A
+        <isEqual property="dateCondition" compareValue="1">
+        	GROUP BY 
+       		 A.PKG_SEQ
+       		 ) A
+        </isEqual>
+	</select>
+
+	<select id="pkgDAO.readListHistory" parameterClass="PkgModel" resultClass="PkgModel">
+        SELECT 
+             A.PKG_SEQ,
+             A.TITLE,
+             A.VER, 
+             A.SER_YN, 
+             A.PE_YN,
+             A.STATUS,
+             B.NAME AS STATUS_NAME,
+             A.SYSTEM_SEQ,
+             A.TPL_SEQ,
+             TO_CHAR(A.VERIFY_DATE_START, 'YYYY-MM-DD') AS VERIFY_DATE_START,
+             TO_CHAR(A.VERIFY_DATE_END, 'YYYY-MM-DD') AS VERIFY_DATE_END,
+             A.USE_YN,
+             A.REG_USER,
+             A.REG_USER_GUBUN,
+             A.REG_DATE, 
+             A.UPDATE_USER,
+             A.UPDATE_USER_GUBUN,
+             A.UPDATE_DATE,
+             (select nvl(sum(content),0) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 17) AS TOTAL_VERIFY,
+             (select nvl(sum(content),0) from pkg_detail x join pkg_detail_variable y on x.pkg_detail_seq = y.pkg_detail_seq where x.pkg_seq = A.PKG_SEQ and y.ord = 18) AS TOTAL_IMPROVE
+        FROM PKMS.PKG_MASTER A, PKMS.COMMON_CODE B
+        WHERE A.STATUS = B.COMMON_CODE
+        AND B.GUBUN = 'PKS'
+        AND A.STATUS = 9
+		<isNotEmpty prepend="AND" property="system_seq">
+			A.SYSTEM_SEQ = #system_seq#
+		</isNotEmpty>
+		ORDER BY A.PKG_SEQ DESC
+	</select>
+
+	<select id="pkgDAO.readTotalCountTemplate" parameterClass="PkgModel" resultClass="int">
+        SELECT COUNT(1) totalCount
+        FROM PKMS.PKG_MASTER
+        WHERE TPL_SEQ = #tpl_seq#
+	</select>
+
+	<update id="pkgDAO.status_update" parameterClass="PkgModel">
+	
+        UPDATE PKMS.PKG_MASTER SET
+               STATUS            = #selected_status#,
+               UPDATE_USER       = #session_user_id#,
+               UPDATE_USER_GUBUN = #session_user_type#,
+               DEV_YN 			 = #dev_yn_bak#,
+               <isEqual property="dev_yn" compareValue="D">
+               STATUS_DEV		 = #status_dev#,
+               </isEqual>
+               VOL_YN			 = #vol_yn#,
+               SEC_YN			= #sec_yn#,
+               CHA_YN			= #cha_yn#,
+               NON_YN			= #non_yn#,
+               ON_YN			= #on_yn#,
+               UPDATE_DATE       = sysdate
+        WHERE  PKG_SEQ           = #pkg_seq#
+        
+	</update>
+	
+	<update id="pkgDAO.urgency_update" parameterClass="PkgModel">
+	
+        UPDATE PKMS.PKG_MASTER SET
+               UPDATE_USER       = #session_user_id#,
+               UPDATE_USER_GUBUN = #session_user_type#,
+               UPDATE_DATE       = sysdate,
+               URGENCY_YN       = #urgency_yn#
+        WHERE  PKG_SEQ           = #pkg_seq#
+        
+	</update>
+
+	<update id="pkgDAO.tpl_seq_update" parameterClass="PkgModel">
+        UPDATE PKMS.PKG_MASTER SET
+               TPL_SEQ           = #tpl_seq#,
+               UPDATE_USER       = #session_user_id#,
+               UPDATE_USER_GUBUN = #session_user_type#,
+               UPDATE_DATE       = sysdate
+        WHERE  PKG_SEQ           = #pkg_seq#
+	</update>
+
+	<update id="pkgDAO.verify_update" parameterClass="PkgModel">
+        UPDATE PKMS.PKG_MASTER SET
+		<isNotEmpty property="verify_date_start">
+               VERIFY_DATE_START = #verify_date_start#,
+		</isNotEmpty>
+		<isNotEmpty property="verify_date_end">
+               VERIFY_DATE_END   = #verify_date_end#,
+		</isNotEmpty>
+		<isEmpty property="verify_date_end">
+               VERIFY_DATE_END   = #verify_date_start#,
+		</isEmpty>
+		<isEmpty property="urgency_verifi">
+               URGENCY_VERIFI   = #urgency_verifi#,
+		</isEmpty>
+               UPDATE_USER       = #session_user_id#,
+               UPDATE_USER_GUBUN = #session_user_type#,
+               UPDATE_DATE       = sysdate
+        WHERE  PKG_SEQ           = #pkg_seq#
+	</update>
+
+	<delete id="pkgDAO.delete" parameterClass="PkgModel">
+		DELETE FROM PKMS.PKG_MASTER
+		WHERE PKG_SEQ = #pkg_seq#
+	</delete> 
+	
+	<select id="pkgDAO.popupProgressRead" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+		    NEW_COL1, PN_COL1, CR_COL1, 
+		    NEW_COL2, PN_COL2, CR_COL2, 
+		    NEW_COL3, PN_COL3, CR_COL3,
+		    NEW_COL4, PN_COL4, CR_COL4 
+		FROM
+		    (select count(*) as new_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '신규'),
+		    (select count(*) as pn_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '보완'),
+		    (select count(*) as cr_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '개선'),
+		    (select nvl(sum(content),0)  as new_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '신규'),
+		    (select nvl(sum(content),0)  as pn_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '보완'),
+		    (select nvl(sum(content),0)  as cr_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '개선') ,
+		    (select nvl(sum(content),0)  as new_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '신규'),
+		    (select nvl(sum(content),0)  as pn_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '보완'),
+		    (select nvl(sum(content),0)  as cr_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '개선'),
+		    (select count(*)  as new_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '신규'),     
+		    (select count(*)  as pn_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '보완'),       
+		    (select count(*)  as cr_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '개선')
+	</select>
+	
+	<select id="pkgDAO.popupProgressRead_Dev" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+		    NEW_COL1, PN_COL1, CR_COL1, 
+		    NEW_COL2, PN_COL2, CR_COL2, 
+		    NEW_COL3, PN_COL3, CR_COL3,
+		    NEW_COL4, PN_COL4, CR_COL4 
+		FROM
+		    (select count(*) as new_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '신규'),
+		    (select count(*) as pn_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '보완'),
+		    (select count(*) as cr_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '개선'),
+		    (select nvl(sum(content),0)  as new_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '신규'),
+		    (select nvl(sum(content),0)  as pn_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '보완'),
+		    (select nvl(sum(content),0)  as cr_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '개선') ,
+		    (select nvl(sum(content),0)  as new_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '신규'),
+		    (select nvl(sum(content),0)  as pn_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '보완'),
+		    (select nvl(sum(content),0)  as cr_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '개선'),
+		    (select count(*)  as new_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 19 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '신규'),     
+		    (select count(*)  as pn_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 19 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '보완'),       
+		    (select count(*)  as cr_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 19 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '개선')
+	</select>
+	
+	<select id="pkgDAO.printRead_Time" parameterClass="PkgModel" resultClass="PkgModel">
+        SELECT WORK_GUBUN, TO_CHAR(MAX(WORK_DATE), 'YYYY-MM-DD') AS MAX_DATE, TO_CHAR(MIN(WORK_DATE), 'YYYY-MM-DD') AS MIN_DATE
+        FROM PKMS.PKG_EQUIPMENT
+        WHERE PKG_SEQ = #pkg_seq#
+        GROUP BY WORK_GUBUN
+        ORDER BY WORK_GUBUN DESC
+	</select>
+	
+	<select id="pkgDAO.printRead_EQ" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT MIN(EQ.NAME) AS EQ_NAME , COUNT(EQ.EQUIPMENT_SEQ) AS EQ_CNT, I.IDC_NAME, I.IDC_SEQ, PE.WORK_GUBUN
+		FROM EQUIPMENT EQ, IDC I , PKG_EQUIPMENT PE
+		WHERE PE.PKG_SEQ = #pkg_seq#
+			AND EQ.EQUIPMENT_SEQ = PE.EQUIPMENT_SEQ
+			AND I.IDC_SEQ = EQ.IDC_SEQ
+		GROUP BY I.IDC_SEQ, I.IDC_NAME, PE.WORK_GUBUN
+		ORDER BY PE.WORK_GUBUN DESC, MIN(EQ.NAME)
+	</select>
+	
+	<select id="pkgDAO.printRead_PnCr" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT MIN(PDV.CONTENT) AS PDV_CONTENT, PD.NEW_PN_CR_GUBUN AS PD_NEW_PN_CR_GUBUN, COUNT(PDV.PKG_DETAIL_SEQ) AS PDV_CNT
+		FROM PKG_DETAIL PD, PKG_DETAIL_VARIABLE PDV
+		WHERE PD.PKG_SEQ = #pkg_seq#
+		AND PDV.PKG_DETAIL_SEQ = PD.PKG_DETAIL_SEQ
+		AND PDV.ORD = 1
+		GROUP BY PD.NEW_PN_CR_GUBUN
+	</select>
+	
+	<select id="pkgDAO.workCntList" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+		    TOTAL.TEAM_NAME, COUNT(TOTAL.PKG_SEQ) AS TEAM_COUNT, TOTAL.TEAM_CODE
+		FROM
+		    (SELECT
+		        PM.PKG_SEQ AS PKG_SEQ,
+		        PM.TITLE AS TITLE,
+		        (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = B.SYSTEM_USER_ID) AS SYSTEM_USER_NAME,
+		        A.TEAM_CODE AS TEAM_CODE,
+		        A.TEAM_NAME AS TEAM_NAME
+		    FROM
+		        PKMS.PKG_MASTER PM,
+		        (SELECT I.TEAM_NAME, PE.WORK_DATE, I.TEAM_CODE,PE.PKG_SEQ  
+		        FROM
+		            PKMS.PKG_EQUIPMENT PE,
+		            PKMS.IDC I,
+		            PKMS.EQUIPMENT E
+		        WHERE
+		            PE.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ
+		            AND E.IDC_SEQ = I.IDC_SEQ
+	                AND WORK_DATE = TO_CHAR(SYSDATE,'yyyy-mm-dd') 
+		        GROUP BY
+		            PE.WORK_DATE,
+		            I.TEAM_CODE,
+		            I.TEAM_NAME,
+		            PE.PKG_SEQ) A,
+		        (SELECT S.SYSTEM_SEQ, S.SYSTEM_USER_ID, E.EQUIPMENT_SEQ
+		        FROM
+		            PKMS.SYSTEM S,
+		            PKMS.EQUIPMENT E
+		        WHERE
+		            S.SYSTEM_SEQ = E.SYSTEM_SEQ
+		            AND S.USE_YN = 'Y'
+		            AND E.USE_YN = 'Y') B
+		    WHERE
+		        PM.PKG_SEQ = A.PKG_SEQ
+		        AND B.SYSTEM_SEQ = PM.SYSTEM_SEQ
+	        <isNotEqual prepend="AND" property="granted" compareValue="ADMIN">
+				((SELECT count(1) 
+				  FROM PKMS.SYSTEM_USER SU
+				  WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				  AND SU.USER_GUBUN = 'M' 
+				  AND SU.USER_ID = #session_user_id#)
+				  + 
+				(SELECT count(1) 
+				  FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+				  WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+				  AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+				  AND EU.USER_ID = #session_user_id#)) 
+				  > 0
+	        </isNotEqual>
+		    GROUP BY
+		        PM.PKG_SEQ, PM.TITLE,
+		        B.SYSTEM_USER_ID,
+		        A.TEAM_CODE, A.TEAM_NAME) TOTAL
+		GROUP BY
+		    TOTAL.TEAM_NAME, TOTAL.TEAM_CODE
+	</select>
+	
+	<select id="pkgDAO.workPkgList" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+		    PM.PKG_SEQ, PM.TITLE,
+		    (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = B.SYSTEM_USER_ID) AS SYSTEM_USER_NAME,
+		    A.TEAM_CODE, A.TEAM_NAME
+		FROM
+		    PKMS.PKG_MASTER PM,
+		    (SELECT I.TEAM_NAME, PE.WORK_DATE, I.TEAM_CODE,PE.PKG_SEQ  
+		    FROM
+		        PKMS.PKG_EQUIPMENT PE,
+		        PKMS.IDC I,
+		        PKMS.EQUIPMENT E
+		    WHERE
+		        PE.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ
+		        AND E.IDC_SEQ = I.IDC_SEQ
+	            AND WORK_DATE = TO_CHAR(SYSDATE,'yyyy-mm-dd') 
+		    GROUP BY
+		        PE.WORK_DATE,
+		        I.TEAM_CODE,
+		        I.TEAM_NAME,
+		        PE.PKG_SEQ) A,
+		    (SELECT S.SYSTEM_SEQ, S.SYSTEM_USER_ID, E.EQUIPMENT_SEQ
+		    FROM
+		        PKMS.SYSTEM S,
+		        PKMS.EQUIPMENT E
+		    WHERE
+		        S.SYSTEM_SEQ = E.SYSTEM_SEQ
+		        AND S.USE_YN = 'Y'
+		        AND E.USE_YN = 'Y') B
+		WHERE
+		    PM.PKG_SEQ = A.PKG_SEQ
+		    AND B.SYSTEM_SEQ = PM.SYSTEM_SEQ
+        <isNotEqual prepend="AND" property="granted" compareValue="ADMIN">
+			((SELECT count(1) 
+			  FROM PKMS.SYSTEM_USER SU
+			  WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+			  AND SU.USER_GUBUN = 'M' 
+			  AND SU.USER_ID = #session_user_id#)
+			  + 
+			(SELECT count(1) 
+			  FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			  WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+			  AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+			  AND EU.USER_ID = #session_user_id#)) 
+			  > 0
+        </isNotEqual>
+		GROUP BY
+		    PM.PKG_SEQ, PM.TITLE,
+		    B.SYSTEM_USER_ID,
+		    A.TEAM_CODE, A.TEAM_NAME
+	</select>
+	
+	<select id="pkgDAO.workLimitList" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+			TEAM_NAME, TEAM_CODE, WORK_LIMIT
+		FROM
+			PKMS.IDC
+		GROUP BY
+			TEAM_NAME, TEAM_CODE, WORK_LIMIT
+		ORDER BY
+			TEAM_NAME
+	</select>
+	
+	<select id="pkgDAO.helloList" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT PD.NEW_PN_CR_GUBUN ,PDV.PKG_DETAIL_SEQ, PDV.ORD, replace(replace(PDV.CONTENT, chr(10),' '),chr(13),' ') AS CONTENT 
+		FROM PKG_DETAIL_VARIABLE PDV,  PKG_DETAIL PD
+		WHERE PDV.PKG_DETAIL_SEQ = PD.PKG_DETAIL_SEQ
+		ORDER BY PDV.PKG_DETAIL_SEQ, PDV.ORD, PD.NEW_PN_CR_GUBUN
+		
+	</select>
+	
+	<select id="pkgDAO.helloList2" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT COUNT(PKG_DETAIL_SEQ) AS COUNT_HELLO FROM (SELECT PKG_DETAIL_SEQ FROM  PKG_DETAIL_VARIABLE GROUP BY PKG_DETAIL_SEQ)
+	</select>
+	
+	<update id="pkgDAO.workLimitSave" parameterClass="PkgModel">
+		UPDATE
+			PKMS.IDC
+		SET
+			WORK_LIMIT = #work_limit#
+		WHERE
+			TEAM_CODE = #team_code#
+	</update>
+	
+	<update id="pkgDAO.security_update" parameterClass="PkgModel">
+        UPDATE PKMS.PKG_MASTER SET
+               SEC_YN			 = 'S'
+        WHERE  PKG_SEQ           = #pkg_seq#
+	</update>
+</sqlMap>

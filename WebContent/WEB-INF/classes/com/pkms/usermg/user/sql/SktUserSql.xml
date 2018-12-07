@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="SktUser">
+
+	<typeAlias alias="SktUserModel" type="com.pkms.usermg.user.model.SktUserModel" />
+
+	<select id="SktUserDAO.read" parameterClass="SktUserModel" resultClass="SktUserModel">
+		<![CDATA[
+			SELECT
+				EMPNO, HNAME, REGNO, ENAME, INDEPT, BOOSER, SOSOK, TSOSOK, JBGRP, JBRANK, JBCHARGE, HOLDOFFIDIVI, PLACE, JOINCOMDD, PRODATE, RETIREDD, JOB, JOBNM, STARTDATE, CLOSEDATE, MOREPOYN, INTELNO, MOVETELNO, TELNO, FAX, EMAIL, EMAIL2, IDSTARTDATE, PHOTOURL, T_FLAG, SENDDT
+			FROM PKMS.INF_PERSON_INFO_RCV 
+			WHERE EMPNO=#empno#
+			AND T_FLAG != 'D'
+		]]>
+	</select>
+
+	<select id="SktUserDAO.readList" parameterClass="SktUserModel" resultClass="SktUserModel">
+		<![CDATA[
+		SELECT 
+            EMPNO, HNAME, INDEPT, SOSOK, MOVETELNO, EMAIL
+        FROM 
+            PKMS.INF_PERSON_INFO_RCV
+		WHERE 1=1
+		AND T_FLAG != 'D'
+		]]>
+		<isNotEmpty property="searchKeyword">
+			<isEmpty property="indept">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					HNAME LIKE '%' || #searchKeyword# || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isEmpty>
+		</isNotEmpty>
+
+		<isNotEmpty property="indept">
+			AND INDEPT = #indept#
+		</isNotEmpty>
+		<![CDATA[
+            ORDER BY HNAME ASC
+		]]>
+	</select>
+
+	<select id="SktUserDAO.readListAuth" parameterClass="SktUserModel" resultClass="SktUserModel">
+		<![CDATA[
+		SELECT 
+            I.EMPNO, I.HNAME, I.INDEPT, I.SOSOK, I.MOVETELNO, I.EMAIL
+        FROM 
+            PKMS.INF_PERSON_INFO_RCV I
+		WHERE (SELECT COUNT(1) FROM PKMS.USER_AUTH_ROLE A WHERE A.USER_GUBUN='M' AND A.USER_ID=I.EMPNO) > 0
+		AND I.T_FLAG != 'D'
+		]]>
+		<isNotEmpty property="searchKeyword">
+			<isEmpty property="indept">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					I.HNAME LIKE '%' || #searchKeyword# || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(I.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isEmpty>
+		</isNotEmpty>
+
+		<isNotEmpty property="indept">
+			AND I.INDEPT = #indept#
+		</isNotEmpty>
+		<![CDATA[
+            ORDER BY I.HNAME ASC
+		]]>
+	</select>
+
+	<select id="SktUserDAO.readListAuth_boan" parameterClass="SktUserModel" resultClass="SktUserModel">
+		<![CDATA[
+		SELECT 
+            SUBSTR(I.EMPNO, -2) AS EMPNO, I.HNAME, I.INDEPT, I.SOSOK, I.MOVETELNO, I.EMAIL
+        FROM 
+            PKMS.INF_PERSON_INFO_RCV I
+		WHERE (SELECT COUNT(1) FROM PKMS.USER_AUTH_ROLE A WHERE A.USER_GUBUN='M' AND A.USER_ID=I.EMPNO) > 0
+		AND I.T_FLAG != 'D'
+		]]>
+		<isNotEmpty property="searchKeyword">
+			<isEmpty property="indept">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					I.HNAME LIKE '%' || #searchKeyword# || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(I.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isEmpty>
+		</isNotEmpty>
+
+		<isNotEmpty property="indept">
+			AND I.INDEPT = #indept#
+		</isNotEmpty>
+		<![CDATA[
+            ORDER BY I.HNAME ASC
+		]]>
+	</select>
+
+	<select id="SktUserDAO.readListManager" parameterClass="SktUserModel" resultClass="SktUserModel">
+		<![CDATA[
+		SELECT 
+            I.EMPNO, I.HNAME, I.INDEPT, I.SOSOK, I.MOVETELNO, I.EMAIL
+        FROM 
+            PKMS.INF_PERSON_INFO_RCV I
+		WHERE (SELECT COUNT(1) FROM PKMS.USER_AUTH_ROLE A WHERE A.USER_GUBUN='M' AND A.AUTH_ROLE='ROLE_MANAGER' AND A.USER_ID=I.EMPNO) > 0
+		AND I.T_FLAG != 'D'
+		]]>
+		<isNotEmpty property="searchKeyword">
+			<isEmpty property="indept">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					I.HNAME LIKE '%' || #searchKeyword# || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(I.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isEmpty>
+		</isNotEmpty>
+
+		<isNotEmpty property="indept">
+			AND I.INDEPT = #indept#
+		</isNotEmpty>
+		<![CDATA[
+            ORDER BY I.HNAME ASC
+		]]>
+	</select>
+	
+	<select id="SktUserDAO.readEmpno" parameterClass="SktUserModel" resultClass="SktUserModel">
+		<![CDATA[
+	        SELECT 
+	            EMPNO
+	        FROM
+	            PKMS.INF_PERSON_INFO_RCV
+	        WHERE
+	            EMPNO LIKE '%' || #empno#
+	          AND
+	          	T_FLAG != 'D'
+	          AND
+	            HNAME = #hname#
+	          AND
+	            SOSOK = #sosok#
+		]]>
+	</select>
+
+</sqlMap>

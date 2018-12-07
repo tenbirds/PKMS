@@ -1,0 +1,43 @@
+.gantt { font-family:'µ¸¿ò'; font-size:11px; margin:0; padding:0; }
+
+.project_top  { border-top: #9B8577 3px solid; }
+.gdatehead    { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; color:#9B8577; font-size:12px; font-weight:bold; height:19px; }
+.gname_head   { height:38px; text-align:center; vertical-align:middle; background-color: #ffffff; color:#9B8577; font-size: 14px; font-weight:bold; }
+
+.gname_t      { border-top: #9B8577 3px solid; border-right:#ebe7e4 1px solid; background-color: #9B8577; color:#ffffff; font-size: 12px; font-weight:bold; height: 19px; }
+.gname_dur_t  { width: 70px; text-align:right; }
+.ghead_t      { border-top: #9B8577 3px solid; border-left: #ebe7e4 1px solid; background-color: #ffffff; }
+.gheadwkend_t { border-top: #9B8577 3px solid; border-left: #ebe7e4 1px solid; background-color: #f5f3f1; }
+
+.gname            { border-top: #ebe7e4 1px solid; border-right:#ebe7e4 1px solid; background-color: #f9f7f5; color:#9B8577; font-size: 12px; font-weight:normal; height: 19px; }
+.gname_dur        { background-color: #f3f1ef; width: 70px; text-align:right; }
+.ghead_dt         { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; background-color: #ffffff; color:#9B8577; font-size: 12px; text-align:center; height: 19px; }
+.ghead            { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; background-color: #ffffff; cursor: default; }
+.ghead_today      { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; background: url('/pssms_resources/images/curday.png');  cursor: default; }
+.gheadwkend_dt    { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; background-color: #ffffff; color:#9B8577; font-size: 12px; text-align:center; height:19px; }
+.gheadwkend       { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; background-color: #f5f3f1; cursor: default; }
+.gheadwkend_today { border-top: #ebe7e4 1px solid; border-left: #ebe7e4 1px solid; background: url('/pssms_resources/images/curday.png');  cursor: default; }
+
+.g_task_prj    { height: 20px; position:relative; top:0px; border-top: #9B8577 3px solid; margin:0px; padding:0px; border-spacing:0px; border-collapse:collapse; }
+.g_task_prj td { padding:0px; }
+.g_task_row    { height: 20px; position:relative; top:0px; border:0; margin:0px; padding:0px; border-spacing:0px; border-collapse:collapse; }
+.g_task_row td { padding:0px; }
+.g_task        { height: 10px; border:#9B8577 1px solid; background-color:#f9f672; cursor: pointer;opacity:0.9; }
+.delay_task    { height: 10px; border:#9B8577 1px solid; background-color:#ff786d; cursor: pointer;opacity:0.9; }
+.prj_task      { height: 10px; border:#9B8577 1px solid; background-color:#ff786d; cursor: pointer;opacity:0.9; }
+
+.grp_task    { height:7px; background-color: #8c7466; border:#9B8577 1px solid; cursor: pointer;opacity:0.9; }
+.grp_tbar4r  { height:4px; background-color: #9B8577; float:right; z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar4l  { height:4px; background-color: #9B8577; float:left;  z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar3r  { height:3px; background-color: #9B8577; float:right; z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar3l  { height:3px; background-color: #9B8577; float:left;  z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar2r  { height:2px; background-color: #9B8577; float:right; z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar2l  { height:2px; background-color: #9B8577; float:left;  z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar1r  { height:1px; background-color: #9B8577; float:right; z-index:-4; overflow: hidden; width:1px; }
+.grp_tbar1l  { height:1px; background-color: #9B8577; float:left;  z-index:-4; overflow: hidden; width:1px; }
+
+.captionbox  { position:absolute; top:-3px; width:120px; font-size:12px; }
+
+.gcomplete   { background-color:black; height:5px; z-index: -4; float:left; overflow: auto; margin-top:4px; filter: alpha(opacity=40); opacity:0.4; overflow:hidden; }
+div.scroll   { border-right: #efefef 1px solid; padding-right: 0px; border-top: #efefef 1px solid; padding-left: 0px; padding-bottom: 0px; overflow: hidden; border-left: #efefef 1px solid; width: 620px; padding-top: 0px; border-bottom: #efefef 1px solid; background-color: #ffffff }
+div.scroll2  { position:relative; padding-right: 0px; overflow:auto ;overflow-x:scroll;overflow-y:hidden; padding-left: 0px; padding-bottom: 0px; width: 980px; padding-top: 0px; background-color: #ffffff }

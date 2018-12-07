@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgCheckListMg">
+
+	<typeAlias alias="PkgCheckListManagerModel" type="com.pkms.verify_tem_mg.model.PkgCheckListManagerModel" />
+	
+
+	
+<select id="pkgCheckListMgDao.readList" parameterClass="PkgCheckListManagerModel" resultClass="PkgCheckListManagerModel">
+		SELECT
+			CHK_SEQ, CHK_TYPE,CHK_TYPE_NAME, TITLE, REG_USER, REG_USER_NAME, REG_DATE, STATUS, CHK_CONTENT
+		FROM ( SELECT 
+				A.*
+			FROM 
+				( 	
+					SELECT 
+						CHK_SEQ
+						,TITLE
+						, REG_USER
+						, (SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = REG_USER UNION ALL  SELECT S.BP_USER_NAME FROM BP_USER S WHERE S.BP_USER_ID = REG_USER ) AS REG_USER_NAME
+						, REG_DATE
+						, CHK_TYPE
+						, (SELECT NAME FROM COMMON_CODE WHERE GUBUN ='CHK_L' AND COMMON_CODE = CHK_TYPE ) AS CHK_TYPE_NAME
+						, STATUS
+						, CHK_CONTENT
+						, ROW_NUMBER () OVER (ORDER BY REG_DATE DESC) AS RN
+        			FROM PKG_CHK_LIST
+					WHERE 1 = 1
+				<isNotEmpty prepend="AND" property="status">
+				   	LOWER(STATUS) LIKE '%' || LOWER(#status#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="chk_type">
+				   	LOWER(CHK_TYPE) LIKE '%' || LOWER(#chk_type#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="reg_user">
+				   	LOWER(REG_USER) LIKE '%' || LOWER(#reg_user#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="title">
+				   	LOWER(TITLE) LIKE '%' || LOWER(#title#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="stdate">
+					REG_DATE BETWEEN TO_DATE(#stdate#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss') AND TO_DATE(#eddate#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+				</isNotEmpty>
+	        
+				ORDER BY REG_DATE ASC
+				) A WHERE RN  <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		 WHERE RN  > #firstIndex#
+</select>
+	
+<select id="pkgCheckListMgDao.readTotalCount" parameterClass="PkgCheckListManagerModel" resultClass="int">
+		SELECT 
+			  COUNT(*) AS CNT
+	    FROM PKG_CHK_LIST
+		WHERE 1 = 1
+				<isNotEmpty prepend="AND" property="stdate">
+				   	LOWER(STATUS) LIKE '%' || LOWER(#status#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="stdate">
+				   	LOWER(CHK_TYPE) LIKE '%' || LOWER(#chk_type#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="stdate">
+				   	LOWER(TITLE) LIKE '%' || LOWER(#title#) || '%'
+				</isNotEmpty>
+				<isNotEmpty prepend="AND" property="stdate">
+					REG_DATE BETWEEN TO_DATE(#stdate#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss') AND TO_DATE(#eddate#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+				</isNotEmpty>
+</select>
+	
+	
+	
+<select id="pkgCheckListMgDao.readone" parameterClass="PkgCheckListManagerModel" resultClass="PkgCheckListManagerModel">
+
+					SELECT 
+						CHK_SEQ
+						,TITLE
+						, REG_USER
+						, (SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = REG_USER UNION ALL  SELECT S.BP_USER_NAME FROM BP_USER S WHERE S.BP_USER_ID = REG_USER ) AS REG_USER_NAME
+						, REG_DATE
+						, CHK_TYPE
+						, (SELECT C.NAME FROM COMMON_CODE C WHERE C.GUBUN ='CHK_L' AND C.COMMON_CODE = CHK_TYPE ) AS CHK_TYPE_NAME
+						, STATUS
+						, CHK_CONTENT
+						, UPDATE_USER
+						, (SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = UPDATE_USER UNION ALL  SELECT S.BP_USER_NAME FROM BP_USER S WHERE S.BP_USER_ID = REG_USER ) AS UPDATE_USER_NAME
+						, UPDATE_DATE
+        			FROM PKG_CHK_LIST
+					WHERE 1 = 1
+					AND CHK_SEQ = #chk_seq#
+				
+</select>	
+	
+	<insert id="pkgCheckListMgDao.insert" parameterClass="PkgCheckListManagerModel">
+		INSERT INTO PKG_CHK_LIST
+		(
+			CHK_SEQ
+			,CHK_TYPE
+			,STATUS
+			,TITLE
+			,CHK_CONTENT
+			,REG_USER
+			,POSITION
+		)
+		VALUES
+		(
+			PKG_CHECKLIST_MG_SEQ.NEXTVAL
+			,#chk_type#
+			,#status#
+			,#title#
+			,#chk_content#
+			,#session_user_id#
+			,#position#
+		)
+	</insert>	
+	
+	<update id="pkgCheckListMgDao.update" parameterClass="PkgCheckListManagerModel">
+		UPDATE PKG_CHK_LIST 
+			SET TITLE = #title# 
+			, CHK_TYPE = #chk_type#
+			, STATUS = #status#
+			, CHK_CONTENT = #chk_content#
+			, UPDATE_USER = #session_user_id#
+			, UPDATE_DATE = sysdate
+			, ANSWER_TYPE = #answer_type#
+		WHERE CHK_SEQ = #chk_seq#
+	</update>
+	
+	<delete id="pkgCheckListMgDao.delete" parameterClass="PkgCheckListManagerModel">
+		DELETE FROM PKG_CHK_LIST
+		WHERE CHK_SEQ = #chk_seq#
+	</delete>
+
+
+
+<select id="pkgCheckListMgDao.codeList" parameterClass="PkgCheckListManagerModel" resultClass="PkgCheckListManagerModel">
+		SELECT 
+			GUBUN
+			,COMMON_CODE
+			,NAME
+			,COL1
+			,COL2
+			,COL3
+			,COL4
+<!-- 			,ORD -->
+			,REMARK
+			,USE_YN
+		FROM COMMON_CODE 
+		WHERE GUBUN = #gubun#
+</select>
+
+</sqlMap>

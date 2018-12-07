@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgDetailNewPnCr">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+
+	<update id="PkgDetailNewPnCrDAO.update" parameterClass="PkgModel">
+		UPDATE PKMS.PKG_DETAIL SET
+		    NEW_PN_CR_SEQ = #new_pn_cr_seq#
+		WHERE PKG_SEQ = #pkg_seq#
+		  AND PKG_DETAIL_SEQ = #pkg_detail_seq#
+	</update>
+</sqlMap>

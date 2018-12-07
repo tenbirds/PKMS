@@ -1,0 +1,158 @@
+.sysc_group {
+	width: 248px;
+	float: left
+}
+
+.sysc_group_last {
+	width: 215px;
+	float: right;
+}
+
+.sysc_group1 {
+	width: 215px;
+	float: left
+}
+
+.sysc_title {
+	background: url(/images/sys_titlebg.gif) no-repeat;
+	width: 200px;
+	height: 22px;
+	font-weight: bold;
+	color: #fff;
+	font-family: '굴림';
+	padding-top: 13px;
+	padding-left: 15px
+}
+
+.sysc_line {
+	width: 215px;
+	height: 120px;
+	border-bottom: 1px solid #cbcbcb
+}
+
+.sysc_line li {
+	background: url(/images/sys_linebg.png) no-repeat left top;
+	width: 215px;
+	height: 18px;
+	font-weight: bold;
+	padding-top: 10px;
+	padding-left: 15px;
+}
+
+.sysc_line_on {
+	background: url(/images/sys_linebg.png) no-repeat left bottom !important;
+	color: #bd3100;
+	width: 215px;
+	height: 18px;
+	font-weight: bold;
+	padding-top: 10px;
+	padding-left: 15px;
+}
+/**
+.sys_line li {
+	background: url(/images/sys_linebg.png) no-repeat left top;
+	width: 215px;
+	height: 18px;
+	font-weight: bold;
+	padding-top: 7px;
+	padding-left: 15px;
+}
+
+.sys_line_on {
+	background: url(/images/sys_linebg.png) no-repeat left bottom !important;
+	color: #bd3100;
+	width: 215px;
+	height: 18px;
+	font-weight: bold;
+	padding-top: 7px;
+	padding-left: 15px;
+}
+**/
+.sys_line {width:100%; height:288px;background:#fff;overflow-y: auto; overflow-x: hidden;}
+.sys_line li {width:95%;height:35px;line-height:35px; font-weight:bold;padding-left:15px;border-bottom:1px solid #f0f0f0;}
+.sys_line li.sys_line_on {background:#b5cbdd; color:#fff;font-weight:bold;}
+
+
+.sysc_arrow {
+	width: 18px;
+	height: 18px;
+	float: right;
+	top: 177px;
+	padding-right: 8px
+}
+
+.sys_arrow {
+	width: 18px;
+	height: 18px;
+	float: right;
+	top: 110px;
+	position: relative;
+	padding-right: 8px
+}
+
+.sysc_btn_location {
+	width: 215px;
+	text-align: right;
+	padding-top: 5px
+}
+
+.sysc_div1 {
+	width: 450px;
+	height: auto;
+	float: left;
+	margin-right: 35px
+}
+
+.sysc_div2_pop {
+	width: 765px;
+	height: 278px;
+	border: 3px solid #adcde8;
+	background: url(/images/sys_poptitlebg.gif) repeat-x left top;
+	padding: 0px 0px 0px 0px;
+	margin: 0px 0px 0px 0px;
+}
+
+.sysc_div2_pop_title {
+	font-weight: bold;
+	color: #333;
+	padding: 5px 0px 0px 15px;
+	height: 25px;
+}
+
+.sysc_div4 {
+	float: left;
+	width: 360px;
+	height: 242px;
+	border: 1px solid #cbcbcb;
+	padding: 0px;
+	overflow: auto;
+	margin-left: 5px;
+}
+
+.sysc_div5 {
+	float: left;
+	width: 385px;
+	height: 242px;
+	border: 1px solid #cbcbcb;
+	padding: 0px;
+	margin-left: 5px;
+}
+
+.sysc_div5_search {
+	border: 2px solid #adcde8;
+	padding: 3px;
+	height: 25px;
+	margin-bottom: 10px;
+}
+
+.sysc_selectm {
+	width: 195px;
+	height: 55px;
+	padding: 0px;
+}
+
+.sysc_selectm_bp {
+	width: 195px;
+	height: 36px;
+	padding: 0px;
+}

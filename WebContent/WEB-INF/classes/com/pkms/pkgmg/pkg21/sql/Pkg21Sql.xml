@@ -1,0 +1,837 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Pkg21">
+	<typeAlias alias="Pkg21Model" type="com.pkms.pkgmg.pkg21.model.Pkg21Model" />
+	<typeAlias alias="Pkg21FileModel" type="com.pkms.pkgmg.pkg21.model.Pkg21FileModel" />
+	<typeAlias alias="Pkg21SysFileModel" type="com.pkms.sys.system.model.SystemFileModel" />
+
+	<select id="pkg21DAO.readList" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+		<isEqual property="isPaging" compareValue="true">
+		<![CDATA[
+			SELECT
+				*
+	        FROM (
+            	SELECT 
+            		ROWNUM AS RNUM
+            		, A.* 
+            	FROM (
+		]]>
+		</isEqual>
+		SELECT
+		    PM.PKG_SEQ
+		    , PM.TITLE
+		    , SYS.SYSTEM_SEQ
+		    , PM.VER
+		    , PM.STATUS
+		    , CC.NAME AS STATUS_NAME
+		    , DECODE(SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME)
+		        AS GROUP_DEPTH
+		    , SYS.SYSTEM_USER_NAME
+		    , SYS.DEV_SYSTEM_USER_NAME
+		    ,TO_CHAR(PM.REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+		    , CASE WHEN PM.REG_USER_GUBUN = 'M'
+		        THEN (SELECT HNAME FROM PKMS.INF_PERSON_INFO_RCV WHERE EMPNO = PM.REG_USER)
+		        ELSE (SELECT BP_USER_NAME FROM PKMS.BP_USER WHERE BP_USER_ID = PM.REG_USER)
+		        END AS REG_USER_NAME
+		    , NVL(PU.STATUS, 'F') AS PKG_USER_STATUS
+		FROM
+		    PKMS.PKG_MASTER PM,
+		    PKMS.COMMON_CODE CC,
+		    (
+		        SELECT 
+                     G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                     G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                     G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                     S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                     S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4,
+                     S.SYSTEM_USER_ID, IPIR.HNAME AS SYSTEM_USER_NAME,
+                     S.DEV_SYSTEM_USER_ID, IPI.HNAME AS DEV_SYSTEM_USER_NAME
+                FROM PKMS.GROUP1 G1,
+                     PKMS.GROUP2 G2,
+                     PKMS.GROUP3 G3,
+                     PKMS.SYSTEM S,
+                     PKMS.INF_PERSON_INFO_RCV IPIR,
+                     PKMS.INF_PERSON_INFO_RCV IPI
+                WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                  AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                  AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                  AND G1.USE_YN = 'Y'
+                  AND G2.USE_YN = 'Y'
+                  AND G3.USE_YN = 'Y'
+                  AND S.USE_YN = 'Y'
+                  AND S.SYSTEM_USER_ID = IPIR.EMPNO(+)
+                  AND S.DEV_SYSTEM_USER_ID = IPI.EMPNO(+)
+		    ) SYS
+		    , (SELECT PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+               FROM PKG_USER PU,
+				(
+					SELECT
+						PKG_SEQ, CHARGE_GUBUN, STATUS, MIN(ORD) AS ORD
+					FROM PKG_USER
+					WHERE STATUS = 'R'
+					GROUP BY
+						PKG_SEQ, STATUS, CHARGE_GUBUN) PU_O
+				WHERE PU.PKG_SEQ = PU_O.PKG_SEQ
+					AND PU.ORD = PU_O.ORD
+					AND PU.CHARGE_GUBUN = PU_O.CHARGE_GUBUN
+					AND PU.STATUS = PU_O.STATUS
+					AND PU.USER_ID = #session_user_id#
+				GROUP BY PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+	             ) PU
+		WHERE
+			1=1
+		AND PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ
+	    AND PM.STATUS = CC.COMMON_CODE
+	    AND CC.GUBUN = 'PKG'
+	    AND PM.PKG_SEQ = PU.PKG_SEQ(+)
+	    <isNotEmpty property="date_start">
+		    AND (PM.REG_DATE >= TO_DATE(#date_start#, 'YYYY-MM-DD')
+		        OR PM.VERIFY_DATE_START >= TO_DATE(#date_start#, 'YYYY-MM-DD'))
+		    AND 1=1
+	    </isNotEmpty>
+	    <isNotEmpty property="date_end">
+		    AND (PM.REG_DATE <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999
+		        OR PM.VERIFY_DATE_START <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999)
+		    AND 1=1
+	    </isNotEmpty>
+	    <isNotEmpty property="statusCondition">
+            <isEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                PM.STATUS in (101,101,102,111,112,113,114,121,122,123,124,125,131,132,133,134,141,142,143)
+            </isEqual>
+            <isNotEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                PM.STATUS = #statusCondition#
+            </isNotEqual>
+        </isNotEmpty>
+	    <isNotEmpty property="searchKeyword">
+	    	AND (LOWER(PM.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+            	OR LOWER(SYS.SYSTEM_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%')
+           </isNotEmpty>
+           <isEqual property="session_user_type" compareValue="M">
+	        <isEqual prepend="AND" property="userCondition" compareValue="0">
+			  ((SELECT count(1) 
+			      FROM PKMS.SYSTEM_USER SU
+			      WHERE SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+			      AND SU.USER_GUBUN = 'M' 
+			      AND SU.USER_ID = #session_user_id#)
+			      + 
+			    (SELECT count(1) 
+			      FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			      WHERE SYS.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+			      AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+			      AND EU.USER_ID = #session_user_id#)) 
+			      > 0
+	        </isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+	        <isEqual prepend="AND" property="userCondition" compareValue="0">
+			   (SELECT count(1) 
+			      FROM PKMS.SYSTEM_USER SU
+			      WHERE SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+			      AND SU.USER_GUBUN = 'B' 
+			      AND SU.USER_ID = #session_user_id#)
+			      > 0
+	        </isEqual>
+	        <isEqual prepend="AND" property="userCondition" compareValue="1">
+				((SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM1 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM2 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM3 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM4 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                    ) > 0
+	        </isEqual>
+		</isEqual>
+		<isNotEmpty property="group1Condition" prepend="AND">
+			SYS.GROUP1_SEQ = #group1Condition#
+        </isNotEmpty>
+        <isNotEmpty property="group2Condition" prepend="AND">
+			SYS.GROUP2_SEQ = #group2Condition#
+        </isNotEmpty>
+		ORDER BY PKG_USER_STATUS DESC, PKG_SEQ DESC
+		<isEqual property="isPaging" compareValue="true">
+			<isNotEmpty property="statusCondition">
+				<isEqual property="statusCondition" compareValue="MAIN">
+					<![CDATA[
+					) A WHERE ROWNUM  <=  #firstIndex# + 100
+					]]>
+				</isEqual>
+			</isNotEmpty>
+			<isNotEqual property="statusCondition" compareValue="MAIN">
+				<![CDATA[
+					) A WHERE ROWNUM  <=  #firstIndex# + #recordCountPerPage#
+				]]>
+			</isNotEqual>
+			<![CDATA[
+				) WHERE RNUM > #firstIndex#
+			]]>
+		</isEqual>
+	</select>
+	
+	<select id="pkg21DAO.readTotalCount" parameterClass="Pkg21Model" resultClass="int">
+	/**pkg21DAO.readTotalCount**/
+		SELECT COUNT(A.PKG_SEQ) AS totalCount
+		FROM
+			(
+			SELECT
+		    PM.PKG_SEQ
+		    , PM.TITLE
+		    , SYS.SYSTEM_SEQ
+		    , PM.VER
+		    , PM.STATUS
+		    , CC.NAME AS STATUS_NAME
+		    , DECODE(SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME)
+		        AS GROUP_DEPTH
+		    , SYS.SYSTEM_USER_NAME
+		    , SYS.DEV_SYSTEM_USER_NAME
+		    , TO_CHAR(PM.REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+		    , CASE WHEN PM.REG_USER_GUBUN = 'M'
+		        THEN (SELECT HNAME FROM PKMS.INF_PERSON_INFO_RCV WHERE EMPNO = PM.REG_USER)
+		        ELSE (SELECT BP_USER_NAME FROM PKMS.BP_USER WHERE BP_USER_ID = PM.REG_USER)
+		        END AS REG_USER_NAME
+		    , NVL(PU.STATUS, 'F') AS PKG_USER_STATUS
+		FROM
+		    PKMS.PKG_MASTER PM
+		    ,PKMS.COMMON_CODE CC
+		    ,(
+		        SELECT 
+                     G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                     G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                     G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                     S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                     S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4,
+                     S.SYSTEM_USER_ID, IPIR.HNAME AS SYSTEM_USER_NAME,
+                     S.DEV_SYSTEM_USER_ID, IPI.HNAME AS DEV_SYSTEM_USER_NAME
+                FROM PKMS.GROUP1 G1,
+                     PKMS.GROUP2 G2,
+                     PKMS.GROUP3 G3,
+                     PKMS.SYSTEM S,
+                     PKMS.INF_PERSON_INFO_RCV IPIR,
+                     PKMS.INF_PERSON_INFO_RCV IPI
+                WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                  AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                  AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                  AND G1.USE_YN = 'Y'
+                  AND G2.USE_YN = 'Y'
+                  AND G3.USE_YN = 'Y'
+                  AND S.USE_YN = 'Y'
+                  AND S.SYSTEM_USER_ID = IPIR.EMPNO(+)
+                  AND S.DEV_SYSTEM_USER_ID = IPI.EMPNO(+)
+		    ) SYS
+		    , (SELECT PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+               FROM PKG_USER PU,
+				(
+					SELECT
+						PKG_SEQ, CHARGE_GUBUN, STATUS, MIN(ORD) AS ORD
+					FROM PKG_USER
+					WHERE STATUS = 'R'
+					GROUP BY
+						PKG_SEQ, STATUS, CHARGE_GUBUN) PU_O
+				WHERE PU.PKG_SEQ = PU_O.PKG_SEQ
+					AND PU.ORD = PU_O.ORD
+					AND PU.CHARGE_GUBUN = PU_O.CHARGE_GUBUN
+					AND PU.STATUS = PU_O.STATUS
+					AND PU.USER_ID = #session_user_id#
+				GROUP BY PU.PKG_SEQ, PU.USER_ID, PU.STATUS
+	             ) PU
+			WHERE
+			1=1
+		AND PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ
+	    AND PM.STATUS = CC.COMMON_CODE
+	    AND CC.GUBUN = 'PKG'
+	    AND PM.PKG_SEQ = PU.PKG_SEQ(+)
+	    <isNotEmpty property="date_start">
+		    AND (PM.REG_DATE >= TO_DATE(#date_start#, 'YYYY-MM-DD')
+		        OR PM.VERIFY_DATE_START >= TO_DATE(#date_start#, 'YYYY-MM-DD'))
+		    AND 1=1
+	    </isNotEmpty>
+	    <isNotEmpty property="date_end">
+		    AND (PM.REG_DATE <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999
+		        OR PM.VERIFY_DATE_START <![CDATA[<=]]> TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999)
+		    AND 1=1
+	    </isNotEmpty>
+	    <isNotEmpty property="statusCondition">
+               <isEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                   PM.STATUS in (101,102,111,112,113,114,121,122,123,124,125,131,132,133,134,141,142,143)
+               </isEqual>
+               <isNotEqual prepend="AND" property="statusCondition" compareValue="MAIN">
+                   PM.STATUS = #statusCondition#
+               </isNotEqual>
+           </isNotEmpty>
+	    <isNotEmpty property="searchKeyword">
+	    	AND (LOWER(PM.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+            	OR LOWER(SYS.SYSTEM_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%')
+           </isNotEmpty>
+           <isEqual property="session_user_type" compareValue="M">
+	        <isEqual prepend="AND" property="userCondition" compareValue="0">
+			  ((SELECT count(1) 
+			      FROM PKMS.SYSTEM_USER SU
+			      WHERE SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+			      AND SU.USER_GUBUN = 'M' 
+			      AND SU.USER_ID = #session_user_id#)
+			      + 
+			    (SELECT count(1) 
+			      FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			      WHERE SYS.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+			      AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+			      AND EU.USER_ID = #session_user_id#)) 
+			      > 0
+	        </isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+	        <isEqual prepend="AND" property="userCondition" compareValue="0">
+			   (SELECT count(1) 
+			      FROM PKMS.SYSTEM_USER SU
+			      WHERE SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+			      AND SU.USER_GUBUN = 'B' 
+			      AND SU.USER_ID = #session_user_id#)
+			      > 0
+	        </isEqual>
+	        <isEqual prepend="AND" property="userCondition" compareValue="1">
+				((SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM1 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM2 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM3 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                       +
+                    (SELECT count(1) 
+                       FROM PKMS.BP_MASTER BM
+                       WHERE SYS.BP_NUM4 = BM.BP_NUM(+)
+                       AND BM.BP_NUM = #session_user_group_id#)
+                    ) > 0
+	        </isEqual>
+		</isEqual>
+		<isNotEmpty property="group1Condition" prepend="AND">
+			SYS.GROUP1_SEQ = #group1Condition#
+        </isNotEmpty>
+        <isNotEmpty property="group2Condition" prepend="AND">
+			SYS.GROUP2_SEQ = #group2Condition#
+        </isNotEmpty>
+			) A
+	</select>
+	
+	<select id="pkg21DAO.read" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+	/** pkg21DAO.read **/
+		SELECT
+		    PM.PKG_SEQ
+		    , PM.SYSTEM_SEQ
+		    , DECODE(SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS SYSTEM_NAME
+		    , SYS.PE_TYPE, PM.DEV_YN, PM.TITLE, PM.WORK_LEVEL
+		    , PM.IMPORTANT, PM.VER, PM.VER_GUBUN, PM.PATCH_YN
+		    , PM.CHA_YN, PM.VOL_YN, PM.SEC_YN ,PM.CONTENT, PM.CONTENT_PN
+		    , PM.CONTENT_CR, PM.CONTENT_SELF, PM.TTM, PM.SER_DOWNTIME
+		    , PM.ROAMING_LINK, PM.BYPASS_TRAFFIC, PM.BYPASS_TRAFFIC_COMMENT
+		    , PM.PE_YN, PM.PE_YN_COMMENT, PM.STATUS, PM.REG_USER, PM.MASTER_FILE_ID
+		    , PM.REG_USER_GUBUN, PM.STATUS_DEV, SYS.IMPACT_SYSTEMS
+		    , CASE PM.REG_USER_GUBUN WHEN 'M'
+		        THEN RIPIR.HNAME
+		        ELSE RBU.BP_USER_NAME
+		        END REG_USER_NAME
+		    , CASE PM.UPDATE_USER_GUBUN WHEN 'M'
+		        THEN UIPIR.HNAME
+		        ELSE UBU.BP_USER_NAME
+		        END UPDATE_USER_NAME
+		    , TO_CHAR(PM.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE
+		    , TO_CHAR(PM.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE
+		    , PM.CONTENT_INVEST
+		    , SYS.SYSTEM_USER_NAME
+		    , SYS.DEV_SYSTEM_USER_NAME
+		FROM
+		    PKG_MASTER PM
+		    , (SELECT 
+		           G1.GROUP1_SEQ, G1.NAME GROUP1_NAME
+		           ,G2.GROUP2_SEQ, G2.NAME GROUP2_NAME
+		           ,G3.GROUP3_SEQ, G3.NAME GROUP3_NAME
+		           ,S.SYSTEM_SEQ, S.NAME SYSTEM_NAME, S.PE_TYPE
+		           ,S.IMPACT_SYSTEMS
+		           ,S.SYSTEM_USER_ID, IPIR.HNAME AS SYSTEM_USER_NAME
+                   ,S.DEV_SYSTEM_USER_ID, IPI.HNAME AS DEV_SYSTEM_USER_NAME
+		      FROM PKMS.GROUP1 G1,
+		           PKMS.GROUP2 G2,
+		           PKMS.GROUP3 G3,
+		           PKMS.SYSTEM S,
+		           PKMS.INF_PERSON_INFO_RCV IPIR,
+                   PKMS.INF_PERSON_INFO_RCV IPI
+		      WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		        AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		        AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		        AND G1.USE_YN = 'Y'
+		        AND G2.USE_YN = 'Y'
+		        AND G3.USE_YN = 'Y'
+		        AND S.SYSTEM_USER_ID = IPIR.EMPNO(+)
+                AND S.DEV_SYSTEM_USER_ID = IPI.EMPNO(+)
+		    ) SYS
+		    , PKMS.INF_PERSON_INFO_RCV RIPIR
+		    , PKMS.BP_USER RBU
+		    , PKMS.INF_PERSON_INFO_RCV UIPIR
+		    , PKMS.BP_USER UBU
+		WHERE
+		    PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ
+		    AND PM.REG_USER = RIPIR.EMPNO(+)
+		    AND PM.REG_USER = RBU.BP_USER_ID(+)
+		    AND PM.UPDATE_USER = UIPIR.EMPNO(+)
+		    AND PM.UPDATE_USER = UBU.BP_USER_ID(+)
+		    AND PM.PKG_SEQ = #pkg_seq#
+	</select>
+	
+	
+	<insert id="pkg21DAO.create" parameterClass="Pkg21Model">
+		<selectKey keyProperty="pkg_seq" resultClass="String">
+			SELECT PKG_MASTER_SEQ.NEXTVAL FROM DUAL
+		</selectKey>
+		/** pkg21DAO.create **/
+		
+		INSERT INTO PKMS.PKG_MASTER (
+            PKG_SEQ
+            ,SYSTEM_SEQ
+            ,DEV_YN
+            ,TITLE
+            ,WORK_LEVEL
+            ,IMPORTANT
+            ,VER
+            ,VER_GUBUN
+            ,PATCH_YN
+            ,CHA_YN
+            ,VOL_YN
+            ,CONTENT
+            ,CONTENT_PN
+            ,CONTENT_CR
+            ,CONTENT_SELF
+            ,CONTENT_INVEST
+            ,TTM
+            ,SER_DOWNTIME
+            ,ROAMING_LINK
+            ,BYPASS_TRAFFIC
+            ,BYPASS_TRAFFIC_COMMENT
+            ,PE_YN
+            ,PE_YN_COMMENT
+            ,MASTER_FILE_ID
+            ,STATUS
+            ,REG_USER
+            ,REG_USER_GUBUN
+            ,BRANCH_TYPE
+            )
+        VALUES ( 
+            #pkg_seq#
+            ,#system_seq#
+            ,#dev_yn#
+            ,(SELECT (NAME || '_' || #ver# || '_' || #title#) AS TITLE FROM SYSTEM WHERE SYSTEM_SEQ = #system_seq#)
+            ,#work_level#
+            ,#important#
+            ,#ver#
+            ,#ver_gubun#
+            ,#patch_yn#
+            ,#cha_yn#
+            ,#vol_yn#
+            ,#content#
+            ,#content_pn#
+            ,#content_cr#
+            ,#content_self#
+            ,#content_invest#
+            ,#ttm#
+            ,#ser_downtime#
+            ,#roaming_link#
+            ,#bypass_traffic#
+            ,#bypass_traffic_comment#
+            ,#pe_yn#
+            ,#pe_yn_comment#
+            <isNotEmpty property="master_file_id">
+            ,#master_file_id#
+            </isNotEmpty>
+            <isEmpty property="master_file_id">
+            ,SEQUENCE_FILE_ID.NEXTVAL
+            </isEmpty>
+            ,#status#
+            ,#session_user_id#
+            ,#session_user_type#
+            ,'CORE'
+            )
+	</insert>
+	
+	<update id="pkg21DAO.update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_MASTER SET
+			TITLE				= (SELECT (NAME || '_' || #ver# || '_' || #title#) AS TITLE FROM SYSTEM WHERE SYSTEM_SEQ = #system_seq#)
+			,WORK_LEVEL			= #work_level#
+			,IMPORTANT			= #important#
+			,VER				= #ver#
+			,CONTENT			= #content#
+			,CONTENT_PN			= #content_pn#
+			,CONTENT_CR			= #content_cr#
+			,CONTENT_SELF		= #content_self#
+			,CONTENT_INVEST		= #content_invest#
+			,TTM				= #ttm#
+			,SER_DOWNTIME		= #ser_downtime#
+			,ROAMING_LINK		= #roaming_link#
+			,BYPASS_TRAFFIC		= #bypass_traffic#
+			,BYPASS_TRAFFIC_COMMENT
+								= #bypass_traffic_comment#
+			,PE_YN				= #pe_yn#
+			,PE_YN_COMMENT		= #pe_yn_comment#
+			<isNotEmpty property="master_file_id">
+				,MASTER_FILE_ID		= #master_file_id# 
+			</isNotEmpty>
+			,UPDATE_USER		= #session_user_id#
+            ,UPDATE_USER_GUBUN	= #session_user_type#
+			,UPDATE_DATE		= sysdate
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+	</update>
+	
+	<delete id="pkg21DAO.pkg_delete" parameterClass="Pkg21Model">
+		DELETE FROM PKMS.PKG_MASTER 
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+	</delete>
+	
+	<update id="pkg21DAO.pkg_status_update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_MASTER SET
+			STATUS				= #save_status#
+			,UPDATE_USER		= #session_user_id#
+            ,UPDATE_USER_GUBUN	= #session_user_type#
+			,UPDATE_DATE		= sysdate
+			<isNotEmpty property="verify_date_start">
+				,VERIFY_DATE_START	= #verify_date_start#
+				,VERIFY_DATE_END	= #verify_date_end#
+			</isNotEmpty>
+			<isNotEmpty property="status_dev">
+				,STATUS_DEV	= #status_dev#
+			</isNotEmpty>
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+	</update>
+	
+	<update id="pkg21DAO.pkg_dev_status_update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_MASTER SET
+			STATUS_DEV	= #save_status#
+			,UPDATE_USER		= #session_user_id#
+            ,UPDATE_USER_GUBUN	= #session_user_type#
+			,UPDATE_DATE		= sysdate
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+	</update>
+	
+	<update id="pkg21DAO.pkg_verify_update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_MASTER SET
+			UPDATE_USER			= #session_user_id#
+            ,UPDATE_USER_GUBUN	= #session_user_type#
+			,UPDATE_DATE		= sysdate
+			<isEqual property="save_status" compareValue="152">
+			,VOL_YN				= 'S'
+			</isEqual>
+			<isEqual property="save_status" compareValue="162">
+			,CHA_YN				= 'S'
+			</isEqual>
+			<isEqual property="save_status" compareValue="171">
+			,SEC_YN				= 'S'
+			</isEqual>
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+	</update>
+	
+	<update id="pkg21DAO.pkg_cha_yn_update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_MASTER SET
+			UPDATE_USER			= #session_user_id#
+            ,UPDATE_USER_GUBUN	= #session_user_type#
+			,UPDATE_DATE		= sysdate
+			,CHA_YN				= #cha_yn#
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+	</update>
+	
+	<select id="pkg21DAO.peTypeRead" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+		SELECT PE_TYPE FROM SYSTEM WHERE SYSTEM_SEQ = #system_seq#
+	</select>
+	
+	<select id="pkg21DAO.questList" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+		SELECT
+		    ROWNUM AS VOL_NO
+		    ,CHK_SEQ
+		    ,TITLE
+		FROM
+		    PKMS.PKG_CHK_LIST
+		WHERE
+		    CHK_TYPE = 'VO'
+		    AND STATUS = 'Y'
+	</select>
+	
+	<select id="pkg21DAO.valueList" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+		SELECT
+			CHK_SEQ
+			, CHK_RESULT
+		FROM
+		    PKMS.PKG_CHK_RESULT
+		WHERE
+		    CHK_SEQ IN (SELECT CHK_SEQ
+		                        FROM PKMS.PKG_CHK_LIST
+		                        WHERE
+		                            CHK_TYPE = 'VO'
+		                            AND STATUS = 'Y') 
+		    AND PKG_SEQ = #pkg_seq#
+	</select>
+	
+	<insert id="pkg21DAO.pkg_vol_create" parameterClass="Pkg21Model">
+		INSERT INTO PKMS.PKG_CHK_RESULT (
+            PKG_SEQ
+            ,CHK_SEQ
+            ,CHK_RESULT
+            ,REG_USER
+            ,REG_DATE
+            )
+        VALUES ( 
+            #pkg_seq#
+            ,#chk_seq#
+            ,#chk_result#
+            ,#session_user_id#
+            ,sysdate
+            )
+	</insert>
+	
+	<update id="pkg21DAO.pkg_vol_update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_CHK_RESULT SET
+			CHK_RESULT = #chk_result#
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+        	AND CHK_SEQ 		= #chk_seq#
+	</update>
+	
+	<delete id="pkg21DAO.pkg_result_delete" parameterClass="Pkg21FileModel">
+		DELETE FROM
+			PKMS.PKG_TEST_RESULT
+		WHERE
+    		PKG_SEQ =
+    			(SELECT PKG_SEQ FROM PKMS.PKG_MASTER WHERE MASTER_FILE_ID = #master_file_id#)
+	</delete>
+	
+	<insert id="pkg21DAO.pkg_result_create" parameterClass="Pkg21FileModel">
+	/** pkg21DAO.pkg_result_create **/
+	
+		INSERT INTO PKMS.PKG_TEST_RESULT (
+			PKG_SEQ
+			,TEST_ITEM
+			,TEST_ITEM_CNT
+			,SVT_CNT
+			,SVT_OK
+			,SVT_NOK
+			,SVT_COK
+			,SVT_POK
+			,DVT_CNT
+			,DVT_OK
+			,DVT_NOK
+			,DVT_COK
+			,DVT_POK
+			,CVT_CNT
+			,CVT_OK
+			,CVT_NOK
+			,CVT_COK
+			,CVT_POK
+			,ORD
+			) VALUES ( 
+			(SELECT PKG_SEQ FROM PKMS.PKG_MASTER WHERE MASTER_FILE_ID = #master_file_id#)
+			,#test_item#
+			,(#svt_cnt# + #dvt_cnt# + #cvt_cnt#)
+			,#svt_cnt#
+			,#svt_ok#
+			,#svt_nok#
+			,#svt_cok#
+			,#svt_pok#
+			,#dvt_cnt#
+			,#dvt_ok#
+			,#dvt_nok#
+			,#dvt_cok#
+			,#dvt_pok#
+			,#cvt_cnt#
+			,#cvt_ok#
+			,#cvt_nok#
+			,#cvt_cok#
+			,#cvt_pok#
+			,#ord#
+            )
+	</insert>
+	<select id="pkg21DAO.pkg_result_list" parameterClass="Pkg21Model" resultClass="Pkg21FileModel">
+		SELECT
+			PKG_SEQ
+			,TEST_ITEM
+			,TEST_ITEM_CNT
+			,SVT_CNT
+			,SVT_OK
+			,SVT_NOK
+			,SVT_COK
+			,SVT_POK
+			,DVT_CNT
+			,DVT_OK
+			,DVT_NOK
+			,DVT_COK
+			,DVT_POK
+			,CVT_CNT
+			,CVT_OK
+			,CVT_NOK
+			,CVT_COK
+			,CVT_POK
+		FROM
+		    PKMS.PKG_TEST_RESULT
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		ORDER BY ORD
+	</select>
+	<delete id="pkg21DAO.pkg_status_delete" parameterClass="Pkg21Model">
+	/**pkg21DAO.pkg_status_delete**/ 
+	
+		DELETE FROM
+			PKMS.PKG_STATUS
+		WHERE
+    		PKG_SEQ = #pkg_seq#
+    		AND STATUS = #save_status#
+	</delete>
+	<delete id="pkg21DAO.pkg_status_delete_like" parameterClass="Pkg21Model">
+	/** pkg21DAO.pkg_status_delete_like **/
+	
+		DELETE FROM
+			PKMS.PKG_STATUS
+		WHERE
+    		PKG_SEQ = #pkg_seq#
+    		AND STATUS LIKE '%' || #save_status# || '%'
+	</delete>
+	<select id="pkg21DAO.readEQCntLeft" parameterClass="Pkg21Model" resultClass="int">
+		SELECT 
+			COUNT(EQUIPMENT_SEQ)
+		FROM
+			PKMS.EQUIPMENT
+		WHERE
+			SYSTEM_SEQ = #system_seq#
+			AND EQUIPMENT_SEQ NOT IN (
+				SELECT EQUIPMENT_SEQ
+				FROM PKG_EQUIPMENT
+				WHERE PKG_SEQ = #pkg_seq#
+			)
+	</select>
+	
+	<select id="pkg21DAO.sysFileList" parameterClass="Pkg21SysFileModel" resultClass="Pkg21SysFileModel">
+		SELECT
+		    MASTER_FILE_ID
+		    ,ATTACH_FILE_ID
+		    ,FILE_PATH
+		    ,FILE_NAME
+		FROM 
+		    PKMS.ATTACH_FILE_INFO
+		WHERE
+		    MASTER_FILE_ID = #master_file_id#
+		AND
+		    REGEXP_LIKE(ATTACH_FILE_ID, (
+			    SELECT 
+			    TRANSLATE(WM_CONCAT(ENG_NAME), ',', '|') AS A
+			    FROM ATTACH_FILE_TREE WHERE USE_YN = 'Y' AND TYPE = #type#
+		    ))
+	</select>
+	<select id="pkg21DAO.getPkgSeq" parameterClass="Pkg21Model" resultClass="String">
+		SELECT
+		    PKG_SEQ
+		FROM 
+		    PKMS.PKG_MASTER
+		WHERE
+		    MASTER_FILE_ID = #master_file_id#
+	</select>
+	
+<!--
+ 	20181115 eryoon 추가
+	CELL 참여자  
+-->
+	<select id="pkg21DAO.getCellUserList" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+	/** pkg21DAO.getCellUserList **/
+		SELECT  I.EMPNO
+		      , I.HNAME
+		      , I.INDEPT
+		      , I.SOSOK
+		      , I.MOVETELNO
+		      , I.EMAIL
+		      , CU.SELECT_USER
+		  FROM  PKMS.INF_PERSON_INFO_RCV I
+		      , PKG_CELL_USER CU
+		 WHERE (SELECT COUNT(1) 
+		          FROM PKMS.USER_AUTH_ROLE A 
+		         WHERE A.USER_GUBUN='M' 
+		           AND A.USER_ID=I.EMPNO) > 0
+		   AND I.T_FLAG != 'D'
+		   AND I.EMPNO = CU.USER_ID
+		   AND CU.USE_YN = 'Y'
+		   AND CU.PKG_SEQ = #pkg_seq#
+		 ORDER BY HNAME ASC
+	</select>
+	
+	<insert id="pkg21DAO.createCellUserList" parameterClass="Pkg21Model">
+	/** pkg21DAO.createCellUserList **/
+		INSERT INTO PKG_CELL_USER
+		(
+		   PKG_SEQ
+		 , USER_ID
+		 , SELECT_USER
+		 , USE_YN
+		 , REG_USER
+		 , REG_DATE
+		)
+		VALUES 
+		(
+		   #pkg_seq#
+		 , #cell_user_id#
+		 , #select_user#
+		 , 'Y'
+		 , #session_user_id#
+		 , SYSDATE
+		)
+	</insert>
+	
+	<update id="pkg21DAO.updaateCellUserList" parameterClass="Pkg21Model">
+	/** pkg21DAO.updaateCellUserList **/
+		UPDATE  PKG_CELL_USER
+		   SET  USE_YN = 'N'
+		      , UPDATE_USER = #session_user_id#
+		      , UPDATE_DATE = SYSDATE
+		 WHERE  PKG_SEQ = #pkg_seq#
+	</update>
+	
+
+	<delete id="pkg21DAO.deleteCellUserList" parameterClass="Pkg21Model">
+	/** pkg21DAO.deleteCellUserList **/
+		DELETE  FROM  PKG_CELL_USER
+		 WHERE  PKG_SEQ = #pkg_seq#
+	</delete>
+	
+	 <!-- * 20181203 eryoon
+	 * 초대적용 시 확대적용이 남은 갯수 체크 -->
+	<select id="pkg21DAO.eqCount" parameterClass="Pkg21Model" resultClass="int">
+	/**pkg21DAO.eqCount*/
+		SELECT  ((SELECT COUNT( EQUIPMENT_SEQ) FROM EQUIPMENT WHERE SYSTEM_SEQ= #system_seq#) - (SELECT COUNT(EQUIPMENT_SEQ) FROM PKG_EQUIPMENT WHERE PKG_SEQ = #pkg_seq# AND WORK_GUBUN = 'S')) AS eq_cnt
+	      FROM DUAL
+	</select>
+</sqlMap>

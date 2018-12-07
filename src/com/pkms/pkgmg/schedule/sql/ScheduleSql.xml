@@ -1,0 +1,681 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Schedule">
+
+	<typeAlias alias="ScheduleModel" type="com.pkms.pkgmg.schedule.model.ScheduleModel" />
+
+	<typeAlias alias="PkgEquipmentModel" type="com.pkms.pkgmg.pkg.model.PkgEquipmentModel" />
+
+	<select id="scheduleDAO.readList" parameterClass="ScheduleModel" resultClass="ScheduleModel">
+	 <isEqual property="isPaging" compareValue="true">
+		<![CDATA[
+			SELECT
+				*
+	        FROM (
+            	SELECT 
+            		ROWNUM AS RNUM
+            		, A.* 
+            	FROM (
+		]]>
+		</isEqual>
+		SELECT
+		PKG_SEQ, TITLE, VER,
+		GROUP_DEPTH,
+		VER_GUBUN, SER_YN, SER_CONTENT,
+		CONTENT, PE_YN, STATUS, STATUS_NAME,
+		SYSTEM_SEQ, TPL_SEQ, USE_YN,
+		VERIFY_DATE_START, VERIFY_DATE_END,
+		REG_USER, REG_USER_GUBUN, REG_DATE,
+		UPDATE_USER, UPDATE_USER_GUBUN, UPDATE_DATE,
+		REG_USER_NAME
+		FROM (SELECT ROWNUM AS RNUM, A.* FROM (
+		SELECT
+		A.PKG_SEQ, NVL(A.TITLE, '제목없음') TITLE, A.VER,
+		DECODE(B.GROUP1_SEQ, '', '', B.GROUP1_NAME || '>' || B.GROUP2_NAME || '>' || B.GROUP3_NAME || '>' || B.SYSTEM_NAME) GROUP_DEPTH,
+		A.VER_GUBUN, A.SER_YN, A.SER_CONTENT,
+		A.CONTENT, A.PE_YN, A.STATUS, C.NAME STATUS_NAME,
+		A.SYSTEM_SEQ, A.TPL_SEQ, A.USE_YN,
+		TO_CHAR(A.VERIFY_DATE_START, 'YYYY-MM-DD') VERIFY_DATE_START,
+		TO_CHAR(A.VERIFY_DATE_END, 'YYYY-MM-DD') VERIFY_DATE_END,
+		A.REG_USER, A.REG_USER_GUBUN, TO_CHAR(A.REG_DATE, 'YYYY-MM-DD') REG_DATE,
+		A.UPDATE_USER, A.UPDATE_USER_GUBUN, TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD') UPDATE_DATE,
+		(CASE WHEN REG_USER_GUBUN = 'M' THEN E.HNAME
+		ELSE D.BP_USER_NAME
+		END) AS REG_USER_NAME
+		FROM PKMS.PKG_MASTER A, (
+		SELECT
+		G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+		G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+		G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+		S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4
+		FROM PKMS.GROUP1 G1,
+		PKMS.GROUP2 G2,
+		PKMS.GROUP3 G3,
+		PKMS.SYSTEM S
+		WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		AND G1.USE_YN = 'Y'
+		AND G2.USE_YN = 'Y'
+		AND G3.USE_YN = 'Y'
+		) B,
+		PKMS.COMMON_CODE C,
+		PKMS.BP_USER D,
+		PKMS.INF_PERSON_INFO_RCV E
+		WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+		AND A.STATUS = C.COMMON_CODE(+)
+		AND A.REG_USER = D.BP_USER_ID(+)
+		AND A.REG_USER = E.EMPNO(+)
+		AND C.GUBUN = 'PKS'
+		<isNotEmpty property="date_start">
+			<isEqual prepend="AND" property="dateCondition" compareValue="0">
+				A.VERIFY_DATE_END <![CDATA[>=]]>
+				TO_DATE(#date_start#, 'YYYY-MM-DD')
+			</isEqual>
+			<isEqual prepend="AND" property="dateCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.PKG_EQUIPMENT PKGE WHERE A.PKG_SEQ=PKGE.PKG_SEQ AND PKGE.WORK_DATE <![CDATA[>=]]>
+				TO_DATE(#date_start#, 'YYYY-MM-DD') ) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				1 = 1
+			</isEqual>
+		</isNotEmpty>
+		<isNotEmpty property="date_end">
+			<isEqual prepend="AND" property="dateCondition" compareValue="0">
+				A.VERIFY_DATE_START <![CDATA[<=]]>
+				TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999
+			</isEqual>
+			<isEqual prepend="AND" property="dateCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.PKG_EQUIPMENT PKGE WHERE A.PKG_SEQ=PKGE.PKG_SEQ AND PKGE.WORK_DATE <![CDATA[<=]]>
+				TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999 ) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				1 = 1
+			</isEqual>
+		</isNotEmpty>
+
+		<isNotEmpty property="statusCondition" prepend="AND">
+			A.STATUS = #statusCondition#
+		</isNotEmpty>
+
+		<isNotEmpty property="searchKeyword">
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				LOWER(A.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				LOWER(A.VER) LIKE '%' || LOWER(#searchKeyword#) || '%'
+			</isEqual>
+		</isNotEmpty>
+
+		<isEqual property="session_user_type" compareValue="M">
+			<isEqual prepend="AND" property="userCondition" compareValue="0">
+				((SELECT count(1)
+				FROM PKMS.SYSTEM_USER SU
+				WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				AND SU.USER_GUBUN = 'M'
+				AND SU.USER_ID = #session_user_id#)
+				+
+				(SELECT count(1)
+				FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+				WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+				AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+				AND EU.USER_ID = #session_user_id#))
+				> 0
+			</isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+			<isEqual prepend="AND" property="userCondition" compareValue="0">
+				(SELECT count(1)
+				FROM PKMS.SYSTEM_USER SU
+				WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				AND SU.USER_GUBUN = 'B'
+				AND SU.USER_ID = #session_user_id#)
+				> 0
+			</isEqual>
+			<isEqual prepend="AND" property="userCondition" compareValue="1">
+				((SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM1 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM2 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM3 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM4 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+				) > 0
+			</isEqual>
+		</isEqual>
+        <isNotEmpty property="group1Condition" prepend="AND">
+                B.GROUP1_SEQ = #group1Condition#
+        </isNotEmpty>
+        <isNotEmpty property="group2Condition" prepend="AND">
+                B.GROUP2_SEQ = #group2Condition#
+        </isNotEmpty>
+		ORDER BY A.PKG_SEQ DESC
+		 )A
+                ) 
+           <isEqual property="isPaging" compareValue="true">
+			<![CDATA[
+             ) A WHERE ROWNUM  <=  #firstIndex# + #recordCountPerPage#
+        ) WHERE RNUM > #firstIndex#
+        ]]>
+		</isEqual>  
+	</select>
+
+	<select id="scheduleDAO.readTotalCount" parameterClass="ScheduleModel" resultClass="int">
+		SELECT COUNT(1) totalCount
+		FROM PKMS.PKG_MASTER A, (
+		SELECT
+		G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+		G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+		G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+		S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4
+		FROM PKMS.GROUP1 G1,
+		PKMS.GROUP2 G2,
+		PKMS.GROUP3 G3,
+		PKMS.SYSTEM S
+		WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		AND G1.USE_YN = 'Y'
+		AND G2.USE_YN = 'Y'
+		AND G3.USE_YN = 'Y'
+		) B,
+		PKMS.COMMON_CODE C,
+		PKMS.BP_USER D,
+		PKMS.INF_PERSON_INFO_RCV E
+		WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+		AND A.STATUS = C.COMMON_CODE(+)
+		AND A.REG_USER = D.BP_USER_ID(+)
+		AND A.REG_USER = E.EMPNO(+)
+		AND C.GUBUN = 'PKS'
+		<isNotEmpty property="date_start">
+			<isEqual prepend="AND" property="dateCondition" compareValue="0">
+				A.VERIFY_DATE_END <![CDATA[>=]]>
+				TO_DATE(#date_start#, 'YYYY-MM-DD')
+			</isEqual>
+			<isEqual prepend="AND" property="dateCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.PKG_EQUIPMENT PKGE WHERE A.PKG_SEQ=PKGE.PKG_SEQ AND PKGE.WORK_DATE <![CDATA[>=]]>
+				TO_DATE(#date_start#, 'YYYY-MM-DD') ) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				1 = 1
+			</isEqual>
+		</isNotEmpty>
+		<isNotEmpty property="date_end">
+			<isEqual prepend="AND" property="dateCondition" compareValue="0">
+				A.VERIFY_DATE_START <![CDATA[<=]]>
+				TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999
+			</isEqual>
+			<isEqual prepend="AND" property="dateCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.PKG_EQUIPMENT PKGE WHERE A.PKG_SEQ=PKGE.PKG_SEQ AND PKGE.WORK_DATE <![CDATA[<=]]>
+				TO_DATE(#date_end#, 'YYYY-MM-DD') + 0.99999 ) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				1 = 1
+			</isEqual>
+		</isNotEmpty>
+
+		<isNotEmpty property="statusCondition" prepend="AND">
+			A.STATUS = #statusCondition#
+		</isNotEmpty>
+
+		<isNotEmpty property="searchKeyword">
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				LOWER(A.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				LOWER(A.VER) LIKE '%' || LOWER(#searchKeyword#) || '%'
+			</isEqual>
+		</isNotEmpty>
+
+		<isEqual property="session_user_type" compareValue="M">
+			<isEqual prepend="AND" property="userCondition" compareValue="0">
+				((SELECT count(1)
+				FROM PKMS.SYSTEM_USER SU
+				WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				AND SU.USER_GUBUN = 'M'
+				AND SU.USER_ID = #session_user_id#)
+				+
+				(SELECT count(1)
+				FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+				WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+				AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+				AND EU.USER_ID = #session_user_id#))
+				> 0
+			</isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+			<isEqual prepend="AND" property="userCondition" compareValue="0">
+				(SELECT count(1)
+				FROM PKMS.SYSTEM_USER SU
+				WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				AND SU.USER_GUBUN = 'B'
+				AND SU.USER_ID = #session_user_id#)
+				> 0
+			</isEqual>
+			<isEqual prepend="AND" property="userCondition" compareValue="1">
+				((SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM1 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM2 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM3 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+					+
+				(SELECT count(1)
+					FROM PKMS.BP_MASTER BM
+					WHERE B.BP_NUM4 = BM.BP_NUM(+)
+					AND BM.BP_NUM = #session_user_group_id#)
+				) > 0
+			</isEqual>
+		</isEqual>
+        <isNotEmpty property="group1Condition" prepend="AND">
+                B.GROUP1_SEQ = #group1Condition#
+        </isNotEmpty>
+        <isNotEmpty property="group2Condition" prepend="AND">
+                B.GROUP2_SEQ = #group2Condition#
+        </isNotEmpty>
+	</select>
+
+
+<!-- pkg검증일정-미완료건 7일마다 메일/sms 발송 추가 ksy-->
+<!-- 초도승인완료 후, 확대일정수립 후 일주일 지나도 완료되지 않은 pkg 목록 불러오기 1106 - ksy -->
+	<select id="scheduleDAO.incompletePkgList" resultClass="ScheduleModel" parameterClass="String">
+	/*scheduleDAO.incompletePkgList*/
+		SELECT  A.PKG_SEQ, A.TITLE, A.STATUS, A.USE_YN,  
+     			A.SYSTEM_SEQ, A.USER_ID, A.HNAME, A.SOSOK, A.EMAIL
+		FROM ( 
+        		SELECT  PM.PKG_SEQ, PM.TITLE, PM.STATUS, PM.USE_YN, 
+       					SU.SYSTEM_SEQ, SU.USER_ID, PI.HNAME, PI.SOSOK, PI.EMAIL
+        		FROM 	PKG_MASTER PM, 
+                		SYSTEM_USER SU, 
+                		INF_PERSON_INFO_RCV PI
+        		WHERE   
+                    	PM.USE_YN = 'Y' AND 
+                    	SU.USE_YN='Y' AND 
+                    	PM.SYSTEM_SEQ = SU.SYSTEM_SEQ AND 
+                    	SU.USER_ID = PI.EMPNO AND 
+                    	SU.CHARGE_GUBUN IN ('VU', 'AU') 
+             ) A
+  		WHERE 		A.PKG_SEQ = #pkg_seq#
+ 		GROUP BY    A.PKG_SEQ, A.TITLE, A.STATUS, A.USE_YN,  
+     				A.SYSTEM_SEQ, A.USER_ID,  A.HNAME, A.SOSOK, A.EMAIL
+   		ORDER BY 	A.PKG_SEQ DESC      
+
+	</select> 
+<!--  -->	
+
+<!-- 초도승인완료일때와 확대일정수립일때의 pkg 시퀀스 출력 -->
+	<select id="scheduleDAO.incompletePkgSeq" resultClass="ScheduleModel">
+		SELECT PM.PKG_SEQ 
+    	FROM PKG_MASTER PM,  
+    		 SYSTEM_USER SU,  
+    		 PKG_USER PU, 
+    		 PKG_STATUS PS
+    	WHERE PM.STATUS IN(6,8)  AND
+    		  PM.URGENCY_YN NOT IN('Y') AND
+              PM.USE_YN = 'Y' AND 
+              SU.USE_YN='Y' AND 
+              PM.SYSTEM_SEQ = SU.SYSTEM_SEQ AND 
+              PM.PKG_SEQ = PU.PKG_SEQ AND 
+              PM.PKG_SEQ = PS.PKG_SEQ AND
+              SU.CHARGE_GUBUN IN ('VU', 'AU') AND
+              NVL(PS.UPDATE_DATE, PS.REG_DATE ) <![CDATA[<]]> SYSDATE <![CDATA[-]]> 7
+        GROUP BY PM.PKG_SEQ
+        ORDER BY PM.PKG_SEQ DESC
+
+	</select>
+<!--  -->	
+
+<!-- pkg 긴급등록시 일주일 경과 일반 pkg로 전환 되지 않은 pkg 시퀀스 출력 11/11 -->
+	<select id="scheduleDAO.emergencyPkgSeq" resultClass="ScheduleModel">
+		SELECT PM.PKG_SEQ 
+    	FROM PKG_MASTER PM ,  
+    		 SYSTEM_USER SU
+    	WHERE PM.URGENCY_YN = 'Y' AND
+              PM.USE_YN = 'Y' AND 
+              SU.USE_YN='Y' AND 
+              PM.SYSTEM_SEQ = SU.SYSTEM_SEQ AND  
+              SU.CHARGE_GUBUN IN ('VU', 'AU') AND    
+              NVL(PM.UPDATE_DATE, PM.REG_DATE ) <![CDATA[<]]> SYSDATE <![CDATA[-]]> 7       
+   		GROUP BY PM.PKG_SEQ
+   		ORDER BY PM.PKG_SEQ DESC
+
+	</select>
+<!--  -->
+
+<!-- PKG 상관없이 pkg미완료 및 긴급등록 미완료의 VU,AU 유저의 정보 140226 -->
+	<select id="scheduleDAO.incompletePkgUser" resultClass="ScheduleModel">
+		SELECT EMAIL, HNAME, SOSOK FROM PKMS.INF_PERSON_INFO_RCV
+		WHERE
+			EMPNO IN (
+			    SELECT SU.USER_ID 
+			    FROM
+			        (SELECT PKG_SEQ, SYSTEM_SEQ FROM PKG_MASTER
+			         WHERE
+			            STATUS IN(6,8)
+			            AND URGENCY_YN='N'
+			            AND USE_YN = 'Y'  ) PM,  
+			         (SELECT SYSTEM_SEQ, USER_ID FROM SYSTEM_USER
+			         WHERE
+			            USE_YN='Y'
+			            AND CHARGE_GUBUN IN ('VU', 'AU') ) SU,   
+			         (SELECT PKG_SEQ FROM PKG_STATUS
+			         WHERE
+			            NVL(UPDATE_DATE, REG_DATE ) <![CDATA[<]]> SYSDATE <![CDATA[-]]> 7 ) PS,
+			         (SELECT PKG_SEQ, SYSTEM_SEQ FROM PKG_MASTER
+			         WHERE
+			            URGENCY_YN='Y'
+			            AND USE_YN = 'Y'
+			            AND NVL(UPDATE_DATE, REG_DATE ) <![CDATA[<]]> SYSDATE <![CDATA[-]]> 7  ) PMU
+			    WHERE  
+			          PM.SYSTEM_SEQ(+) = SU.SYSTEM_SEQ AND
+			          PMU.SYSTEM_SEQ(+) = SU.SYSTEM_SEQ AND 
+			          PM.PKG_SEQ = PS.PKG_SEQ
+			    GROUP BY SU.USER_ID
+			)
+	</select>
+	
+
+
+	
+	
+	
+	
+	
+	
+
+
+<!-- 
+
+ <select id="scheduleDAO.readPkgVUAUList" parameterClass="ScheduleModel" resultClass="ScheduleModel">
+	/*scheduleDAO.readPkgVUAUList*/
+		SELECT DISTINCT USER_ID
+		FROM
+		(SELECT CHARGE_GUBUN, SYSTEM_SEQ, USER_ID
+		FROM SYSTEM_USER
+		WHERE CHARGE_GUBUN IN ('VU', 'AU')
+		AND SYSTEM_SEQ in( #system_seq#)
+		)
+	</select>
+
+
+	<select id="scheduleDAO.readPkgSMinfo" parameterClass="ScheduleModel" resultClass="ScheduleModel">
+		SELECT EMPNO, MOVETELNO, EMAIL 
+		FROM INF_PERSON_INFO_RCV
+		WHERE EMPNO = #user_id#
+	</select> 
+
+ <select id="scheduleDAO.incompletePkgList6_1" resultClass="ScheduleModel">
+  	초도승인완료일때 미완료건 리스트
+  		SELECT  A.PKG_SEQ, A.TITLE, A.STATUS, A.USE_YN,
+  				A.SYSTEM_SEQ, A.USER_ID, A.APPLY_DATE,  
+  				A.HNAME, A.SOSOK, A.EMAIL
+  		FROM  ( 
+        		SELECT  PM.PKG_SEQ, PM.TITLE, PM.STATUS, PM.USE_YN, 
+       					SU.SYSTEM_SEQ, SU.USER_ID, PU.UPDATE_DATE AS APPLY_DATE, 
+       					PI.HNAME, PI.SOSOK, PI.EMAIL
+        		FROM 	PKG_MASTER PM, 
+                		SYSTEM_USER SU, 
+                		PKG_USER PU, 
+                		INF_PERSON_INFO_RCV PI
+        		WHERE   PM.STATUS = 6 AND 
+                    	PM.USE_YN = 'Y' AND 
+                    	SU.USE_YN='Y' AND 
+                    	PM.SYSTEM_SEQ = SU.SYSTEM_SEQ AND 
+                    	PM.PKG_SEQ = PU.PKG_SEQ AND 
+                    	SU.USER_ID = PI.EMPNO AND 
+                    	SU.CHARGE_GUBUN IN ('VU', 'AU')  
+               ) A
+  		WHERE A.APPLY_DATE <![CDATA[<]]> SYSDATE <![CDATA[-]]> 7
+  			 
+ 		GROUP BY A.PKG_SEQ, A.TITLE, A.STATUS, A.USE_YN,  
+ 				 A.SYSTEM_SEQ, A.USER_ID, A.APPLY_DATE,  
+ 				 A.HNAME, A.SOSOK, A.EMAIL
+   		ORDER BY A.PKG_SEQ DESC      
+	
+	</select> 
+	<select id="scheduleDAO.incompletePkgList7" resultClass="ScheduleModel">
+	 초도적용완료일때 미완료건 리스트
+         SELECT A.PKG_SEQ, A.TITLE, A.STATUS, 
+          		A.USE_YN, A.SYSTEM_SEQ, A.CHARGE_GUBUN, 
+          		A.USER_ID, A.APPLY_DATE,  
+          		A.HNAME, A.SOSOK, A.EMAIL
+      	FROM  ( 
+        		SELECT PM.PKG_SEQ, PM.TITLE, PM.STATUS, 
+        				PM.USE_YN, SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, 
+        				SU.USER_ID, NVL(PS.UPDATE_DATE, PS.REG_DATE ) AS APPLY_DATE, 
+        				PI.EMPNO, PI.HNAME, PI.SOSOK, PI.EMAIL
+        		FROM PKG_MASTER PM, 
+            		SYSTEM_USER SU, 
+            		PKG_STATUS PS, 
+            		INF_PERSON_INFO_RCV PI
+        		WHERE PM.STATUS = 7 AND 
+            		PM.USE_YN = 'Y' AND 
+            		SU.USE_YN='Y' AND 
+            		PM.SYSTEM_SEQ = SU.SYSTEM_SEQ AND 
+            		SU.USER_ID = PI.EMPNO AND 
+            		SU.CHARGE_GUBUN IN ('VU', 'AU') AND 
+            		PS.STATUS = 7 AND 
+            		PS.PKG_SEQ = PM.PKG_SEQ ) A
+		WHERE A.APPLY_DATE <![CDATA[<]]> SYSDATE <![CDATA[-]]> 7
+   		ORDER BY A.PKG_SEQ DESC      
+	
+	</select>  -->
+	<insert id="scheduleDAO.create_testbed" parameterClass="java.util.List">		
+		INSERT INTO PKMS.EQUIPMENT_TB
+		(
+			 EQUIPMENT_TB_SEQ,
+			 ASSET_UID,
+			 SERIAL_NO,
+			 ASSET_STATUS,
+			 IDC_NAME,
+			 EQ_GUBUN,
+			 EQ_MAKER,
+			 EQ_MODEL,
+			 SERVICE_GROUP,
+			 EQ_GROUP,
+			 HOST_NAME,
+			 IP_ADDR1,
+			 IP_ADDR2
+		 )
+			SELECT
+				EQUIPMENT_TB_SEQ.NEXTVAL,
+				ASSET_UID,
+				SERIAL_NO,
+				ASSET_STATUS,
+				IDC_NAME,
+				EQ_GUBUN,
+				EQ_MAKER,
+				EQ_MODEL,
+				SERVICE_GROUP,
+				EQ_GROUP,
+				HOST_NAME,
+				IP_ADDR1,
+				IP_ADDR2
+			FROM
+			(
+			<iterate conjunction=" UNION ALL ">
+				SELECT
+				 #[].asset_uid# AS ASSET_UID
+				 ,#[].serial_no# AS SERIAL_NO
+				 ,#[].asset_status# AS ASSET_STATUS
+				 ,#[].idc_name# AS IDC_NAME
+				 ,#[].eq_gubun# AS EQ_GUBUN
+				 ,#[].eq_maker# AS EQ_MAKER
+				 ,#[].eq_model# AS EQ_MODEL
+				 ,#[].service_group# AS SERVICE_GROUP
+				 ,#[].eq_group# AS EQ_GROUP
+				 ,#[].host_name# AS HOST_NAME
+				 ,#[].ip_addr1# AS IP_ADDR1
+				 ,#[].ip_addr2# AS IP_ADDR2
+				FROM DUAL
+			</iterate>
+			)
+	</insert>
+	<delete id="scheduleDAO.delete_testbed">
+		DELETE FROM PKMS.EQUIPMENT_TB
+	</delete>
+	
+	<insert id="scheduleDAO.create_real" parameterClass="java.util.List">		
+		INSERT INTO PKMS.EQUIPMENT_REAL
+		(
+			 EQUIPMENT_REAL_SEQ,
+			 IDC_NAME,
+			 TEAM_NAME,
+			 NETWORK_GROUP,
+			 SYSTEM_GROUP,
+			 SYSTEM_NAME,
+			 MANAGE_NAME,
+			 REAL_HOST_NAME,
+			 REAL_IP,
+			 SERIAL_NO,
+			 IP_ADDR1,
+			 IP_ADDR2
+		 )
+			SELECT
+				 EQUIPMENT_REAL_SEQ.NEXTVAL,
+				 IDC_NAME,
+				 TEAM_NAME,
+				 NETWORK_GROUP,
+				 SYSTEM_GROUP,
+				 SYSTEM_NAME,
+				 MANAGE_NAME,
+				 REAL_HOST_NAME,
+				 REAL_IP,
+				 SERIAL_NO,
+				 IP_ADDR1,
+				 IP_ADDR2
+			FROM
+			(
+			<iterate conjunction=" UNION ALL ">
+				SELECT
+				 #[].idc_name# AS IDC_NAME
+				 ,#[].team_name# AS TEAM_NAME
+				 ,#[].network_group# AS NETWORK_GROUP
+				 ,#[].system_group# AS SYSTEM_GROUP
+				 ,#[].system_name# AS SYSTEM_NAME
+				 ,#[].manage_name# AS MANAGE_NAME
+				 ,#[].real_host_name# AS REAL_HOST_NAME
+				 ,#[].real_ip# AS REAL_IP
+				 ,#[].serial_no# AS SERIAL_NO
+				 ,#[].ip_addr1# AS IP_ADDR1
+				 ,#[].ip_addr2# AS IP_ADDR2
+				FROM DUAL
+			</iterate>
+			)
+	</insert>
+	<delete id="scheduleDAO.delete_real">
+		DELETE FROM PKMS.EQUIPMENT_REAL
+	</delete>
+	
+	<insert id="scheduleDAO.create_group_depth" parameterClass="java.util.List">		
+		INSERT INTO PKMS.GROUP_DEPTH
+		(
+			GROUP_DEPTH_SEQ
+			,GROUP1_CODE
+			,GROUP1_NAME
+			,GROUP2_CODE
+			,GROUP2_NAME
+			,GROUP3_CODE
+			,GROUP3_NAME
+			,SYSTEM_CODE
+			,SYSTEM_NAME
+			,EQUIPMENT_CODE
+			,EQUIPMENT_NAME
+			,G1_SEQ
+			,G1_NAME
+			,G2_SEQ
+			,G2_NAME
+			,G3_SEQ
+			,G3_NAME
+			,SYS_SEQ
+			,SYS_NAME
+			,EQ_SEQ
+			,EQ_NAME
+		 )
+			SELECT
+				GROUP_DEPTH_SEQ.NEXTVAL
+				,GROUP1_CODE
+				,GROUP1_NAME
+				,GROUP2_CODE
+				,GROUP2_NAME
+				,GROUP3_CODE
+				,GROUP3_NAME
+				,SYSTEM_CODE
+				,SYSTEM_NAME
+				,EQUIPMENT_CODE
+				,EQUIPMENT_NAME
+				,G1_SEQ
+				,G1_NAME
+				,G2_SEQ
+				,G2_NAME
+				,G3_SEQ
+				,G3_NAME
+				,SYS_SEQ
+				,SYS_NAME
+				,EQ_SEQ
+				,EQ_NAME
+			FROM
+			(
+			<iterate conjunction=" UNION ALL ">
+				SELECT
+					#[].group1_code# AS GROUP1_CODE   
+					,#[].group1_name# AS GROUP1_NAME   
+					,#[].group2_code# AS GROUP2_CODE   
+					,#[].group2_name# AS GROUP2_NAME   
+					,#[].group3_code# AS GROUP3_CODE   
+					,#[].group3_name# AS GROUP3_NAME   
+					,#[].system_code# AS SYSTEM_CODE   
+					,#[].system_name# AS SYSTEM_NAME   
+					,#[].equipment_code# AS EQUIPMENT_CODE
+					,#[].equipment_name# AS EQUIPMENT_NAME
+					,#[].g1_seq# AS G1_SEQ        
+					,#[].g1_name# AS G1_NAME       
+					,#[].g2_seq# AS G2_SEQ        
+					,#[].g2_name# AS G2_NAME       
+					,#[].g3_seq# AS G3_SEQ        
+					,#[].g3_name# AS G3_NAME       
+					,#[].sys_seq# AS SYS_SEQ       
+					,#[].sys_name# AS SYS_NAME      
+					,#[].eq_seq# AS EQ_SEQ        
+					,#[].eq_name# AS EQ_NAME       
+				FROM DUAL
+			</iterate>
+			)
+	</insert>
+	<delete id="scheduleDAO.delete_group_depth">
+		DELETE FROM PKMS.GROUP_DEPTH
+	</delete>
+</sqlMap> 

@@ -1,0 +1,625 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+<sqlMap namespace="SolutionReport">
+
+	<typeAlias alias="SolutionReportModel" type="com.pkms.board.report.model.SolutionReportModel" />
+	<typeAlias alias="SolutionReportUserModel" type="com.pkms.board.report.model.SolutionReportUserModel" />
+	
+	<select id="SolutionReportDAO.readList" parameterClass="SolutionReportModel" resultClass="SolutionReportModel">
+		SELECT
+		    SOLUTION_REPORT_SEQ
+		    ,SYSTEM_NAME
+		    ,TITLE
+		    ,CONTENT_GUBUN
+		    ,RESULT_YN
+		    ,REG_NAME
+		    ,REG_SOSOK
+		    ,REG_DATE
+		FROM
+		    (
+		        SELECT A.*
+		        FROM
+		            (
+		                SELECT
+		                    SR.SOLUTION_REPORT_SEQ
+		                    ,DECODE(S.GROUP1_SEQ, '', '', S.GROUP1_NAME || ' > ' || S.GROUP2_NAME || ' > ' || S.GROUP3_NAME || ' > ' || S.SYSTEM_NAME) AS SYSTEM_NAME
+		                    ,SR.TITLE
+		                    ,SR.CONTENT_GUBUN
+		                    ,SR.RESULT_YN
+		                    ,SR.REG_NAME
+		                    ,SR.REG_SOSOK
+		                    ,TO_CHAR(SR.REG_DATE, 'YYYY-MM-DD HH24:MI:SS') AS REG_DATE
+		                    ,ROW_NUMBER () OVER (ORDER BY SR.SOLUTION_REPORT_SEQ DESC) AS RN
+		                FROM
+		                    PKMS.SOLUTION_REPORT SR
+		                    ,(
+		                    SELECT 
+							    G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+							    S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+							FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+							WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+							AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+							AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+							AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'
+							) S
+							<isEqual property="session_user_type" compareValue="B">
+							,(
+							SELECT SYSTEM_SEQ
+							FROM PKMS.SYSTEM_USER
+							WHERE
+								USER_GUBUN = 'B'
+							  AND
+								USER_ID = #session_user_id#
+							GROUP BY
+								SYSTEM_SEQ
+							) BU
+							</isEqual>
+		                WHERE
+		                	S.SYSTEM_SEQ=SR.SYSTEM_SEQ
+		                  AND
+		                    SR.USE_YN = 'Y'
+		                  AND
+		                  	SR.REG_DATE BETWEEN TO_DATE(#search_date_start#,'YYYY-MM-DD') AND (TO_DATE(#search_date_end#, 'YYYY-MM-DD')+1)
+		                  <isNotEmpty property="search_system_seq" open="AND">
+		                    SR.SYSTEM_SEQ=#search_system_seq#
+		                  </isNotEmpty>
+		                  <isNotEmpty property="search_content_gubun" open="AND">
+		                    SR.CONTENT_GUBUN=#search_content_gubun#
+		                  </isNotEmpty>
+		                  <isNotEmpty property="search_reg_name" open="AND">
+		                    LOWER(SR.REG_NAME) LIKE '%' || LOWER(#search_reg_name#) || '%'
+		                  </isNotEmpty>
+		                  <isNotEmpty property="search_reg_sosok" open="AND">
+		                    LOWER(SR.REG_SOSOK) LIKE '%' || LOWER(#search_reg_sosok#) || '%'
+		                  </isNotEmpty>
+		                  <isNotEmpty property="search_title" open="AND">
+		                    LOWER(SR.TITLE) LIKE '%' || LOWER(#search_title#) || '%'
+		                  </isNotEmpty>
+		                  <isEqual property="session_user_type" open="AND" compareValue="B">
+		                  	SR.SYSTEM_SEQ = BU.SYSTEM_SEQ
+		                  </isEqual>
+						ORDER BY SR.SOLUTION_REPORT_SEQ DESC
+		            ) A
+				WHERE RN <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#
+		    )
+		WHERE RN > #firstIndex#
+	</select>
+	<select id="SolutionReportDAO.readTotalCount" parameterClass="SolutionReportModel" resultClass="int">
+		SELECT
+		    COUNT(*) AS totcnt
+		FROM
+		    PKMS.SOLUTION_REPORT SR
+		    ,(
+	            SELECT 
+				    G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+				    S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+				FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+				WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+				AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+				AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+				AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'
+			) S
+        WHERE
+        	S.SYSTEM_SEQ=SR.SYSTEM_SEQ
+          AND
+			SR.USE_YN = 'Y'
+		  AND
+		  	SR.REG_DATE BETWEEN TO_DATE(#search_date_start#,'YYYY-MM-DD') AND TO_DATE(#search_date_end#, 'YYYY-MM-DD')
+		  <isNotEmpty property="search_system_seq" open="AND">
+		  	SR.SYSTEM_SEQ=#search_system_seq#
+		  </isNotEmpty>
+		  <isNotEmpty property="search_content_gubun" open="AND">
+		  	SR.CONTENT_GUBUN=#search_content_gubun#
+		  </isNotEmpty>
+		  <isNotEmpty property="search_reg_name" open="AND">
+		  	LOWER(SR.REG_NAME) LIKE '%' || LOWER(#search_reg_name#) || '%'
+		  </isNotEmpty>
+		  <isNotEmpty property="search_reg_sosok" open="AND">
+		  	LOWER(SR.REG_SOSOK) LIKE '%' || LOWER(#search_reg_sosok#) || '%'
+		  </isNotEmpty>
+		  <isNotEmpty property="search_title" open="AND">
+            LOWER(SR.TITLE) LIKE '%' || LOWER(#search_title#) || '%'
+          </isNotEmpty>
+	</select>
+	
+	<select id="SolutionReportDAO.read" parameterClass="SolutionReportModel" resultClass="SolutionReportModel">
+		SELECT
+		    SR.SOLUTION_REPORT_SEQ
+		    ,SR.SYSTEM_SEQ
+		    ,SR.TITLE
+		    ,SR.CONTENT
+		    ,SR.CONTENT_GUBUN
+		    ,SR.RESULT_YN
+		    ,SR.NOTI_WHY
+		    ,SR.MASTER_FILE_ID
+		    ,SR.USE_YN
+		    ,SR.REG_USER
+		    ,SR.REG_NAME
+		    ,SR.REG_SOSOK
+		    ,TO_CHAR(SR.REG_DATE, 'YYYY-MM-DD HH24:MI:SS') AS REG_DATE
+		    ,SR.UPDATE_USER
+		    ,SR.UPDATE_NAME
+		    ,TO_CHAR(SR.UPDATE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS UPDATE_DATE
+		    ,DECODE(S.GROUP1_SEQ, '', '', S.GROUP1_NAME || ' > ' || S.GROUP2_NAME || ' > ' || S.GROUP3_NAME || ' > ' || S.SYSTEM_NAME) AS SYSTEM_NAME
+		    ,S.GROUP1_SEQ, S.GROUP2_SEQ, S.GROUP3_SEQ
+		    ,DECODE(SRC.COMMENT_CNT, NULL, 0, SRC.COMMENT_CNT) AS COMMENT_CNT
+		FROM
+		    PKMS.SOLUTION_REPORT SR
+		    ,(
+		        SELECT 
+		            G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		            S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+		        FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+		        WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		        AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		        AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		        AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'
+		    ) S
+		    ,(
+		        SELECT
+		            SOLUTION_REPORT_SEQ, COUNT(SOLUTION_REPORT_COMMENT_SEQ) AS COMMENT_CNT
+		        FROM
+		            PKMS.SOLUTION_REPORT_COMMENT
+		        WHERE
+		            USE_YN = 'Y'
+		          AND
+		            SOLUTION_REPORT_SEQ = #solution_report_seq#
+		        GROUP BY SOLUTION_REPORT_SEQ
+		     ) SRC
+		WHERE
+		    SR.SOLUTION_REPORT_SEQ = #solution_report_seq#
+		  AND
+		    SR.SYSTEM_SEQ = S.SYSTEM_SEQ(+)
+		  AND
+		    SR.SOLUTION_REPORT_SEQ = SRC.SOLUTION_REPORT_SEQ(+)
+	</select>
+	
+	<select id="SolutionReportDAO.commentList" parameterClass="SolutionReportModel" resultClass="SolutionReportModel">
+		SELECT
+		    SOLUTION_REPORT_COMMENT_SEQ
+		    ,SOLUTION_REPORT_SEQ
+		    ,CONTENT
+		    ,REG_USER
+		    ,REG_NAME
+		    ,TO_CHAR(REG_DATE, 'YYYY-MM-DD HH24:MI:SS') AS REG_DATE
+		FROM PKMS.SOLUTION_REPORT_COMMENT
+		WHERE USE_YN = 'Y'
+		AND SOLUTION_REPORT_SEQ =  #solution_report_seq#
+		ORDER BY REG_DATE ASC
+	</select>
+	
+	<select id="SolutionReportDAO.srUserList" parameterClass="SolutionReportUserModel" resultClass="SolutionReportUserModel">
+		SELECT
+		    SRU.USER_ID
+		    ,SRU.STATUS_YN
+		    ,IPIR.HNAME AS USER_NAME
+		    ,IPIR.MOVETELNO AS USER_PHONE
+		    ,IPIR.EMAIL AS USER_EMAIL
+		    ,IPIR.SOSOK AS SOSOK
+		    ,SRU.USE_YN
+		    ,SRU.AU_COMMENT
+		    ,TO_CHAR(SRU.UPDATE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS UPDATE_DATE
+		FROM
+		    PKMS.SOLUTION_REPORT_USER SRU
+		    ,PKMS.INF_PERSON_INFO_RCV IPIR
+		WHERE
+		    SRU.USER_ID = IPIR.EMPNO(+)
+		  AND
+		    SRU.SOLUTION_REPORT_SEQ = #solution_report_seq#
+	</select>
+	
+	<select id="SolutionReportDAO.srSosokList" parameterClass="SolutionReportUserModel" resultClass="SolutionReportUserModel">
+		SELECT
+			INDEPT
+			,SOSOK
+		FROM
+			(SELECT
+			    NVL(IPIR.INDEPT, BU.BP_NUM) AS INDEPT
+			    ,NVL(IPIR.SOSOK, BU.BP_NAME) AS SOSOK
+			FROM
+			    (SELECT
+			        SYSTEM_SEQ
+			        ,USER_ID
+			    FROM
+			        (SELECT
+			            S.SYSTEM_SEQ
+			            ,SU.USER_ID
+			        FROM
+			            PKMS.SYSTEM S
+			            ,PKMS.SYSTEM_USER SU
+			        WHERE
+			            S.USE_YN = 'Y'
+			          AND
+			            SU.SYSTEM_SEQ = S.SYSTEM_SEQ
+			        GROUP BY
+			            S.SYSTEM_SEQ
+			            ,SU.USER_ID)
+			UNION
+			    SELECT
+			        SYSTEM_SEQ
+			        ,USER_ID
+			    FROM
+			        (SELECT
+			            E.SYSTEM_SEQ
+			            ,EU.USER_ID
+			        FROM
+			            PKMS.EQUIPMENT E
+			            ,PKMS.EQUIPMENT_USER EU
+			        WHERE
+			            E.USE_YN = 'Y'
+			          AND
+			            EU.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ
+			        GROUP BY
+			            SYSTEM_SEQ, USER_ID)) S
+			    ,PKMS.INF_PERSON_INFO_RCV IPIR
+			    ,(SELECT
+			        BU.BP_USER_ID, BM.BP_NAME, BM.BP_NUM
+			    FROM
+			        PKMS.BP_USER BU
+			        ,PKMS.BP_MASTER BM
+			    WHERE
+			        BM.BP_NUM = BU.BP_NUM) BU
+			WHERE
+			    S.SYSTEM_SEQ = #system_seq#
+			  AND
+			    S.USER_ID = IPIR.EMPNO(+)
+			  AND
+			    S.USER_ID = BU.BP_USER_ID(+)
+			GROUP BY
+			    IPIR.INDEPT, IPIR.SOSOK, BU.BP_NUM, BU.BP_NAME)
+		GROUP BY INDEPT, SOSOK
+		ORDER BY INDEPT
+		
+	</select>
+	
+	<select id="SolutionReportDAO.srSosokMailList" parameterClass="SolutionReportUserModel" resultClass="SolutionReportUserModel">
+		SELECT
+		    INDEPT
+		    ,SOSOK
+		    ,USER_ID
+		    ,USER_EMAIL
+		    ,USER_NAME
+		    ,CHARGE_GUBUN AS CHARGE_GUBUN_NAME
+		FROM
+		    (SELECT
+		        NVL(IPIR.INDEPT, BU.BP_NUM) AS INDEPT
+		        ,NVL(IPIR.SOSOK, BU.BP_NAME) AS SOSOK
+		        ,NVL(IPIR.EMPNO, BU.BP_USER_ID) AS USER_ID
+		        ,NVL(IPIR.EMAIL, BU.BP_USER_EMAIL) AS USER_EMAIL
+		        ,NVL(IPIR.HNAME, BU.BP_USER_NAME) AS USER_NAME
+		        ,S.CHARGE_GUBUN AS CHARGE_GUBUN
+		    FROM
+		        (SELECT
+		            SYSTEM_SEQ
+		            ,USER_ID
+		            ,CHARGE_GUBUN
+		        FROM
+		            (SELECT
+		                S.SYSTEM_SEQ
+		                ,SU.USER_ID
+		                ,TO_CHAR(WM_CONCAT(SU.CHARGE_GUBUN)) AS CHARGE_GUBUN
+		            FROM
+		                PKMS.SYSTEM S
+		                ,(
+		                    SELECT
+		                        SYSTEM_SEQ
+		                        ,USER_ID
+		                        ,CASE
+		                           WHEN CHARGE_GUBUN = 'VU' THEN '상용검증'
+		                           WHEN CHARGE_GUBUN = 'AU' THEN '상용승인'
+		                           WHEN CHARGE_GUBUN = 'PU' THEN '사업계획'
+		                           WHEN CHARGE_GUBUN = 'BU' THEN '협력업체'
+		                           WHEN CHARGE_GUBUN = 'DV' THEN '개발검증'
+		                           WHEN CHARGE_GUBUN = 'DA' THEN '개발승인'
+		                           WHEN CHARGE_GUBUN = 'VO' THEN '용량검증'
+		                           WHEN CHARGE_GUBUN = 'SE' THEN '보안검증'
+		                           WHEN CHARGE_GUBUN = 'CH' THEN '과금검증'
+		                           ELSE '비기능검증'
+		                        END AS CHARGE_GUBUN
+		                    FROM
+		                        PKMS.SYSTEM_USER
+		                ) SU
+		            WHERE
+		                S.USE_YN = 'Y'
+		              AND
+		                SU.SYSTEM_SEQ = S.SYSTEM_SEQ
+		            GROUP BY
+		                S.SYSTEM_SEQ
+		                ,SU.USER_ID)
+		    UNION
+		        SELECT
+		            SYSTEM_SEQ
+		            ,USER_ID
+		            ,CHARGE_GUBUN
+		        FROM
+		            (SELECT
+		                E.SYSTEM_SEQ
+		                ,EU.USER_ID
+		                ,'운용' AS CHARGE_GUBUN
+		            FROM
+		                PKMS.EQUIPMENT E
+		                ,PKMS.EQUIPMENT_USER EU
+		            WHERE
+		                E.USE_YN = 'Y'
+		              AND
+		                EU.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ
+		            GROUP BY
+		                SYSTEM_SEQ, USER_ID)) S
+		        ,PKMS.INF_PERSON_INFO_RCV IPIR
+		        ,(SELECT
+		            BU.BP_USER_ID, BM.BP_NAME, BM.BP_NUM, BU.BP_USER_EMAIL, BU.BP_USER_NAME
+		        FROM
+		            PKMS.BP_USER BU
+		            ,PKMS.BP_MASTER BM
+		        WHERE
+		            BM.BP_NUM = BU.BP_NUM) BU
+		    WHERE
+		        S.SYSTEM_SEQ = #system_seq#
+		      AND
+		        S.USER_ID = IPIR.EMPNO(+)
+		      AND
+		        S.USER_ID = BU.BP_USER_ID(+)
+		    GROUP BY
+		        IPIR.INDEPT, IPIR.SOSOK, BU.BP_NUM, BU.BP_NAME,IPIR.EMAIL, BU.BP_USER_EMAIL,IPIR.HNAME, BU.BP_USER_NAME, IPIR.EMPNO, BU.BP_USER_ID, S.CHARGE_GUBUN)
+		<isNotNull property="indept">
+		WHERE
+		    INDEPT IN (#indept#)
+		</isNotNull>
+		GROUP BY
+		    INDEPT
+		    ,SOSOK
+		    ,USER_EMAIL
+		    ,USER_NAME
+		    ,USER_ID
+		    ,CHARGE_GUBUN
+		ORDER BY CHARGE_GUBUN, INDEPT 
+	</select>
+	<select id="SolutionReportDAO.readSosokList" parameterClass="SolutionReportUserModel" resultClass="SolutionReportUserModel">
+		SELECT
+		    SOLUTION_REPORT_SEQ
+		    ,INDEPT
+		    ,SOSOK
+		    ,CONFIRM_YN
+		    ,USE_YN
+		    ,UPDATE_NAME
+		    ,TO_CHAR(SRT.UPDATE_DATE, 'YYYY-MM-DD HH24:MI:SS') AS UPDATE_DATE
+		    ,SOSOK_COMMENT
+		FROM
+			SOLUTION_REPORT_TEAM SRT
+		WHERE
+		    SRT.SOLUTION_REPORT_SEQ = #solution_report_seq#
+		ORDER BY INDEPT
+	</select>
+	
+	<select id="SolutionReportDAO.readSeq" resultClass="String">
+		SELECT 
+			SOLUTION_REPORT_SEQ.NEXTVAL
+		FROM
+			DUAL
+	</select>
+	
+	<insert id="SolutionReportDAO.create" parameterClass="SolutionReportModel">
+		INSERT INTO PKMS.SOLUTION_REPORT
+		    (
+		        SOLUTION_REPORT_SEQ
+		        ,TITLE
+		        ,CONTENT
+		        ,MASTER_FILE_ID
+		        ,REG_USER
+		        ,REG_NAME
+		        ,REG_SOSOK
+		        ,SYSTEM_SEQ
+		        ,CONTENT_GUBUN
+		        ,RESULT_YN
+		        ,NOTI_WHY
+		    )
+		    VALUES
+		    (
+		        #solution_report_seq#
+		        ,#title#
+		        ,#content#
+		        ,#master_file_id#
+		        ,#session_user_id#
+		        ,#session_user_name#
+		        ,#session_user_group_name#
+		        ,#system_seq#
+		        ,#content_gubun#
+		        ,#result_yn#
+		        ,#noti_why#
+		    )
+	</insert>
+	<update id="SolutionReportDAO.update" parameterClass="SolutionReportModel">
+		UPDATE
+			PKMS.SOLUTION_REPORT
+		SET
+			SYSTEM_SEQ = #system_seq#
+			,TITLE = #title#
+	        ,CONTENT = #content#
+	        ,CONTENT_GUBUN = #content_gubun#
+	        ,NOTI_WHY = #noti_why#
+			,UPDATE_USER = #session_user_id#
+			,UPDATE_NAME = #session_user_name#
+			,UPDATE_DATE = sysdate
+		WHERE
+			SOLUTION_REPORT_SEQ = #solution_report_seq#
+	</update>
+	
+	<update id="SolutionReportDAO.delete" parameterClass="SolutionReportModel">
+		UPDATE
+			PKMS.SOLUTION_REPORT
+		SET
+			USE_YN = 'N'
+		WHERE
+			SOLUTION_REPORT_SEQ = #solution_report_seq#
+	</update>
+	
+	<update id="SolutionReportDAO.complete" parameterClass="SolutionReportModel">
+		UPDATE
+			PKMS.SOLUTION_REPORT
+		SET
+			RESULT_YN = 'Y'
+		WHERE
+			SOLUTION_REPORT_SEQ = #solution_report_seq#
+	</update>
+	
+	<insert id="SolutionReportDAO.userCreate" parameterClass="SolutionReportUserModel">
+		INSERT INTO PKMS.SOLUTION_REPORT_USER
+		    (
+		        SOLUTION_REPORT_SEQ
+		        ,REG_USER
+		        ,USER_ID
+		        ,USE_YN
+		        ,STATUS_YN
+		    )
+		    VALUES
+		    (
+		        #solution_report_seq#
+		        ,#reg_user#
+		        ,#user_id#
+		        ,#use_yn#
+		        ,#status_yn#
+		    )
+	</insert>
+	
+	<insert id="SolutionReportDAO.sosokCreate" parameterClass="SolutionReportUserModel">
+		INSERT INTO PKMS.SOLUTION_REPORT_TEAM
+		    (
+		        SOLUTION_REPORT_SEQ
+		        ,REG_USER
+		        ,INDEPT
+		        ,SOSOK
+		        ,USE_YN
+		        ,CONFIRM_YN
+		    )
+		    VALUES
+		    (
+		        #solution_report_seq#
+		        ,#reg_user#
+		        ,#indept#
+		        ,#sosok#
+		        ,#use_yn#
+		        ,#confirm_yn#
+		    )
+	</insert>
+	
+	<update id="SolutionReportDAO.userUpdate" parameterClass="SolutionReportUserModel">
+		UPDATE PKMS.SOLUTION_REPORT_USER
+		SET
+		    USE_YN = #use_yn#
+		WHERE
+		    SOLUTION_REPORT_SEQ=#solution_report_seq#
+		  AND
+		    USER_ID=#user_id#
+	</update>
+	<update id="SolutionReportDAO.sosokUpdate" parameterClass="SolutionReportUserModel">
+		UPDATE PKMS.SOLUTION_REPORT_TEAM
+		SET
+		    USE_YN = #use_yn#
+		WHERE
+		    SOLUTION_REPORT_SEQ=#solution_report_seq#
+		  AND
+		    INDEPT=#indept#
+	</update>
+	<delete id="SolutionReportDAO.userDelete" parameterClass="SolutionReportUserModel">
+		DELETE FROM PKMS.SOLUTION_REPORT_USER
+		WHERE SOLUTION_REPORT_SEQ = #solution_report_seq#
+	</delete>
+	<delete id="SolutionReportDAO.sosokDelete" parameterClass="SolutionReportUserModel">
+		DELETE FROM PKMS.SOLUTION_REPORT_TEAM
+		WHERE SOLUTION_REPORT_SEQ = #solution_report_seq#
+	</delete>
+	<insert id="SolutionReportDAO.commentCreate" parameterClass="SolutionReportModel">
+		INSERT INTO PKMS.SOLUTION_REPORT_COMMENT
+		    (
+		        SOLUTION_REPORT_COMMENT_SEQ
+				,SOLUTION_REPORT_SEQ
+				,CONTENT
+				,REG_USER
+				,REG_NAME
+		    )
+		    VALUES
+		    (
+		        SOLUTION_REPORT_COMMENT_SEQ.NEXTVAL
+				,#solution_report_seq#
+				,#content#
+				,#session_user_id#
+				,#session_user_name#
+		    )
+	</insert>
+	
+	<update id="SolutionReportDAO.commentDelete" parameterClass="SolutionReportModel">
+		UPDATE
+			PKMS.SOLUTION_REPORT_COMMENT
+		SET
+			USE_YN = 'N'
+			,UPDATE_NAME = #session_user_name#
+			,UPDATE_USER = #session_user_id#
+			,UPDATE_DATE = sysdate
+		WHERE
+			SOLUTION_REPORT_COMMENT_SEQ = #solution_report_comment_seq#
+	</update>
+	
+	<update id="SolutionReportDAO.userYes" parameterClass="SolutionReportModel">
+		UPDATE
+			PKMS.SOLUTION_REPORT_USER
+		SET
+			STATUS_YN = 'Y'
+			,AU_COMMENT = #au_comment#
+			,UPDATE_USER = #session_user_id#
+			,UPDATE_DATE = sysdate
+		WHERE
+			SOLUTION_REPORT_SEQ = #solution_report_seq#
+		  AND
+		  	USER_ID = #session_user_id#
+	</update>
+	
+	<update id="SolutionReportDAO.sosokYes" parameterClass="SolutionReportModel">
+		UPDATE
+			PKMS.SOLUTION_REPORT_TEAM
+		SET
+			CONFIRM_YN = 'Y'
+			,UPDATE_USER = #session_user_id#
+			,UPDATE_NAME = #session_user_name#
+			,UPDATE_DATE = sysdate
+			,SOSOK_COMMENT = #sosok_comment#
+		WHERE
+			SOLUTION_REPORT_SEQ = #solution_report_seq#
+		  AND
+		  	INDEPT = #session_user_group_id#
+	</update>
+	
+	<select id="SolutionReportDAO.readVuYn" parameterClass="SolutionReportModel" resultClass="String">
+		SELECT
+		    DECODE(CNT, 0, 'N', 'Y') AS VU_YN
+		FROM
+		    (SELECT
+		        count(*) AS CNT
+		    FROM
+		        PKMS.SYSTEM_USER
+		    WHERE
+		        SYSTEM_SEQ = #system_seq#
+		      AND
+		        CHARGE_GUBUN = 'VU'
+		      AND
+		        USER_ID = #session_user_id#)
+	</select>
+	
+	<select id="SolutionReportDAO.readTel" parameterClass="SolutionReportModel" resultClass="String">
+		SELECT 
+		    MOVETELNO 
+		FROM
+		    (SELECT
+		        EMPNO AS USER_ID
+		        ,MOVETELNO
+		    FROM PKMS.INF_PERSON_INFO_RCV 
+		    WHERE T_FLAG != 'D'
+		        UNION ALL
+		    SELECT
+		        BP_USER_ID AS USER_ID
+		        ,(BP_USER_PHONE1 || '-' || BP_USER_PHONE2 || '-' || BP_USER_PHONE3) AS MOVETELNO
+		    FROM PKMS.BP_USER
+		    WHERE USE_YN = 'Y')
+		WHERE
+		    USER_ID = #user_id#
+	</select>
+</sqlMap>

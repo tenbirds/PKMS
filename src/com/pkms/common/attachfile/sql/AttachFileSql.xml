@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="FileManage">
+
+	<typeAlias alias="AttachFileModel" type="com.pkms.common.attachfile.model.AttachFileModel" />
+	<typeAlias alias="SystemFileModel" type="com.pkms.sys.system.model.SystemFileModel" />
+
+	<!-- 
+	<insert id="AttachFileDAO.createAll" parameterClass="java.util.List">
+		INSERT ALL
+		<dynamic>
+			<iterate conjunction=" ">
+				<![CDATA[
+					INTO ATTACH_FILE_INFO
+						(MASTER_FILE_ID, ATTACH_FILE_ID, FILE_EXTENSION, FILE_SIZE, FILE_PATH, FILE_ORG_NAME, FILE_NAME)
+					VALUES
+					( #[].master_file_id#, #[].attach_file_id#, #[].file_extension#, #[].file_size#, #[].file_path#, #[].file_org_name#, #[].file_name#)			
+				]]>
+			</iterate>
+		</dynamic>
+		SELECT * FROM dual
+	</insert>
+ 	-->
+
+	<insert id="AttachFileDAO.create" parameterClass="AttachFileModel">
+		<![CDATA[
+			INSERT INTO ATTACH_FILE_INFO
+				(MASTER_FILE_ID, ATTACH_FILE_ID, FILE_EXTENSION, FILE_SIZE, FILE_PATH, FILE_ORG_NAME, FILE_NAME, PARENT_TREE_ID, REG_DATE, REG_USER)
+			VALUES
+			( #master_file_id#, #attach_file_id#, #file_extension#, #file_size#, #file_path#, #file_org_name#, #file_name#, #parent_tree_id#, SYSDATE, #user_nm#)			
+		]]>
+	</insert>
+
+	<select id="AttachFileDAO.readList" parameterClass="AttachFileModel" resultClass="AttachFileModel">
+			SELECT MASTER_FILE_ID, ATTACH_FILE_ID, FILE_EXTENSION, FILE_SIZE, FILE_PATH, FILE_ORG_NAME, FILE_NAME 
+			FROM ATTACH_FILE_INFO
+			WHERE MASTER_FILE_ID = #master_file_id#
+	</select>
+
+	<delete id="AttachFileDAO.deleteAll" parameterClass="AttachFileModel">
+			DELETE FROM 
+				ATTACH_FILE_INFO
+			WHERE
+				MASTER_FILE_ID = #master_file_id#			
+	</delete>
+
+	<select id="AttachFileDAO.read" parameterClass="AttachFileModel" resultClass="AttachFileModel">
+			/* AttachFileDAO.read */
+			SELECT MASTER_FILE_ID, ATTACH_FILE_ID, FILE_EXTENSION, FILE_SIZE, FILE_PATH, FILE_ORG_NAME, FILE_NAME 
+			FROM ATTACH_FILE_INFO
+			WHERE MASTER_FILE_ID = #master_file_id# AND ATTACH_FILE_ID = #attach_file_id# 
+	</select>
+	
+	<delete id="AttachFileDAO.delete" parameterClass="AttachFileModel">
+			DELETE FROM 
+				ATTACH_FILE_INFO
+			WHERE
+				MASTER_FILE_ID = #master_file_id# AND ATTACH_FILE_ID = #attach_file_id#
+	</delete>
+
+
+	<select id="AttachFileDAO.NextStringId" resultClass="java.lang.String">
+		<![CDATA[
+			SELECT SEQUENCE_FILE_ID.NEXTVAL FROM DUAL
+		]]>
+	</select>
+	
+ 	<select id="AttachFileDAO.deleteList" parameterClass="AttachFileModel" resultClass="AttachFileModel"> 
+		SELECT MASTER_FILE_ID, 
+		       ATTACH_FILE_ID, 
+		       FILE_EXTENSION, 
+		       FILE_SIZE, 
+		       FILE_PATH, 
+		       FILE_ORG_NAME, 
+		       FILE_NAME 
+		  FROM ATTACH_FILE_INFO  
+		 WHERE MASTER_FILE_ID = #master_file_id# 
+		   AND ATTACH_FILE_ID = #attach_file_id#
+	</select>
+	
+	<select id="AttachFileDAO.idReadList" parameterClass="AttachFileModel" resultClass="AttachFileModel">
+		SELECT EMPNO FROM INF_PERSON_INFO_RCV
+	</select>
+	
+	<select id="AttachFileDAO.fileIdx" resultClass="Integer">
+		SELECT 
+			CASE 
+				WHEN MAX(IDX) IS NULL THEN 1
+				ELSE MAX(IDX)+1 
+			END idx
+		FROM(
+		  SELECT
+		  	ATTACH_FILE_ID, TO_NUMBER(SUBSTR(ATTACH_FILE_ID, 11)) IDX
+		  FROM
+		  ATTACH_FILE_INFO
+		  WHERE
+		  MASTER_FILE_ID = #master_file_id#
+		  AND ATTACH_FILE_ID LIKE 'attachFile%'
+		) A
+	</select>
+	
+	<select id="AttachFileDAO.newfileIdx" resultClass="Integer">
+		SELECT 
+			CASE 
+				WHEN MAX(IDX) IS NULL THEN 1
+				ELSE MAX(IDX)+1 
+			END idx
+		FROM(
+		  SELECT
+		  	ATTACH_FILE_ID, TO_NUMBER(SUBSTR(ATTACH_FILE_ID, #attach_file_id_size#)) IDX
+		  FROM
+		  ATTACH_FILE_INFO
+		  WHERE
+		  MASTER_FILE_ID = #master_file_id#
+		  AND ATTACH_FILE_ID LIKE #attach_file_id# ||'%'
+		) A
+	</select>
+	
+	
+	
+	<update id="AttachFileDAO.tree_file_move" parameterClass="SystemFileModel">
+		UPDATE 
+			ATTACH_FILE_INFO
+		SET
+			PARENT_TREE_ID = #parent_tree_id#
+		WHERE
+		MASTER_FILE_ID = #master_file_id#
+		AND ATTACH_FILE_ID = #attach_file_id#
+	</update>
+	
+	<update id="AttachFileDAO.tree_file_update" parameterClass="SystemFileModel">
+		UPDATE 
+			ATTACH_FILE_INFO
+		SET
+			FILE_ORG_NAME = #file_org_name#
+		WHERE
+		MASTER_FILE_ID = #master_file_id#
+		AND ATTACH_FILE_ID = #attach_file_id#
+	</update>
+	
+	
+	
+	
+	<select id="AttachFileDAO.docfileIdx" resultClass="Integer">
+		SELECT
+			CASE 
+				WHEN MAX(DOC_SEQ) IS NULL THEN 1
+				ELSE MAX(DOC_SEQ)+1 
+			END idx				
+		FROM
+			DOCUMENT_LIBRARY
+		WHERE 1=1
+			AND ROWNUM = 1
+		ORDER BY DOC_SEQ DESC          
+	</select>
+	
+</sqlMap>

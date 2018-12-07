@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="VerifyTem">
+	<typeAlias alias="VerifyTemModel" type="com.pkms.verify_tem_mg.model.VerifyTemModel" />
+	
+	<insert id="VerifyTemDAO.create_quest" parameterClass="VerifyTemModel">
+		<selectKey keyProperty="quest_seq" resultClass="String">
+			SELECT PKMS.QUEST_SEQ.nextval FROM dual
+		</selectKey>
+		INSERT INTO PKMS.VERIFYTEM_QUEST
+		( 
+			QUEST_SEQ,
+			VERIFY_TYPE,
+			QUEST_TITLE,
+			QUEST_TYPE,
+			REG_DATE,
+			REG_USER
+	  	)
+		values
+		(
+			#quest_seq#,
+			#verify_type#,
+			#quest_title#,
+			#quest_type#,
+			SYSDATE,
+			#session_user_id#
+		)
+	</insert>
+	
+	<insert id="VerifyTemDAO.create_item" parameterClass="VerifyTemModel">
+		<selectKey keyProperty="item_seq" resultClass="String">
+			SELECT PKMS.ITEM_SEQ.nextval FROM dual
+		</selectKey>
+		INSERT INTO PKMS.VERIFYTEM_ITEM
+		(
+			ITEM_SEQ,
+			QUEST_SEQ,
+			ITEM_CONTENT,
+			ITEM_NUM
+		)
+		values
+		(
+			#item_seq#,
+			#quest_seq#,
+			#item_content#,
+			#item_num#
+		)
+		
+	</insert>
+	
+	<select id="VerifyTemDAO.readList_quest" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		<isEqual property="isPaging" compareValue="true">
+			<![CDATA[
+				SELECT
+					*
+		        FROM (
+	            	SELECT 
+	            		ROWNUM AS RNUM
+	            		, A.* 
+	            	FROM (
+			]]>
+		</isEqual>
+		SELECT 
+			QUEST_SEQ, 
+			CASE
+				WHEN VERIFY_TYPE = 'vol' THEN '용량 검증'
+				WHEN VERIFY_TYPE = 'cha' THEN '과금 검증'
+				WHEN VERIFY_TYPE = 'non' THEN '비기능 검증'
+				WHEN VERIFY_TYPE = 'sec' THEN '보안 검증'
+			END
+			AS VERIFY_TYPE,
+			QUEST_TITLE,
+			CASE
+				WHEN QUEST_TYPE = '0' THEN '선택형'
+				ELSE '단답형'
+			END AS QUEST_TYPE,
+			REG_DATE,
+			REG_USER,
+			(SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = REG_USER) AS REG_NAME,
+			UPDATE_DATE,
+			UPDATE_USER
+		FROM VERIFYTEM_QUEST 
+		WHERE VERIFY_TYPE = #searchCondition#
+		<isNotEmpty property="searchKeyword">
+			AND QUEST_TITLE LIKE '%' || #searchKeyword# || '%'
+		</isNotEmpty>
+		ORDER BY REG_DATE DESC
+		<isEqual property="isPaging" compareValue="true">
+	         <![CDATA[
+		         	) A WHERE ROWNUM  <=  #firstIndex# + #recordCountPerPage#
+		        ) WHERE RNUM > #firstIndex#
+	        ]]>
+		</isEqual>  
+	</select>
+	
+	<select id="VerifyTemDAO.readList_quest_totalCnt" parameterClass="VerifyTemModel" resultClass="int">
+		SELECT COUNT(QUEST_SEQ) AS TOTALCNT FROM VERIFYTEM_QUEST
+		WHERE VERIFY_TYPE = #searchCondition#
+		<isNotEmpty property="searchKeyword">
+			AND QUEST_TITLE LIKE '%' || #searchKeyword# || '%'
+		</isNotEmpty>
+	</select>
+	
+	<select id="VerifyTemDAO.read_quest" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT 
+			QUEST_SEQ,
+ 			CASE
+				WHEN VERIFY_TYPE = 'vol' THEN '용량 검증'
+				WHEN VERIFY_TYPE = 'cha' THEN '과금 검증'
+				WHEN VERIFY_TYPE = 'non' THEN '비기능 검증'
+				WHEN VERIFY_TYPE = 'sec' THEN '보안 검증'
+			END AS VERIFY_TYPE,
+			QUEST_TITLE,
+			QUEST_TYPE,
+			REG_USER
+		FROM VERIFYTEM_QUEST
+		WHERE QUEST_SEQ = #quest_seq#
+	</select>
+	
+	<select id="VerifyTemDAO.read_itemList" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT 
+			ITEM_SEQ,
+			QUEST_SEQ,
+			ITEM_CONTENT,
+			ITEM_NUM
+		FROM  VERIFYTEM_ITEM
+		WHERE  QUEST_SEQ = #quest_seq#
+	</select>
+	
+	<delete id="VerifyTemDAO.delete_result" parameterClass="VerifyTemModel">
+		DELETE FROM VERIFYTEM_RESULT
+		WHERE QUEST_SEQ = #quest_seq#
+	</delete>
+	
+	<delete id="VerifyTemDAO.delete_item" parameterClass="VerifyTemModel">
+		DELETE FROM VERIFYTEM_ITEM
+		WHERE QUEST_SEQ = #quest_seq#
+	</delete>
+	
+	<delete id="VerifyTemDAO.delete_quest" parameterClass="VerifyTemModel">
+		DELETE FROM  VERIFYTEM_QUEST
+		WHERE QUEST_SEQ = #quest_seq#
+	</delete>
+	
+	<delete id="VerifyTemDAO.delete_manage_tem" parameterClass="VerifyTemModel">
+		DELETE FROM VERIFYTEM_MANAGE_TEM
+		WHERE QUEST_SEQ = #quest_seq#
+	</delete>
+	
+	<update id="VerifyTemDAO.update_quest" parameterClass="VerifyTemModel">
+		UPDATE VERIFYTEM_QUEST 
+			SET QUEST_TITLE = #quest_title# , QUEST_TYPE = #quest_type#
+		WHERE QUEST_SEQ = #quest_seq#
+	</update>
+	
+	<select id="VerifyTemDAO.verifyinfo_pkgVerify_S" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT VERIFY_SEQ, VERIFY_VER 
+		FROM PKG_VERIFY_GUBUN WHERE PKG_SEQ IN (
+			(
+				SELECT PKG_SEQ FROM PKG_MASTER 
+				WHERE 
+				<isNotEmpty property="verify_type">
+					<isEqual property="verify_type" compareValue="용량 검증">
+						VOL_YN = 'S'
+					</isEqual>
+					<isEqual property="verify_type" compareValue="보안 검증">
+						SEC_YN = 'S'
+					</isEqual>
+					<isEqual property="verify_type" compareValue="과금 검증">
+						CHA_YN = 'S'
+					</isEqual>
+					<isEqual property="verify_type" compareValue="비기능 검증">
+						NON_YN = 'S'
+					</isEqual>
+				</isNotEmpty>
+				
+			)
+		)
+	</select>
+	<select id="VerifyTemDAO.quest_pkgVerify_S" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT QUEST_SEQ 
+		FROM VERIFYTEM_MANAGE_TEM 
+		WHERE VERIFY_SEQ = #verify_seq# AND VERIFY_VER = #verify_ver#
+	</select>
+
+</sqlMap>

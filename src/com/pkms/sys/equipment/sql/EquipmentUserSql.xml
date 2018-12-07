@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="EquipmentUser">
+
+	<typeAlias alias="EquipmentUserModel" type="com.pkms.sys.equipment.model.EquipmentUserModel" />
+
+
+	<insert id="EquipmentUserDAO.create" parameterClass="java.util.List">
+		INSERT ALL
+		<dynamic>
+			<iterate conjunction=" ">
+				<![CDATA[
+					INTO PKMS.EQUIPMENT_USER 
+				  ( 
+				  	EQUIPMENT_SEQ
+				  ,	ORD
+				  ,	USER_ID
+				  , USER_GUBUN
+				  ,	USE_YN
+				  , REG_USER
+				  , REG_DATE
+				  )
+					VALUES
+				  (
+				    #[].equipment_seq#
+				  , #[].ord#
+				  , #[].user_id#
+				  , #[].user_gubun#
+				  , 'Y'
+				  , #[].session_user_name#
+				  , SYSDATE
+				  )
+				]]>
+			</iterate>
+		</dynamic>
+		SELECT * FROM DUAL
+	</insert>
+
+	<select id="EquipmentUserDAO.readList" parameterClass="EquipmentUserModel" resultClass="EquipmentUserModel">
+		<![CDATA[
+			SELECT
+				EQUIPMENT_SEQ, ORD, USER_ID, USER_GUBUN, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE
+			FROM PKMS.EQUIPMENT_USER 
+			WHERE USE_YN='Y' AND EQUIPMENT_SEQ=#equipment_seq# ORDER BY ORD ASC
+		]]>
+	</select>
+
+	<select id="EquipmentUserDAO.readListAppliedToUser" parameterClass="EquipmentUserModel" resultClass="EquipmentUserModel">
+		<![CDATA[
+			SELECT
+				EQUIPMENT_SEQ, ORD, USER_ID, USER_GUBUN, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE
+			FROM PKMS.EQUIPMENT_USER 
+			WHERE USE_YN='Y' AND USER_ID=#user_id# AND USER_GUBUN=#user_gubun# ORDER BY EQUIPMENT_SEQ ASC
+		]]>
+	</select>
+
+
+	<delete id="EquipmentUserDAO.delete" parameterClass="EquipmentUserModel">
+		<![CDATA[
+			DELETE FROM PKMS.EQUIPMENT_USER 
+			WHERE EQUIPMENT_SEQ=#equipment_seq#
+		]]>
+	</delete>
+	
+	<delete id="EquipmentUserDAO.delete_u" parameterClass="EquipmentUserModel">
+		<![CDATA[
+			UPDATE
+				PKMS.EQUIPMENT_USER
+			SET
+				USE_YN = 'N'
+			WHERE 
+				EQUIPMENT_SEQ=#equipment_seq#
+		]]>
+	</delete>
+	
+	<select id="EquipmentUserDAO.idc_readList" parameterClass="EquipmentUserModel" resultClass="EquipmentUserModel">
+		<![CDATA[
+			SELECT E.IDC_SEQ, EU.USER_ID
+			FROM PKMS.EQUIPMENT_USER EU, PKMS.EQUIPMENT E, PKMS.SYSTEM S
+			WHERE
+				EU.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ
+			  AND E.SYSTEM_SEQ = S.SYSTEM_SEQ
+			  AND S.SYSTEM_SEQ = #system_seq# 
+			  AND EU.USE_YN='Y'
+			  AND E.IDC_SEQ = #idc_seq#
+			GROUP BY E.IDC_SEQ, EU.USER_ID
+		]]>
+	</select>
+</sqlMap>

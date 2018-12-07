@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgDetailSearch">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+	<typeAlias alias="PkgDetailModel" type="com.pkms.pkgmg.pkg.model.PkgDetailModel" />
+
+	<select id="PkgDetailSearchDAO.readList" parameterClass="PkgModel" resultClass="PkgDetailModel">
+        SELECT 
+        	*
+        FROM (SELECT ROWNUM AS RNUM, A.* FROM (
+            SELECT
+                PD.PKG_SEQ AS PKG_SEQ,
+                PM.TITLE AS TITLE,
+                PD.PKG_DETAIL_SEQ AS PKG_DETAIL_SEQ,
+                PD.NO AS NO,
+                PD.NEW_PN_CR_GUBUN AS NEW_PN_CR_GUBUN,
+                PD.NEW_PN_CR_SEQ AS NEW_PN_CR_SEQ,
+                PDV.CONTENT AS CONTENT,
+                PD.REG_DATE AS REG_DATE
+            FROM PKMS.PKG_MASTER PM,
+                 PKMS.PKG_DETAIL PD,
+                 PKMS.PKG_DETAIL_VARIABLE PDV
+            WHERE PD.PKG_SEQ = PM.PKG_SEQ(+)
+              AND PD.PKG_DETAIL_SEQ = PDV.PKG_DETAIL_SEQ(+)
+              AND PM.USE_YN = 'Y'
+              AND PD.USE_YN = 'Y'
+              AND PDV.USE_YN = 'Y'
+<!-- 
+              AND PDV.ORD = 1
+ -->              
+              AND PM.SYSTEM_SEQ = #system_seq#
+            <isNotEmpty prepend="AND" property="content">
+                   LOWER(PDV.CONTENT) LIKE '%' || LOWER(#content#) || '%' AND PDV.ORD = #content_ord#
+            </isNotEmpty>
+             ORDER BY PD.REG_DATE DESC
+             ) A WHERE ROWNUM <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#
+        ) WHERE RNUM > #firstIndex#
+	</select>
+
+	<select id="PkgDetailSearchDAO.readTotalCount" parameterClass="PkgModel" resultClass="int">
+         SELECT COUNT(1) totalCount
+            FROM PKMS.PKG_MASTER PM,
+                 PKMS.PKG_DETAIL PD,
+                 PKMS.PKG_DETAIL_VARIABLE PDV
+            WHERE PD.PKG_SEQ = PM.PKG_SEQ(+)
+              AND PD.PKG_DETAIL_SEQ = PDV.PKG_DETAIL_SEQ(+)
+              AND PM.USE_YN = 'Y'
+              AND PD.USE_YN = 'Y'
+              AND PDV.USE_YN = 'Y'
+<!-- 
+              AND PDV.ORD = 1
+ -->              
+              AND PM.SYSTEM_SEQ = #system_seq#
+            <isNotEmpty prepend="AND" property="content">
+                   LOWER(PDV.CONTENT) LIKE '%' || LOWER(#content#) || '%' AND PDV.ORD = #content_ord#
+            </isNotEmpty>
+	</select>
+
+</sqlMap>

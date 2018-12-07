@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="WiredStatus">
+	<typeAlias alias="Pkg21Model" type="com.pkms.pkgmg.pkg21.model.Pkg21Model" />
+
+	<insert id="wiredStatusDAO.create" parameterClass="Pkg21Model">
+		INSERT INTO PKMS.PKG_STATUS (
+            PKG_SEQ ,STATUS
+            ,COL1 ,COL2 ,COL3 ,COL4 ,COL5 
+            ,COL6 ,COL7 ,COL8 ,COL9 ,COL10 
+            ,COL11 ,COL12 ,COL13 ,COL14 ,COL15 
+            ,COL16 ,COL17 ,COL18 ,COL19 ,COL20 
+            ,COL21 ,COL22 ,COL23 ,COL24 ,COL25 
+            ,COL26 ,COL27 ,COL28 ,COL29 ,COL30 
+            ,COL31 ,COL32 ,COL33 ,COL34 ,COL35 
+            ,COL36 ,COL37 ,COL38 ,COL39 ,COL40 
+			,COL41 ,COL42 ,COL43 ,REG_USER
+			<isNotEmpty property="update_gubun">
+			, UPDATE_GUBUN
+			</isNotEmpty>
+            )
+        VALUES ( 
+            #pkg_seq# ,#save_status#
+            ,#col1# ,#col2# ,#col3# ,#col4# ,#col5#
+            ,#col6# ,#col7# ,#col8# ,#col9# ,#col10#
+            ,#col11# ,#col12# ,#col13# ,#col14# ,#col15#
+            ,#col16# ,#col17# ,#col18# ,#col19# ,#col20#
+            ,#col21# ,#col22# ,#col23# ,#col24# ,#col25#
+            ,#col26# ,#col27# ,#col28# ,#col29# ,#col30#
+            ,#col31# ,#col32# ,#col33# ,#col34# ,#col35#
+            ,#col36# ,#col37# ,#col38# ,#col39# ,#col40#
+            ,#col41# ,#col42# ,#col43# ,#session_user_id#
+            <isNotEmpty property="update_gubun">
+            ,#update_gubun#
+            </isNotEmpty>
+            )
+	</insert>
+	
+	<update id="wiredStatusDAO.update" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_STATUS SET
+			COL1					= #col1# 
+			,COL2					= #col2# 
+			,COL3					= #col3# 
+			,COL4					= #col4# 
+			,COL5					= #col5# 
+			,COL6					= #col6# 
+			,COL7					= #col7# 
+			,COL8					= #col8# 
+			,COL9					= #col9# 
+			,COL10					= #col10#
+			,COL11					= #col11#
+			,COL12					= #col12#
+			,COL13					= #col13#
+			,COL14					= #col14#
+			,COL15					= #col15#
+			,COL16					= #col16#
+			,COL17					= #col17#
+			,COL18					= #col18#
+			,COL19					= #col19#
+			,COL20					= #col20#
+			,COL21					= #col21#
+			,COL22					= #col22#
+			,COL23					= #col23#
+			,COL24					= #col24#
+			,COL25					= #col25#
+			,COL26					= #col26#
+			,COL27					= #col27#
+			,COL28					= #col28#
+			,COL29					= #col29#
+			,COL30					= #col30#
+			,COL31					= #col31#
+			,COL32					= #col32#
+			,COL33					= #col33#
+			,COL34					= #col34#
+			,COL35					= #col35#
+			,COL36					= #col36#
+			,COL37					= #col37#
+			,COL38					= #col38#
+			,COL39					= #col39#
+			,COL40					= #col40#
+			,COL41					= #col41#
+			,COL42					= #col42#
+			,COL43					= #col43#
+			,UPDATE_USER			= #session_user_id#
+			,UPDATE_DATE			= sysdate
+			<isNotEmpty property="update_gubun">
+			,UPDATE_GUBUN			= #update_gubun#
+			</isNotEmpty>
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+        	AND STATUS			= #save_status#
+	</update>
+	
+	<select id="wiredStatusDAO.read" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+		SELECT
+		    PM.PKG_SEQ, PM.STATUS,PM.MASTER_FILE_ID
+		    ,PS.STATUS AS SELECT_STATUS
+		    ,PS.COL1 ,PS.COL2 ,PS.COL3 ,PS.COL4 ,PS.COL5 
+		    ,PS.COL6 ,PS.COL7 ,PS.COL8 ,PS.COL9 ,PS.COL10 
+		    ,PS.COL11 ,PS.COL12 ,PS.COL13 ,PS.COL14 ,COL15 
+		    ,PS.COL16 ,PS.COL17 ,PS.COL18 ,PS.COL19 ,PS.COL20 
+		    ,PS.COL21 ,PS.COL22 ,PS.COL23 ,PS.COL24 ,PS.COL25 
+		    ,PS.COL26 ,PS.COL27 ,PS.COL28 ,PS.COL29 ,PS.COL30 
+		    ,PS.COL31 ,PS.COL32 ,PS.COL33 ,PS.COL34 ,PS.COL35 
+		    ,PS.COL36 ,PS.COL37 ,PS.COL38 ,PS.COL39 ,PS.COL40 
+		    ,PS.COL41 ,PS.COL42 ,PS.COL43
+		    ,TO_CHAR(PS.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') AS REG_DATE
+		    ,RIP.HNAME AS REG_USER_NAME
+		    ,TO_CHAR(PS.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') AS UPDATE_DATE 
+		    ,UIP.HNAME AS UPDATE_USER_NAME, UPDATE_GUBUN
+		FROM
+		    PKMS.PKG_MASTER PM
+		    , PKMS.PKG_STATUS PS
+		    , PKMS.INF_PERSON_INFO_RCV RIP
+		    , PKMS.INF_PERSON_INFO_RCV UIP
+		WHERE
+		    PM.PKG_SEQ =  PS.PKG_SEQ(+)
+		    AND PS.REG_USER = RIP.EMPNO(+)
+		    AND PS.UPDATE_USER = UIP.EMPNO(+)
+		    AND PM.PKG_SEQ = #pkg_seq#
+		    AND PS.STATUS = #select_status#
+	</select>
+	
+	<select id="wiredStatusDAO.real_status" parameterClass="Pkg21Model" resultClass="String">
+        SELECT
+	        MAX(TO_NUMBER(STATUS)) AS SELECT_STATUS
+	    FROM
+	        PKG_STATUS
+	    WHERE
+	        PKG_SEQ = #pkg_seq#
+	        AND STATUS LIKE '%' || SUBSTR(#select_status#, 1, 2) || '%'
+	</select>
+	
+	<select id="wiredStatusDAO.pkg_user_all_yn" parameterClass="Pkg21Model" resultClass="Pkg21Model">
+		SELECT
+		    CASE
+		        WHEN COUNT(STATUS) > 0 THEN 'N'
+		        ELSE 'Y'
+		    END AS PKG_USER_ALL_YN
+		FROM
+		    PKMS.PKG_USER
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND
+		    CHARGE_GUBUN = 'LA'
+		    AND
+		    STATUS = 'R'
+	</select>
+	
+	
+	
+		<update id="wiredStatusDAO.statusUpdate" parameterClass="Pkg21Model">
+		UPDATE PKMS.PKG_STATUS SET
+			STATUS					= #save_status# 
+        WHERE
+        	PKG_SEQ				= #pkg_seq#
+        	AND STATUS			= #select_status#
+	</update>
+	
+	
+	
+</sqlMap>

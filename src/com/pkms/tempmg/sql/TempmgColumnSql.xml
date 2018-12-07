@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="TempmgColumn">
+
+	<typeAlias alias="TempmgModel" type="com.pkms.tempmg.model.TempmgModel" />
+
+	<insert id="TempmgColumnDAO.create" parameterClass="TempmgModel">
+		<selectKey keyProperty="new_tpl_seq" resultClass="String">
+			SELECT PKMS.TEMPLATE_SEQ.nextval FROM dual
+		</selectKey>
+		<![CDATA[
+			INSERT INTO PKMS.TEMPLATE
+				( 
+					TPL_SEQ,
+					ORD,
+					TITLE,
+					POSITION,
+					USE_YN,
+					REG_USER,
+					REG_DATE,
+					MASTER_FILE_ID
+				  )
+			VALUES (
+					#new_tpl_seq#,
+					#ord#,
+					#title#,
+					#position#,
+					#use_yn#,
+					#session_user_id#,
+					SYSDATE,
+					#master_file_id#
+				  )
+		]]>
+	</insert>
+
+	<insert id="TempmgColumnDAO.createByTpl_seq" parameterClass="TempmgModel">
+		<![CDATA[
+			INSERT INTO PKMS.TEMPLATE
+				( 
+					TPL_SEQ,
+					ORD,
+					TITLE,
+					POSITION,
+					USE_YN,
+					REG_USER,
+					REG_DATE,
+					MASTER_FILE_ID
+				  )
+			VALUES (
+					#tpl_seq#,
+					#ord#,
+					#title#,
+					#position#,
+					#use_yn#,
+					#session_user_id#,
+					SYSDATE,
+					#master_file_id#
+				  )
+		]]>
+	</insert>
+
+	<select id="TempmgColumnDAO.read" parameterClass="TempmgModel" resultClass="TempmgModel">
+        SELECT
+        	TPL_SEQ, ORD, TITLE, POSITION, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE, MASTER_FILE_ID
+        FROM PKMS.TEMPLATE
+        WHERE 1=1
+		<isNotEmpty prepend="AND" property="tpl_seq">
+			<isNotEmpty property="ord">
+				TPL_SEQ = #tpl_seq# AND ORD = #ord#
+			</isNotEmpty>
+			<isEmpty property="ord">
+					ROWNUM = 0
+			</isEmpty>
+		</isNotEmpty>
+		<isEmpty prepend="AND" property="ord">
+				ROWNUM = 0
+		</isEmpty>
+	</select>
+
+	<select id="TempmgColumnDAO.readList" parameterClass="TempmgModel" resultClass="TempmgModel">
+        SELECT
+			(TO_CHAR(a.REG_DATE, 'yyyymmdd') || '-' || a.TPL_SEQ) AS TPL_VER,
+        	a.TPL_SEQ, a.ORD, a.TITLE, a.POSITION, a.USE_YN, a.REG_USER, a.REG_DATE, a.UPDATE_USER, a.UPDATE_DATE, a.MASTER_FILE_ID
+        	, b.FILE_PATH, b.FILE_NAME, b.FILE_ORG_NAME
+        FROM PKMS.TEMPLATE a
+        JOIN PKMS.ATTACH_FILE_INFO b ON a.MASTER_FILE_ID = b.MASTER_FILE_ID
+        WHERE 1 = 1
+		<isNotEmpty prepend="AND" property="position">
+			a.POSITION = #position#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="tpl_seq">
+			a.TPL_SEQ = #tpl_seq#
+		</isNotEmpty>
+		<isEmpty prepend="AND" property="tpl_seq">
+			<isEqual property="use_yn" compareValue="Y">
+				a.USE_YN = 'Y'
+			</isEqual>
+			<isEqual property="use_yn" compareValue="N">
+				ROWNUM = 0
+			</isEqual>
+		</isEmpty>
+        ORDER BY a.ORD ASC
+	</select>
+
+	<update id="TempmgColumnDAO.update" parameterClass="TempmgModel">
+		<![CDATA[
+			UPDATE PKMS.TEMPLATE
+			SET 
+				  TITLE   	  = #title#
+				, UPDATE_USER = #session_user_id#
+				, UPDATE_DATE = SYSDATE
+			WHERE TPL_SEQ = #tpl_seq#
+			AND ORD = #ord#
+		]]>
+	</update>
+	
+	<delete id="TempmgColumnDAO.delete" parameterClass="TempmgModel">
+		DELETE PKMS.TEMPLATE
+		WHERE TPL_SEQ = #tpl_seq#
+		<isNotEmpty prepend="AND" property="ord">
+			ORD = #ord#
+		</isNotEmpty>
+	</delete>
+	
+</sqlMap>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgDetailVariabl">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+	<typeAlias alias="PkgDetailVariableModel" type="com.pkms.pkgmg.pkg.model.PkgDetailVariableModel" />
+
+	<insert id="PkgDetailVariablDAO.create" parameterClass="PkgDetailVariableModel">
+		INSERT INTO PKMS.PKG_DETAIL_VARIABLE (
+           PKG_DETAIL_SEQ, ORD, CONTENT,
+           REG_USER) 
+        VALUES ( 
+           #pkg_detail_seq#, #ord#, #content#,
+           #session_user_id#)
+	</insert>
+	
+	<insert id="PkgDetailVariablDAO.add1" parameterClass="PkgDetailVariableModel">
+		INSERT INTO PKMS.PKG_DETAIL_VARIABLE (PKG_DETAIL_SEQ, ORD,  REG_USER, REG_DATE, CONTENT)
+		VALUES (#detailMaxSeq#, #ord#, #session_user_id#, SYSDATE, #content#)
+	
+	</insert>
+	
+	<insert id="PkgDetailVariablDAO.add2" parameterClass="PkgDetailVariableModel">
+		INSERT INTO PKG_DETAIL (PKG_SEQ,PKG_DETAIL_SEQ,NO, NEW_PN_CR_GUBUN, NEW_PN_CR_SEQ, REG_USER, REG_DATE) 
+		VALUES(#pkg_seq#,#detailMaxSeq#,#detailMaxNO#,#new_pn_cr_gubun#,0,#session_user_id#, SYSDATE)
+	</insert>
+
+	<insert id="PkgDetailVariablDAO.update" parameterClass="java.util.List">
+		INSERT ALL
+		<dynamic>
+			<iterate conjunction=" ">
+				<![CDATA[
+					INTO PKMS.PKG_DETAIL_VARIABLE (PKG_DETAIL_SEQ, ORD, CONTENT, REG_USER)
+					VALUES (#[].pkg_detail_seq#, #[].ord#, #[].content#, #[].session_user_id#)
+				]]>
+			</iterate>
+		</dynamic>
+		SELECT * FROM DUAL
+	</insert>
+
+	<delete id="PkgDetailVariablDAO.deleteAll" parameterClass="PkgModel">
+		DELETE FROM PKMS.PKG_DETAIL_VARIABLE
+		WHERE PKG_DETAIL_SEQ IN (SELECT PKG_DETAIL_SEQ FROM PKG_DETAIL WHERE PKG_SEQ = #pkg_seq#)
+	</delete>
+
+	<delete id="PkgDetailVariablDAO.delete" parameterClass="PkgModel">
+		DELETE FROM PKMS.PKG_DETAIL_VARIABLE
+		WHERE PKG_DETAIL_SEQ = #pkg_detail_seq#
+	</delete>
+	
+<!-- 상용 검증결과 update	 -->
+	<update id="PkgDetailVariablDAO.okUpdate" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'OK' where ORD = 2 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#okArray[]#
+		</iterate>
+	</update>
+	<update id="PkgDetailVariablDAO.nokUpdate" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'NOK' where ORD = 2 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#nokArray[]#
+		</iterate>
+	</update>
+	<update id="PkgDetailVariablDAO.cokUpdate" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'COK' where ORD = 2 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#cokArray[]#
+		</iterate>
+	</update>
+	
+<!-- 개발 검증결과 update	 -->
+	<update id="PkgDetailVariablDAO.okUpdate_dev" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'OK' where ORD = 19 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#okArray[]#
+		</iterate>
+	</update>
+	<update id="PkgDetailVariablDAO.nokUpdate_dev" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'NOK' where ORD = 19 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#nokArray[]#
+		</iterate>
+	</update>
+	<update id="PkgDetailVariablDAO.cokUpdate_dev" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'COK' where ORD = 19 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#cokArray[]#
+		</iterate>
+	</update>
+		<update id="PkgDetailVariablDAO.bypassUpdate_dev" parameterClass="java.util.List">
+		UPDATE PKMS.PKG_DETAIL_VARIABLE set content = 'BYPASS' where ORD = 19 AND PKG_DETAIL_SEQ in
+		<iterate conjunction="," open="(" close=")">
+			#bypassArray[]#
+		</iterate>
+	</update>
+	
+	<select id="PkgDetailVariablDAO.detailSeq" resultClass="int">
+		SELECT MAX(PKG_DETAIL_SEQ) as detail_seq 
+		FROM PKG_DETAIL_VARIABLE
+	</select>
+	<select id="PkgDetailVariablDAO.detailNO" resultClass="int" parameterClass="String">
+		SELECT MAX(NO) from PKG_DETAIL where PKG_SEQ =#pkg_seq#
+	</select>
+	
+</sqlMap>

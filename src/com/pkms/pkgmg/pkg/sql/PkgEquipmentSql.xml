@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgEquipment">
+
+	<typeAlias alias="PkgEquipmentModel" type="com.pkms.pkgmg.pkg.model.PkgEquipmentModel" />
+
+	<select id="pkgEquipmentDAO.readEqWorkSeq" parameterClass="PkgEquipmentModel" resultClass="String">
+        SELECT PKMS.PKG_EQ_WORK_SEQ.NEXTVAL FROM DUAL
+	</select>
+	
+	<insert id="pkgEquipmentDAO.create" parameterClass="PkgEquipmentModel">
+		INSERT INTO PKMS.PKG_EQUIPMENT (
+			PKG_SEQ, 
+			WORK_GUBUN, 
+			EQUIPMENT_SEQ,
+			EQ_WORK_SEQ,
+        	WORK_DATE, 
+        	START_TIME, 
+        	END_TIME, 
+        	USE_YN, 
+        	REG_USER, 
+        	REG_DATE,
+        	<isNotEmpty property="work_result">
+        		WORK_RESULT,
+        	</isNotEmpty>
+        	<isNotEmpty property="charge_result">
+        		CHARGE_RESULT,
+        	</isNotEmpty>
+        	AMPM
+		) VALUES (
+		   #pkg_seq#,
+		   #work_gubun#,
+		   #equipment_seq#,
+		   #eq_work_seq#,
+		   #work_date#,
+		   #start_time1# || #start_time2# || '00',
+		   #end_time1# || #end_time2# || '00',
+		   #use_yn#,
+		   #session_user_id#,
+		   SYSDATE,
+		   <isNotEmpty property="work_result">
+		   		#work_result#,
+		   </isNotEmpty>
+		   <isNotEmpty property="charge_result">
+		   		#charge_result#,
+		   </isNotEmpty>
+		   #ampm#
+		   )
+	</insert>
+
+	<insert id="pkgEquipmentDAO.create21" parameterClass="PkgEquipmentModel">
+		INSERT INTO PKMS.PKG_EQUIPMENT (
+			PKG_SEQ, 
+			WORK_GUBUN, 
+			EQUIPMENT_SEQ,
+			EQ_WORK_SEQ,
+        	START_DATE,
+        	END_DATE, 
+        	START_TIME, 
+        	END_TIME, 
+        	USE_YN, 
+        	REG_USER, 
+        	REG_DATE,
+        	<isNotEmpty property="work_result">
+        		WORK_RESULT,
+        	</isNotEmpty>
+        	<isNotEmpty property="charge_result">
+        		CHARGE_RESULT,
+        	</isNotEmpty>
+        	AMPM
+		) VALUES (
+		   #pkg_seq#,
+		   #work_gubun#,
+		   #equipment_seq#,
+		   #eq_work_seq#,
+		   #start_date#,
+		   #end_date#,
+		   #start_time1# || #start_time2# || '00',
+		   #end_time1# || #end_time2# || '00',
+		   #use_yn#,
+		   #session_user_id#,
+		   SYSDATE,
+		   <isNotEmpty property="work_result">
+		   		#work_result#,
+		   </isNotEmpty>
+		   <isNotEmpty property="charge_result">
+		   		#charge_result#,
+		   </isNotEmpty>
+		   #ampm#
+		   )
+	</insert>
+
+	<update id="pkgEquipmentDAO.update" parameterClass="PkgEquipmentModel">
+		UPDATE PKMS.PKG_EQUIPMENT
+		SET
+			EQUIPMENT_SEQ = #equipment_seq#
+			<isNotEmpty property="work_result">
+			,WORK_RESULT = #work_result#
+			</isNotEmpty>
+			<isNotEmpty property="charge_result">
+			,CHARGE_RESULT = #charge_result#
+			</isNotEmpty>
+		WHERE
+			PKG_SEQ = #pkg_seq#
+			<isNotEmpty prepend="AND" property="equipment_seq">
+				EQUIPMENT_SEQ = #equipment_seq#
+			</isNotEmpty>
+	</update>
+	
+	<update id="pkgEquipmentDAO.s_work_update" parameterClass="PkgEquipmentModel">
+		UPDATE PKMS.PKG_EQUIPMENT
+		SET
+			WORK_RESULT = #work_result#
+		WHERE
+			PKG_SEQ = #pkg_seq#
+	</update>
+
+	<select id="pkgEquipmentDAO.readList" parameterClass="PkgEquipmentModel" resultClass="PkgEquipmentModel">
+        SELECT
+        	PE.PKG_SEQ, PE.WORK_GUBUN, PE.EQUIPMENT_SEQ, PE.EQ_WORK_SEQ,
+        	E.NAME AS EQUIPMENT_NAME,
+        	I.TEAM_NAME AS TEAM_NAME,
+        	E.SERVICE_AREA AS SERVICE_AREA,
+        	I.IDC_NAME AS IDC_NAME,
+        	TO_CHAR(PE.WORK_DATE, 'yyyy-mm-dd') AS WORK_DATE, 
+            (SUBSTR(NVL(PE.START_TIME, '020000'), 0, 2)) AS START_TIME1,
+            (SUBSTR(NVL(PE.START_TIME, '000000'), 3, 2)) AS START_TIME2,
+            (SUBSTR(NVL(PE.END_TIME, '070000'), 0, 2)) AS END_TIME1,
+            (SUBSTR(NVL(PE.END_TIME, '000000'), 3, 2)) AS END_TIME2,
+        	PE.USE_YN, PE.REG_USER, PE.REG_DATE, PE.UPDATE_USER, PE.UPDATE_DATE,
+        	PE.WORK_RESULT, PE.AMPM, PE.CHARGE_RESULT,
+        	(SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = PE.REG_USER) AS REG_USER_NAME,
+        	I.TEAM_CODE
+        FROM PKMS.PKG_EQUIPMENT PE,
+             PKMS.EQUIPMENT E,
+             PKMS.IDC I
+        WHERE PE.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ(+)
+        AND E.IDC_SEQ = I.IDC_SEQ(+)
+        <isNull prepend="AND" property="eq_history_yn">
+        E.USE_YN = 'Y'
+        </isNull>
+        AND PE.USE_YN = 'Y'
+		<isNotEmpty prepend="AND" property="pkg_seq">
+			PE.PKG_SEQ = #pkg_seq#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="work_gubun">
+			PE.WORK_GUBUN = #work_gubun#
+		</isNotEmpty>
+        ORDER BY PE.WORK_GUBUN DESC, E.NAME ASC
+	</select>
+	
+	<select id="pkgEquipmentDAO.read21List" parameterClass="PkgEquipmentModel" resultClass="PkgEquipmentModel">
+        SELECT
+        	PE.PKG_SEQ, PE.WORK_GUBUN, PE.EQUIPMENT_SEQ, PE.EQ_WORK_SEQ,
+        	E.NAME AS EQUIPMENT_NAME,
+        	I.TEAM_NAME AS TEAM_NAME,
+        	E.SERVICE_AREA AS SERVICE_AREA,
+        	I.IDC_NAME AS IDC_NAME,
+        	TO_CHAR(PE.START_DATE, 'yyyy-mm-dd') AS START_DATE,
+        	TO_CHAR(PE.END_DATE, 'yyyy-mm-dd') AS END_DATE, 
+            (SUBSTR(NVL(PE.START_TIME, '020000'), 0, 2)) AS START_TIME1,
+            (SUBSTR(NVL(PE.START_TIME, '000000'), 3, 2)) AS START_TIME2,
+            (SUBSTR(NVL(PE.END_TIME, '070000'), 0, 2)) AS END_TIME1,
+            (SUBSTR(NVL(PE.END_TIME, '000000'), 3, 2)) AS END_TIME2,
+        	PE.USE_YN, PE.REG_USER, PE.REG_DATE, PE.UPDATE_USER, PE.UPDATE_DATE,
+        	PE.WORK_RESULT, PE.AMPM, PE.CHARGE_RESULT,
+        	(SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = PE.REG_USER) AS REG_USER_NAME,
+        	(SELECT SOSOK FROM INF_PERSON_INFO_RCV WHERE EMPNO = PE.REG_USER) AS REG_USER_SOSOK,
+        	I.TEAM_CODE
+        FROM PKMS.PKG_EQUIPMENT PE,
+             PKMS.EQUIPMENT E,
+             PKMS.IDC I
+        WHERE PE.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ(+)
+        AND E.IDC_SEQ = I.IDC_SEQ(+)
+        <isNull prepend="AND" property="eq_history_yn">
+        E.USE_YN = 'Y'
+        </isNull>
+        AND PE.USE_YN = 'Y'
+		<isNotEmpty prepend="AND" property="pkg_seq">
+			PE.PKG_SEQ = #pkg_seq#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="work_gubun">
+			PE.WORK_GUBUN = #work_gubun#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="work_result">
+			PE.WORK_RESULT = #work_result#
+		</isNotEmpty>
+        ORDER BY PE.WORK_GUBUN DESC, E.NAME ASC
+	</select>
+	
+	<delete id="pkgEquipmentDAO.delete" parameterClass="PkgEquipmentModel">
+		DELETE FROM PKMS.PKG_EQUIPMENT
+		WHERE PKG_SEQ = #pkg_seq#
+		<isNotEmpty prepend="AND" property="work_gubun">
+			WORK_GUBUN = #work_gubun#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="equipment_seq">
+			EQUIPMENT_SEQ = #equipment_seq#
+		</isNotEmpty>
+		<isNotEmpty prepend="AND" property="work_result">
+			WORK_RESULT IS NULL
+		</isNotEmpty>
+	</delete>
+
+	<select id="pkgEquipmentDAO.readName" parameterClass="PkgEquipmentModel" resultClass="PkgEquipmentModel">
+		SELECT
+		    E.NAME AS EQUIPMENT_NAME
+		    ,I.IDC_NAME
+		FROM
+		    PKMS.EQUIPMENT E
+		    ,PKMS.IDC I
+		WHERE
+		    E.EQUIPMENT_SEQ = #equipment_seq#
+		    AND I.IDC_SEQ = E.IDC_SEQ
+	</select>
+	<select id="pkgEquipmentDAO.readOrd" parameterClass="PkgEquipmentModel" resultClass="PkgEquipmentModel">
+		SELECT
+		    (NVL(max(ORD), 0) + 1) as ORD
+		FROM 
+		    PKMS.PKG_EQUIPMENT_ACCESS
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND WORK_GUBUN = #work_gubun#
+	</select>
+	<select id="pkgEquipmentDAO.maxOrd" parameterClass="PkgEquipmentModel" resultClass="PkgEquipmentModel">
+		SELECT
+		    (NVL(max(ORD), 0)) as ORD
+		FROM 
+		    PKMS.PKG_EQUIPMENT_ACCESS
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND WORK_GUBUN = #work_gubun#
+	</select>
+	
+	<insert id="pkgEquipmentDAO.createAccess" parameterClass="PkgEquipmentModel">
+		INSERT INTO PKMS.PKG_EQUIPMENT_ACCESS (
+			PKG_SEQ 
+			,WORK_GUBUN 
+			,SYSTEM_NM
+			,EQUIP_SEQ
+        	,CUID
+        	,EQP_ID
+        	,SISUL_NAME
+        	,ORD
+		) VALUES (
+		   	#pkg_seq# 
+			,#work_gubun# 
+			,#system_nm#
+			,'없음'
+        	,#cuid#
+        	,#eqp_id#
+        	,#sisul_name#
+        	,#ord#
+		   )
+	</insert>
+	
+	<update id="pkgEquipmentDAO.updateAccess" parameterClass="PkgEquipmentModel">
+		UPDATE PKMS.PKG_EQUIPMENT_ACCESS
+		SET
+			START_DATE=#start_date#
+        	,END_DATE=#end_date#
+        	,START_TIME=#start_time1# || #start_time2# || '00'
+        	,END_TIME=#end_time1# || #end_time2# || '00'
+        	,AMPM=#ampm#
+        	,PATCH_TITLE=#patch_title#
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND WORK_GUBUN = #work_gubun#
+		    AND ORD = #ord#
+	</update>
+	
+	<select id="pkgEquipmentDAO.readAccess" parameterClass="PkgEquipmentModel" resultClass="PkgEquipmentModel">
+        SELECT
+		    ORD
+		    ,PE.AMPM
+		    ,TO_CHAR(PE.START_DATE, 'yyyy-mm-dd') AS START_DATE
+		    ,TO_CHAR(PE.END_DATE, 'yyyy-mm-dd') AS END_DATE
+		    ,(SUBSTR(NVL(PE.START_TIME, '020000'), 0, 2)) AS START_TIME1
+		    ,(SUBSTR(NVL(PE.START_TIME, '000000'), 3, 2)) AS START_TIME2
+		    ,(SUBSTR(NVL(PE.END_TIME, '070000'), 0, 2)) AS END_TIME1
+		    ,(SUBSTR(NVL(PE.END_TIME, '000000'), 3, 2)) AS END_TIME2
+		    ,PE.WORK_RESULT
+		    ,PE.PATCH_TITLE
+		    ,PE.RESULT_COMMENT
+		FROM PKMS.PKG_EQUIPMENT_ACCESS PE
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND WORK_GUBUN = #work_gubun#
+		GROUP BY
+		PE.ORD, PE.START_DATE, PE.END_DATE, PE.START_TIME, PE.END_TIME, PE.AMPM, PE.WORK_RESULT
+		, PE.PATCH_TITLE, PE.RESULT_COMMENT
+		ORDER BY PE.ORD
+	</select>
+	
+	<update id="pkgEquipmentDAO.updateResultAccess" parameterClass="PkgEquipmentModel">
+		UPDATE PKMS.PKG_EQUIPMENT_ACCESS
+		SET
+			WORK_RESULT = #work_result#
+			,RESULT_COMMENT = #result_comment#
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND WORK_GUBUN = #work_gubun#
+		    AND ORD = #ord#
+	</update>
+	
+	<delete id="pkgEquipmentDAO.deleteAccess" parameterClass="PkgEquipmentModel">
+		DELETE FROM PKMS.PKG_EQUIPMENT_ACCESS
+		WHERE PKG_SEQ = #pkg_seq#
+		<isNotEmpty prepend="AND" property="work_gubun">
+			WORK_GUBUN = #work_gubun#
+		</isNotEmpty>
+	</delete>
+</sqlMap>

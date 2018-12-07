@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Notice">
+
+	<typeAlias alias="NoticeModel" type="com.pkms.board.notice.model.NoticeModel" />
+	
+	<resultMap id="noticeModelRead" class="NoticeModel">
+		<result property="notice_seq" column="notice_seq"/>
+		<result property="title" column="title"/>
+		<result property="reg_name" column="reg_name"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_date" column="reg_date"/>
+		<result property="update_user" column="update_user"/>
+		<result property="update_name" column="update_name"/>
+		<result property="update_date" column="update_date"/>
+		<result property="main_pop_yn" column="main_pop_yn"/>
+		<result property="master_file_id" column="master_file_id"/>
+		<result property="main_date_start" column="main_date_start"/>
+		<result property="main_date_end" column="main_date_end"/>
+		<result property="content" column="content"/>
+	</resultMap>
+	
+	<select id="noticeDao.readList" parameterClass="NoticeModel" resultClass="NoticeModel">
+	    SELECT
+		    NOTICE_SEQ, TITLE, REG_NAME, REG_DATE 
+		 FROM ( SELECT A.* 
+		 	FROM 
+      		 	(SELECT NOTICE_SEQ,
+                     TITLE,
+                     REG_NAME,
+                     TO_CHAR (REG_DATE, 'YYYY-MM-DD') AS REG_DATE,
+                     ROW_NUMBER () OVER (ORDER BY notice_seq DESC) AS rn
+                 FROM PKMS.NOTICE
+               	 WHERE use_yn = 'Y'
+               	 <isNotNull property="searchKeyword">
+               	 	<isNotEmpty property="searchKeyword">
+						<isEqual prepend="AND" property="searchCondition" compareValue="0">
+							LOWER(TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition" compareValue="1">
+							LOWER(CONTENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition"  compareValue="2">
+							LOWER(REG_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+					</isNotEmpty>
+				</isNotNull>
+            	 ORDER BY NOTICE_SEQ DESC
+            	) A WHERE RN  <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		 WHERE RN  > #firstIndex#
+	</select>
+
+	<select id="noticeDao.readTotalCount" parameterClass="NoticeModel" resultClass="int">
+        SELECT 
+            COUNT(*) AS COUNT
+        FROM PKMS.NOTICE
+        WHERE USE_YN = 'Y'
+        <isNotNull property="searchKeyword">
+      	 	<isNotEmpty property="searchKeyword">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					LOWER(TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(CONTENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition"  compareValue="2">
+					LOWER(REG_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isNotEmpty>
+		</isNotNull>
+	</select>
+	
+	<select id="noticeDao.read" parameterClass="NoticeModel" resultMap="noticeModelRead">
+		SELECT
+		    NOTICE_SEQ,
+		    TITLE,
+		    REG_NAME,
+		    REG_USER,
+		    TO_CHAR(REG_DATE, 'YYYY-MM-DD  hh24:mi:ss') REG_DATE,
+		    UPDATE_USER,
+		    UPDATE_NAME,
+		    TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD  hh24:mi:ss') UPDATE_DATE,
+		    DECODE(MAIN_POP_YN, 'Y', 1, 0) as MAIN_POP_YN,
+		    MASTER_FILE_ID,
+		    TO_CHAR(MAIN_DATE_START, 'YYYY-MM-DD') MAIN_DATE_START,
+		    TO_CHAR(MAIN_DATE_END, 'YYYY-MM-DD') MAIN_DATE_END, 
+		    CONTENT
+		FROM PKMS.NOTICE
+		WHERE NOTICE_SEQ = #notice_seq#
+	</select>
+	
+	<insert id="noticeDao.create" parameterClass="NoticeModel">
+		INSERT INTO PKMS.NOTICE
+		(
+			NOTICE_SEQ,
+			TITLE,
+			CONTENT,
+			MASTER_FILE_ID,
+			MAIN_POP_YN,
+			<isEqual property="main_pop_yn" compareValue="true">
+				MAIN_DATE_START,
+				MAIN_DATE_END,
+			</isEqual>
+			REG_NAME,
+			REG_USER
+		)
+		values
+		(
+			NOTICE_SEQ.NEXTVAL,
+			#title#,
+			#content#,
+			#master_file_id#,
+			decode(#main_pop_yn#, '1', 'Y', 'N'),
+			<isEqual property="main_pop_yn" compareValue="true">
+				TO_DATE(#main_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss'),
+				TO_DATE(#main_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss'),
+			</isEqual>
+			#session_user_name#,
+			#session_user_id#
+		)
+	</insert>
+	
+	<update id="noticeDao.update" parameterClass="NoticeModel">
+		UPDATE PKMS.NOTICE
+		SET 
+			TITLE = #title#,
+			CONTENT = #content#,
+			UPDATE_NAME = #session_user_name#,
+			UPDATE_USER = #session_user_id#,
+			UPDATE_DATE = sysdate,
+			MAIN_POP_YN = decode(#main_pop_yn#, '1', 'Y', 'N'),
+			MASTER_FILE_ID = #master_file_id#
+			<isEqual property="main_pop_yn" compareValue="true">
+				, MAIN_DATE_START = TO_DATE(#main_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+				, MAIN_DATE_END = TO_DATE(#main_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</isEqual>
+			<isEqual property="main_pop_yn" compareValue="false">
+				, MAIN_DATE_START = null
+				, MAIN_DATE_END = null
+			</isEqual>
+		where notice_seq = #notice_seq#
+	</update>
+	
+	<update id="noticeDao.delete" parameterClass="NoticeModel">
+		UPDATE PKMS.NOTICE
+		SET 
+			USE_YN = 'N',
+			UPDATE_NAME = #session_user_name#,
+			UPDATE_USER = #session_user_id#,
+			UPDATE_DATE = sysdate
+		WHERE NOTICE_SEQ = #notice_seq#
+	</update>
+	 
+	<select id="noticeDao.readList4Main" parameterClass="NoticeModel" resultMap="noticeModelRead">
+		<![CDATA[
+		SELECT 
+	        NOTICE_SEQ,
+	        TITLE,
+	        CONTENT,
+	        MASTER_FILE_ID,
+	        DECODE(MAIN_POP_YN, 'Y', 1, 0) as MAIN_POP_YN,
+	        MAIN_DATE_START,
+	        MAIN_DATE_END,
+	        UPDATE_NAME,
+	        USE_YN,
+	        REG_NAME,
+	        REG_USER,
+	        TO_CHAR(REG_DATE, 'YYYY-MM-DD') AS REG_DATE,
+	        UPDATE_USER,
+	        TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD') AS UPDATE_DATE
+    	FROM PKMS.NOTICE
+      	WHERE use_yn = 'Y'
+      	AND MAIN_POP_YN = 'Y' 
+      	AND TO_DATE(MAIN_DATE_START, 'YYYY-MM-DD') <= TO_DATE(SYSDATE, 'YYYY-MM-DD') 
+      	AND TO_DATE(SYSDATE, 'YYYY-MM-DD') <= TO_DATE(MAIN_DATE_END, 'YYYY-MM-DD')
+      	]]>
+	</select>
+
+</sqlMap>

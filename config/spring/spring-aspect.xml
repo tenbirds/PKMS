@@ -1,0 +1,42 @@
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:aop="http://www.springframework.org/schema/aop"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+	http://www.springframework.org/schema/beans/spring-beans-3.0.xsd 
+	http://www.springframework.org/schema/aop 
+	http://www.springframework.org/schema/aop/spring-aop-3.0.xsd ">
+
+	<aop:aspectj-autoproxy />
+
+	<!-- Aspect -->
+	<bean id="intercepter" class="com.pkms.common.intercept.Intercepter" scope="session" />
+
+	<aop:config>
+	 
+		<aop:aspect id="aspecIintercepter" ref="intercepter">
+
+			<!-- Before Point Cut-->
+			<aop:pointcut id="pointcut_before" expression="
+				execution(* com.pkms.common.top..*Service.*(..)) ||
+				execution(* com.pkms.board..*Service.*(..)) ||
+				execution(* com.pkms.organization..*Service.*(..)) ||
+				execution(* com.pkms.pkgmg..*Service.*(..)) ||
+				execution(* com.pkms.tempmg..*Service.*(..)) ||
+				execution(* com.pkms.usermg..*Service.*(..)) ||
+				execution(* com.pkms.sys..*Service.*(..)) ||
+				execution(* com.pkms.statsmg..*Service.*(..)) ||
+				execution(* com.pkms.newpncrmg..*Service.*(..)) ||
+				execution(* com.pkms.verify_tem_mg..*Service.*(..))
+			" />
+			
+			<!-- Before Method Mapping-->
+			<aop:before method="pointCutBefore" pointcut-ref="pointcut_before" />
+
+			<!-- @AfterThrowing -->
+			<aop:pointcut id="pointCutAfterThrowing" expression="bean(*Service)" />
+			<aop:after-throwing method="pointCutAfterThrowing" throwing="error" pointcut-ref="pointCutAfterThrowing" />
+
+		</aop:aspect>
+	
+	</aop:config>
+	
+</beans>

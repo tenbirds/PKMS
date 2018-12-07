@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="File">
+
+	<typeAlias alias="FileModel" type="com.pkms.sys.file.model.FileModel" />
+	
+	<select id="File.list" resultClass="FileModel" parameterClass="FileModel">
+		SELECT 
+			A.GROUP1_SEQ
+			,A.GROUP1_NAME
+			,A.GROUP2_SEQ
+			,A.GROUP2_NAME
+			,A.GROUP3_SEQ
+			,A.GROUP3_NAME
+			,A.SYSTEM_SEQ
+			,A.SYSTEM_NAME
+			,A.TREE_ID
+			,A.TREE_NAME
+			,F.MASTER_FILE_ID
+			,F.ATTACH_FILE_ID
+			,F.FILE_EXTENSION
+			,F.FILE_SIZE
+			,F.FILE_PATH
+			,F.FILE_ORG_NAME
+			,F.FILE_NAME
+			,F.PARENT_TREE_ID
+			,CASE WHEN F.REG_DATE IS NULL THEN ' '
+			ELSE TO_CHAR(F.REG_DATE,'YYYY-MM-DD') END REG_DATE
+			,CASE WHEN F.REG_USER IS NULL THEN ' '
+			ELSE F.REG_USER END REG_USER
+			,IPIR.HNAME AS SYSTEM_USER_NAME
+            ,A.SYSTEM_USER_ID
+            ,F.CONFIRM_YN
+			,F.CONFIRM_USER
+			,CASE WHEN F.CONFIRM_DATE IS NULL THEN ' '
+			 ELSE TO_CHAR(F.CONFIRM_DATE,'YYYY-MM-DD') END CONFIRM_DATE
+		FROM (
+			SELECT
+				G1.GROUP1_SEQ
+				,G1.NAME GROUP1_NAME
+				,G2.GROUP2_SEQ
+				,G2.NAME GROUP2_NAME
+				,G3.GROUP3_SEQ
+				,G3.NAME GROUP3_NAME
+				,S.MASTER_FILE_ID
+				,S.NAME SYSTEM_NAME
+				,S.SYSTEM_SEQ
+				,S.SYSTEM_USER_ID
+				,T.ID TREE_ID
+				,T.NAME TREE_NAME
+			FROM 
+				GROUP1 G1, GROUP2 G2, GROUP3 G3, SYSTEM S , ATTACH_FILE_TREE T
+			WHERE 
+				G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' AND S.USE_YN = 'Y' AND T.USE_YN = 'Y'
+				AND G1.GROUP1_SEQ = G2.GROUP1_SEQ AND G2.GROUP2_SEQ = G3.GROUP2_SEQ AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+				AND T.PID != 0
+				<isNotNull property="group1Condition">
+					<isNotEmpty property="group1Condition" open="AND">
+						G1.GROUP1_SEQ = #group1Condition#
+					</isNotEmpty>
+				</isNotNull>
+				<isNotNull property="group2Condition">
+					<isNotEmpty property="group2Condition" open="AND">
+						G2.GROUP2_SEQ = #group2Condition#
+					</isNotEmpty>
+				</isNotNull>
+				<isNotNull property="group3Condition">
+					<isNotEmpty property="group3Condition" open="AND">
+						G3.GROUP3_SEQ = #group3Condition#
+					</isNotEmpty>
+				</isNotNull>
+				<isNotNull property="systemCondition">
+					<isNotEmpty property="systemCondition" open="AND">
+						S.SYSTEM_SEQ = #systemCondition#
+					</isNotEmpty>
+				</isNotNull>
+				<isNotNull property="gubunCondition">
+					<isNotEmpty property="gubunCondition" open="AND">
+						T.ID = #gubunCondition#
+					</isNotEmpty>
+				</isNotNull>
+			ORDER BY G1.NAME , G2.NAME, G3.NAME, S.NAME, T.ID
+		) A 
+		LEFT JOIN ATTACH_FILE_INFO F ON F.MASTER_FILE_ID = A.MASTER_FILE_ID AND A.TREE_ID = F.PARENT_TREE_ID
+		LEFT JOIN PKMS.INF_PERSON_INFO_RCV IPIR ON IPIR.EMPNO=A.SYSTEM_USER_ID
+		WHERE 1=1
+		<isNotNull property="no_file">
+			<isNotEmpty property="no_file" open="AND">
+				<isEqual property="no_file" compareValue="true">  
+				  F.FILE_ORG_NAME IS NULL 
+				</isEqual>  
+			</isNotEmpty>
+		</isNotNull>
+		<isNotNull property="file_org_name">
+			<isNotEmpty property="file_org_name" open="AND">
+				UPPER(F.FILE_ORG_NAME) LIKE '%'||UPPER(#file_org_name#)||'%'
+			</isNotEmpty>
+		</isNotNull>
+		ORDER BY A.GROUP1_NAME , A.GROUP2_NAME, A.GROUP3_NAME, A.SYSTEM_NAME, A.TREE_ID
+	</select>
+	
+	<select id="File.nameList" resultClass="FileModel" parameterClass="FileModel">
+		SELECT
+		    NAME AS SYSTEM_NAME,
+		    SYSTEM_SEQ AS SYSTEM_SEQ
+		FROM
+		    PKMS.SYSTEM
+		WHERE
+		    (0, SYSTEM_SEQ) IN
+		    <iterate property="system_seqs" open="(" conjunction="," close= ")">
+            	(0, #system_seqs[]#)
+            </iterate>
+	</select>
+	
+	<select id="File.gubunList" resultClass="FileModel" parameterClass="FileModel">
+		SELECT
+			CHARGE_GUBUN, CHARGE_GUBUN_NAME
+		FROM    
+		    (SELECT
+		        CHARGE_GUBUN
+		        ,(CASE
+		            WHEN CHARGE_GUBUN = 'VU' THEN '상용검증'
+		            WHEN CHARGE_GUBUN = 'AU' THEN '상용승인'
+		            WHEN CHARGE_GUBUN = 'PU' THEN '사업계획'
+		            WHEN CHARGE_GUBUN = 'BU' THEN '협력업체'
+		            WHEN CHARGE_GUBUN = 'DV' THEN '개발검증'
+		            WHEN CHARGE_GUBUN = 'DA' THEN '개발승인'
+		            WHEN CHARGE_GUBUN = 'VO' THEN '용량검증'
+		            WHEN CHARGE_GUBUN = 'SE' THEN '보안검증'
+		            WHEN CHARGE_GUBUN = 'CH' THEN '과금검증'
+		            WHEN CHARGE_GUBUN = 'NO' THEN '비기능검증'
+		            ELSE '등록안됨'
+		          END) AS CHARGE_GUBUN_NAME
+		    FROM
+		        PKMS.SYSTEM_USER
+		    WHERE
+		        (0, SYSTEM_SEQ) IN
+		        <iterate property="system_seqs" open="(" conjunction="," close= ")">
+            		(0, #system_seqs[]#)
+            	</iterate>
+		    GROUP BY CHARGE_GUBUN
+		UNION ALL
+		    SELECT
+		        (CASE
+		            WHEN COUNT(USER_ID) > 0 THEN 'OP'
+		            ELSE 'XX'
+		            END) AS CHARGE_GUBUN
+		        ,(CASE
+		            WHEN COUNT(USER_ID) > 0 THEN '운용'
+		            ELSE 'XX'
+		            END) AS CHARGE_GUBUN_NAME
+		    FROM
+		        PKMS.SYSTEM S
+		        ,PKMS.EQUIPMENT E
+		        ,PKMS.EQUIPMENT_USER EU
+		    WHERE
+		        S.SYSTEM_SEQ = E.SYSTEM_SEQ(+)
+		      AND E.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+		      AND S.USE_YN='Y'
+		      AND E.USE_YN='Y'
+		      AND EU.USE_YN='Y'
+		      AND (0, S.SYSTEM_SEQ) IN
+		      <iterate property="system_seqs" open="(" conjunction="," close= ")">
+	          	(0, #system_seqs[]#)
+	          </iterate>
+	       )
+	</select>
+	<select id="File.mailInfo" resultClass="FileModel" parameterClass="FileModel">
+		SELECT
+		    SU.USER_ID
+		    ,DECODE(SU.USER_GUBUN, 'M', IPIR.HNAME, BU.BP_USER_NAME) AS USER_NAME
+		    ,DECODE(SU.USER_GUBUN, 'M', IPIR.EMAIL, BU.BP_USER_EMAIL) AS USER_EMAIL
+		    ,DECODE(SU.USER_GUBUN, 'M', IPIR.SOSOK, BU.BP_NAME) AS USER_SOSOK
+		FROM
+		    PKMS.SYSTEM_USER SU
+		    ,PKMS.INF_PERSON_INFO_RCV IPIR
+		    ,(SELECT BU.*, BM.BP_NAME FROM PKMS.BP_USER BU, PKMS.BP_MASTER BM WHERE BM.BP_NUM = BU.BP_NUM AND BU.USE_YN = 'Y' AND BM.USE_YN = 'Y') BU
+		WHERE
+		    (0, SU.SYSTEM_SEQ) IN
+		    <iterate property="system_seqs" open="(" conjunction="," close= ")">
+          		(0, #system_seqs[]#)
+          	</iterate>
+		  AND
+		    SU.CHARGE_GUBUN IN
+		    <iterate property="charge_gubuns" open="(" conjunction="," close= ")">
+          		#charge_gubuns[]#
+          	</iterate>
+		  AND
+		    SU.USER_ID = IPIR.EMPNO(+)
+		  AND
+		    SU.USER_ID = BU.BP_USER_ID(+)
+		GROUP BY IPIR.HNAME, BU.BP_USER_NAME, SU.USER_GUBUN, SU.USER_ID,IPIR.EMAIL, BU.BP_USER_EMAIL,IPIR.SOSOK, BU.BP_NAME
+		ORDER BY USER_SOSOK, USER_NAME, USER_ID
+	</select>
+	<select id="File.mailInfo_Op" resultClass="FileModel" parameterClass="FileModel">
+		SELECT
+		    USER_ID, USER_NAME, USER_EMAIL, USER_SOSOK
+		FROM
+		    (SELECT
+		        SU.USER_ID
+		        ,DECODE(SU.USER_GUBUN, 'M', IPIR.HNAME, BU.BP_USER_NAME) AS USER_NAME
+		        ,DECODE(SU.USER_GUBUN, 'M', IPIR.EMAIL, BU.BP_USER_EMAIL) AS USER_EMAIL
+		        ,DECODE(SU.USER_GUBUN, 'M', IPIR.SOSOK, BU.BP_NAME) AS USER_SOSOK
+		    FROM
+		        PKMS.SYSTEM_USER SU
+		        ,PKMS.INF_PERSON_INFO_RCV IPIR
+		        ,(SELECT BU.*, BM.BP_NAME FROM PKMS.BP_USER BU, PKMS.BP_MASTER BM WHERE BM.BP_NUM = BU.BP_NUM AND BU.USE_YN = 'Y' AND BM.USE_YN = 'Y') BU
+		    WHERE
+		        (0, SU.SYSTEM_SEQ) IN
+			    <iterate property="system_seqs" open="(" conjunction="," close= ")">
+	          		(0, #system_seqs[]#)
+	          	</iterate>
+			  AND
+			    SU.CHARGE_GUBUN IN
+			    <iterate property="charge_gubuns" open="(" conjunction="," close= ")">
+	          		#charge_gubuns[]#
+	          	</iterate>
+		      AND
+		        SU.USER_ID = IPIR.EMPNO(+)
+		      AND
+		        SU.USER_ID = BU.BP_USER_ID(+)
+		    GROUP BY IPIR.HNAME, BU.BP_USER_NAME, SU.USER_GUBUN, SU.USER_ID,IPIR.EMAIL, BU.BP_USER_EMAIL,IPIR.SOSOK, BU.BP_NAME 
+		UNION
+		    SELECT
+		        EU.USER_ID
+		        ,IPIR.HNAME AS USER_NAME
+		        ,IPIR.EMAIL AS USER_EMAIL
+		        ,IPIR.SOSOK AS USER_SOSOK
+		    FROM
+		        PKMS.EQUIPMENT E
+		        ,PKMS.EQUIPMENT_USER EU
+		        ,PKMS.INF_PERSON_INFO_RCV IPIR
+		    WHERE
+		        (0, E.SYSTEM_SEQ) IN
+		        <iterate property="system_seqs" open="(" conjunction="," close= ")">
+	          		(0, #system_seqs[]#)
+	          	</iterate>
+		      AND
+		        E.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+		      AND
+		        EU.USER_ID = IPIR.EMPNO
+		    GROUP BY  EU.USER_ID,IPIR.HNAME,IPIR.EMAIL,IPIR.SOSOK)
+		ORDER BY USER_SOSOK, USER_NAME, USER_ID
+	</select>
+	<update id="File.confirmUpdate" parameterClass="FileModel">
+		UPDATE
+			PKMS.ATTACH_FILE_INFO
+		SET
+			CONFIRM_YN = 'Y'
+			,CONFIRM_USER = #session_user_name#
+			,CONFIRM_DATE = SYSDATE
+		WHERE
+			MASTER_FILE_ID = #master_file_id#
+		AND
+			ATTACH_FILE_ID = #attach_file_id#
+	</update>
+</sqlMap>

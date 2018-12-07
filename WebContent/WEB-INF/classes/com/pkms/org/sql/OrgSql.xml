@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Org">
+
+	<typeAlias alias="OrgModel" type="com.pkms.org.model.OrgModel" />
+
+	<select id="OrgDAO.readList" parameterClass="OrgModel" resultClass="OrgModel">
+		<![CDATA[
+			SELECT
+			     T.INDEPT, T.DEPTNM, T.SOSOK, T.HIGHPARTDEPT, T.LEVELCD, T.LOWYN
+			FROM
+			    INF_DEPT_INFO_RCV T
+			WHERE 
+			    T.T_FLAG != 'D'
+			    AND
+			    NVL(T.INDEPT, '0') NOT IN (SELECT INDEPT FROM INF_DEPT_INFO_RCV WHERE INDEPT LIKE '0000990%')
+			    AND
+			    NVL(T.INDEPT, '0') NOT IN ('00009910','00009911','00009912','00009913','00009914','00009915')
+			    AND
+			    NVL(T.HIGHPARTDEPT, '0') NOT IN (SELECT INDEPT FROM INF_DEPT_INFO_RCV WHERE INDEPT LIKE '0000990%')
+			    AND
+			    NVL(T.HIGHPARTDEPT, '0') NOT IN ('00009910','00009911','00009912','00009913','00009914','00009915')
+			ORDER BY T.LEVELCD, T.INDEPT
+		]]>
+	</select>
+
+</sqlMap>

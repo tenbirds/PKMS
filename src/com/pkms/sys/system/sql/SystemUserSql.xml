@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="SystemUser">
+
+	<typeAlias alias="SystemUserModel" type="com.pkms.sys.system.model.SystemUserModel" />
+
+
+	<insert id="SystemUserDAO.create" parameterClass="java.util.List">
+		INSERT ALL
+		<dynamic>
+			<iterate conjunction=" ">
+				<![CDATA[
+					INTO PKMS.SYSTEM_USER 
+				  ( 
+				  	CHARGE_GUBUN
+				  ,	ORD
+				  ,	SYSTEM_SEQ
+				  ,	USER_ID
+				  , USER_GUBUN
+				  , BU_IDX
+				  ,	USE_YN
+				  , REG_USER
+				  , REG_DATE
+				  )
+					VALUES
+				  (
+				    #[].charge_gubun#
+				  , #[].ord#
+				  , #[].system_seq#
+				  , #[].user_id#
+				  , #[].user_gubun#
+				  , #[].bu_idx#
+				  , 'Y'
+				  , #[].session_user_name#
+				  , SYSDATE
+				  )
+				]]>
+			</iterate>
+		</dynamic>
+		SELECT * FROM DUAL
+	</insert>
+
+	<select id="SystemUserDAO.readList" parameterClass="SystemUserModel" resultClass="SystemUserModel">
+		<![CDATA[
+			SELECT
+				CHARGE_GUBUN, ORD, SYSTEM_SEQ, USER_ID, USER_GUBUN, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE, BU_IDX
+			FROM PKMS.SYSTEM_USER 
+			WHERE USE_YN='Y' AND SYSTEM_SEQ=#system_seq# AND CHARGE_GUBUN=#charge_gubun# ORDER BY ORD ASC
+		]]>
+	</select>
+
+	<select id="SystemUserDAO.readListAppliedToUser" parameterClass="SystemUserModel" resultClass="SystemUserModel">
+		<![CDATA[
+			SELECT
+				CHARGE_GUBUN, ORD, SYSTEM_SEQ, USER_ID, USER_GUBUN, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE, BU_IDX
+			FROM PKMS.SYSTEM_USER 
+			WHERE USE_YN='Y' AND USER_ID=#user_id# AND USER_GUBUN=#user_gubun# ORDER BY SYSTEM_SEQ ASC
+		]]>
+	</select>
+
+
+	<delete id="SystemUserDAO.delete" parameterClass="SystemUserModel">
+		<![CDATA[
+			DELETE FROM PKMS.SYSTEM_USER 
+			WHERE SYSTEM_SEQ=#system_seq#
+		]]>
+	</delete>
+	
+	<delete id="SystemUserDAO.delete_u" parameterClass="SystemUserModel">
+		<![CDATA[
+			UPDATE PKMS.SYSTEM_USER
+			SET USE_YN = 'N'
+			WHERE SYSTEM_SEQ=#system_seq#
+		]]>
+	</delete>
+
+	<select id="SystemUserDAO.dev_readUser" parameterClass="SystemUserModel" resultClass="SystemUserModel">
+		<![CDATA[
+			SELECT EMPNO AS USER_ID, HNAME AS USER_NAME, INDEPT, BOOSER,
+			       SOSOK, TSOSOK, JBGRP, JBRANK, JBCHARGE, HOLDOFFIDIVI,
+			       PLACE, JOINCOMDD, PRODATE, RETIREDD, JOB, JOBNM,
+			       STARTDATE, CLOSEDATE, MOREPOYN, INTELNO, MOVETELNO AS USER_PHONE, TELNO, FAX,
+			       EMAIL AS USER_EMAIL, EMAIL2, IDSTARTDATE, PHOTOURL, T_FLAG, SENDDT
+			 FROM PKMS.INF_PERSON_INFO_RCV
+			 WHERE EMPNO IN (
+			 					SELECT DISTINCT USER_ID 
+			 					FROM PKMS.SYSTEM_USER
+			 					WHERE SYSTEM_SEQ = #system_seq#
+				 					AND
+				 					CHARGE_GUBUN = #charge_gubun#
+			 				)
+			 AND T_FLAG != 'D'
+		]]>						
+	</select>
+
+</sqlMap>

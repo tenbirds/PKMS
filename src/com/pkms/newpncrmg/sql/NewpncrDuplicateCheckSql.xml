@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="NewpncrDuplicateCheck">
+	
+	<typeAlias alias="NewpncrModel" type="com.pkms.newpncrmg.model.NewpncrModel"/>
+	
+	<select id="NewpncrDuplicateCheckDao.readList" parameterClass="NewpncrModel" resultClass="NewpncrModel">
+		SELECT
+		    NEW_PN_CR_SEQ, NEW_PN_CR_NO, STATE, NEW_PNCR_GUBUN, SYSTEM_SEQ, SYSTEM_NAME, TITLE
+		    FROM (
+		        SELECT A.*
+		        FROM 
+		            (SELECT 
+		                  N.NEW_PN_CR_SEQ
+		                , CASE
+					        WHEN N.NEW_PNCR_GUBUN = '신규'  THEN '신규 - ' || N.NEW_PN_CR_SEQ
+					        WHEN N.NEW_PNCR_GUBUN = '보완'  THEN '보완 - ' || N.NEW_PN_CR_SEQ
+					        WHEN N.NEW_PNCR_GUBUN = '개선'  THEN '개선 - ' || N.NEW_PN_CR_SEQ  
+					      END  AS NEW_PN_CR_NO  
+		                , CASE
+			                WHEN N.STATE = '0' AND N.REJECT_FLAG = 'N' THEN '검토요청'
+					         WHEN N.STATE = '1' AND N.REJECT_FLAG = 'N' THEN '협력사 검토 요청'
+					         WHEN N.STATE = '2' AND N.REJECT_FLAG = 'N' THEN '검토완료'
+					         WHEN N.STATE = '4' AND N.REJECT_FLAG = 'N' THEN '보류'
+					         WHEN N.STATE = '3' AND N.REJECT_FLAG = 'N' THEN '반영'
+					         WHEN N.STATE = '1' AND N.REJECT_FLAG = 'Y' THEN '반려'
+					         WHEN N.STATE = '2' AND N.REJECT_FLAG = 'Y' THEN '반려'
+					         WHEN N.STATE = '3' AND N.REJECT_FLAG = 'Y' THEN '반려'
+		                  END AS STATE
+		                , N.NEW_PNCR_GUBUN
+		                , N.SYSTEM_SEQ
+		                , S.NAME AS SYSTEM_NAME
+		                , N.TITLE
+		                , ROW_NUMBER() OVER (ORDER BY NEW_PN_CR_SEQ DESC) AS RN     
+		            FROM PKMS.NEW_PN_CR N
+		            JOIN (SELECT * FROM SYSTEM WHERE USE_YN = 'Y') S ON N.SYSTEM_SEQ = S.SYSTEM_SEQ
+		            WHERE N.USE_YN = 'Y'
+		            AND LOWER(N.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+		            ORDER BY NEW_PN_CR_SEQ DESC
+		            ) A  WHERE RN <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		WHERE RN  > #firstIndex#
+	</select>
+	
+	<select id="NewpncrDuplicateCheckDao.readTotalcount" parameterClass="NewpncrModel" resultClass="int">
+		SELECT 
+              COUNT(*) AS COUNT      
+        FROM PKMS.NEW_PN_CR N
+        JOIN PKMS.SYSTEM S ON N.SYSTEM_SEQ = S.SYSTEM_SEQ
+        WHERE N.USE_YN = 'Y' AND N.TITLE LIKE '%' || #title# || '%'
+	</select>
+	
+	<insert id="NewpncrDuplicateCheckDao.create" parameterClass="NewpncrModel">
+		<selectKey keyProperty="new_pn_cr_seq" resultClass="String">
+			select new_pn_cr_seq.nextval from dual
+		</selectKey>
+		INSERT INTO PKMS.NEW_PN_CR
+		(
+			  NEW_PN_CR_SEQ
+			, TITLE
+			, NEW_PNCR_GUBUN
+			, PRIORITY
+			, SYSTEM_SEQ
+			, PROBLEM_GUBUN
+			, PROBLEM
+			, REQUIREMENT
+			, MASTER_FILE_ID
+			, STATE
+			, REG_USER
+		)VALUES
+		(
+			  #new_pn_cr_seq#
+			, #title#
+			, #new_pncr_gubun#
+			, #priority#
+			, #system_seq#
+			, #problem_gubun#
+			, #problem#
+			, #requirement#
+			, #master_file_id#
+			, #state#
+			, #session_user_id#
+		)
+	</insert>
+	
+</sqlMap>

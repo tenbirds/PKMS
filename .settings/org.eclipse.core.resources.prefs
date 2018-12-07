@@ -1,0 +1,13 @@
+eclipse.preferences.version=1
+encoding//src/Common/Error_Info.java=UTF-8
+encoding//src/Common/Header.java=UTF-8
+encoding//src/Common/Result.java=UTF-8
+encoding//src/skt/soa/notification/webservice/MailSender.java=UTF-8
+encoding//src/skt/soa/notification/webservice/MailSenderService.java=UTF-8
+encoding//src/skt/soa/notification/webservice/MailSenderServiceLocator.java=UTF-8
+encoding//src/skt/soa/notification/webservice/MailSenderServiceSoapBindingStub.java=UTF-8
+encoding//src/skt/soa/notification/webservice/SMSSender.java=UTF-8
+encoding//src/skt/soa/notification/webservice/SMSSenderService.java=UTF-8
+encoding//src/skt/soa/notification/webservice/SMSSenderServiceLocator.java=UTF-8
+encoding//src/skt/soa/notification/webservice/SMSSenderServiceSoapBindingStub.java=UTF-8
+encoding/<project>=UTF-8

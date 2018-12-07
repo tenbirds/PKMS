@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="NewMail">
+
+
+	<typeAlias alias="NewMailModel" type="com.pkms.common.newmail.model.NewMailModel" />	
+	<typeAlias alias="PkgEquipmentModel" type="com.pkms.pkgmg.pkg.model.PkgEquipmentModel" />
+	<typeAlias alias="Pkg21Model" type="com.pkms.pkgmg.pkg21.model.Pkg21Model" />
+	
+<select id="NewMailDAO.readList" parameterClass="NewMailModel" resultClass="NewMailModel">
+		select 
+			hname
+			,email
+			,sosok
+			,movetelno
+			,telno 
+		from inf_person_info_rcv 
+		where 1=1
+		and empno in (
+			select 
+				user_id 
+			from system_user 
+			where 1=1
+			  <isNotEmpty prepend="AND CHARGE_GUBUN IN" property="gubuns">            	
+		            <iterate property = "gubuns" open="(" conjunction="," close= ")">
+		            	#gubuns[]#
+		            </iterate>
+	            </isNotEmpty>
+			and system_seq=#system_seq#
+			and user_gubun=#user_type#
+		)
+		and t_flag != 'D'  
+</select>
+
+
+<select id="NewMailDAO.readInfoList" parameterClass="NewMailModel" resultClass="NewMailModel">
+		select 
+		hname
+		, email
+		,sosok
+		,movetelno
+		,telno 
+		from inf_person_info_rcv 
+		where 1=1
+		and t_flag != 'D'  
+	  	<isNotEmpty prepend="AND empno IN" property="user_ids">            	
+            <iterate property = "user_ids" open="(" conjunction="," close= ")">
+            	#user_ids[]#
+            </iterate>
+        </isNotEmpty>
+
+</select>	
+
+
+
+
+
+
+
+
+<select id="NewMailDAO.systemSeqSearch" parameterClass="NewMailModel" resultClass="NewMailModel">
+		select 
+		system_seq
+		from pkg_master 
+		where 1=1
+	  	and pkg_seq = #pkg_seq#
+</select>	
+
+
+<select id="NewMailDAO.pkgUserInfoList" parameterClass="NewMailModel" resultClass="NewMailModel">
+       SELECT
+			A.PKG_SEQ
+			,A.CHARGE_GUBUN
+	        ,A.USER_ID
+			,A.ORD
+			,A.STATUS
+			,A.AU_COMMENT
+			,A.USE_YN
+			,A.REG_USER
+			,B.HNAME AS USER_NAME
+           	,B.MOVETELNO AS USER_PHONE
+			,B.EMAIL AS USER_EMAIL
+			,B.SOSOK AS SOSOK
+			,A.UPDATE_USER
+           	,TO_CHAR(A.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE
+           	,TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE
+       FROM PKMS.PKG_USER A
+            LEFT OUTER JOIN PKMS.INF_PERSON_INFO_RCV B ON A.USER_ID = B.EMPNO
+       WHERE A.USE_YN = 'Y'
+        AND B.t_flag != 'D'  
+       			  <isNotEmpty prepend="AND A.CHARGE_GUBUN IN" property="gubuns">            	
+		            <iterate property = "gubuns" open="(" conjunction="," close= ")">
+		            	#gubuns[]#
+		            </iterate>
+	            </isNotEmpty>
+       AND A.PKG_SEQ = #pkg_seq#
+       ORDER BY A.ORD ASC
+</select>
+
+
+<select id="NewMailDAO.pkgUserIdList" parameterClass="NewMailModel" resultClass="String">
+       SELECT
+	        USER_ID
+       FROM PKMS.PKG_USER 
+       WHERE USE_YN = 'Y'
+       			  <isNotEmpty prepend="AND CHARGE_GUBUN IN" property="gubuns">            	
+		            <iterate property = "gubuns" open="(" conjunction="," close= ")">
+		            	#gubuns[]#
+		            </iterate>
+	            </isNotEmpty>
+       AND PKG_SEQ = #pkg_seq#
+       AND ORD = #ord#
+       ORDER BY ORD ASC
+</select>
+
+<select id="NewMailDAO.pkgUserIdList2" parameterClass="NewMailModel" resultClass="String">
+       SELECT
+	        USER_ID
+       FROM PKMS.PKG_USER 
+       WHERE USE_YN = 'Y'
+       			  <isNotEmpty prepend="AND CHARGE_GUBUN IN" property="gubuns">            	
+		            <iterate property = "gubuns" open="(" conjunction="," close= ")">
+		            	#gubuns[]#
+		            </iterate>
+	            </isNotEmpty>
+       AND PKG_SEQ = #pkg_seq#
+       AND ORD <![CDATA[<]]>  #ord#
+       ORDER BY ORD ASC
+</select>
+
+
+
+
+<select id="NewMailDAO.eqmentUserList"   parameterClass="NewMailModel" resultClass="NewMailModel">
+       SELECT
+			HNAME
+			,EMAIL
+			,SOSOK
+			,MOVETELNO
+			,TELNO 
+		FROM INF_PERSON_INFO_RCV
+		WHERE EMPNO IN(
+						SELECT 
+							USER_ID	
+						FROM EQUIPMENT_USER 
+						WHERE 1=1
+	       			  	<isNotEmpty prepend="AND EQUIPMENT_SEQ IN" property="eqment_seqs">            	
+				            <iterate property = "eqment_seqs" open="(" conjunction="," close= ")">
+				            	#eqment_seqs[]#
+				            </iterate>
+			            </isNotEmpty>
+						)
+		AND T_FLAG != 'D'  
+</select>
+
+
+
+<select id="NewMailDAO.eqmentList"   parameterClass="Pkg21Model" resultClass="PkgEquipmentModel">   
+	SELECT 
+		PKG_SEQ
+		,WORK_GUBUN
+		,EQUIPMENT_SEQ
+		,USE_YN
+		,REG_USER
+		,REG_DATE
+		,UPDATE_USER
+		,UPDATE_DATE
+		,EQ_WORK_SEQ
+		,START_TIME
+		,END_TIME
+		,WORK_DATE
+		,WORK_RESULT
+		,AMPM
+		,CHARGE_RESULT
+		,START_DATE
+		,END_DATE
+	FROM PKG_EQUIPMENT 
+	WHERE PKG_SEQ=#pkg_seq#
+	AND WORK_GUBUN =#work_gubun#
+</select>
+
+
+	
+
+</sqlMap>

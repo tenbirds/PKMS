@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Menu">
+
+	<typeAlias alias="MenuModel" type="com.pkms.common.menu.model.MenuModel" />
+	<typeAlias alias="MenuAuthRoleModel" type="com.pkms.common.menu.model.MenuAuthRoleModel" />
+
+	<select id="MenuDAO.readList" parameterClass="MenuModel" resultClass="MenuModel">
+		<![CDATA[
+		SELECT 
+            MENU_SEQ, TOP_SEQ, PARENT_SEQ, MENU_DEPTH, NAME, URL, IMAGE_TOP_ON, IMAGE_TOP_OFF, ORD 
+        FROM MENU
+        WHERE USE_YN = 'Y'
+        ORDER BY MENU_DEPTH, ORD ASC
+		]]>
+	</select>
+
+	<select id="MenuDAO.readListAuthRole" parameterClass="MenuAuthRoleModel" resultClass="MenuAuthRoleModel">
+		<![CDATA[
+			SELECT MENU_SEQ, AUTH_ROLE FROM MENU_AUTH_ROLE
+		]]>
+	</select>
+
+	<select id="MenuDAO.readParentSeq" parameterClass="MenuModel" resultClass="MenuModel">
+		SELECT PARENT_SEQ 
+		FROM MENU
+		WHERE URL LIKE '%' || #url# || '%'
+		GROUP BY PARENT_SEQ
+	</select>
+</sqlMap>

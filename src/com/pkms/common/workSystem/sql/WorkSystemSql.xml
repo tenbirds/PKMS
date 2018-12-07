@@ -1,0 +1,654 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="WorkSystem">
+
+	<typeAlias alias="WorkSystemModel" type="com.pkms.common.workSystem.model.WorkSystemModel"/>
+	
+	<!-- seq max값 가져오는 쿼리 추가 -->
+	<select id="WorkSystemDao.read_SeqMax_Main" resultClass="WorkSystemModel">
+	SELECT MAX(SEQ) AS SEQ FROM PKMS_MAIN@DBM1_LINK
+	</select>
+	<select id="WorkSystemDao.read_SeqMax_Tango" resultClass="WorkSystemModel">
+	SELECT WORK_EQUIPMENT_SEQ.NEXTVAL AS SEQ FROM DUAL
+	</select>
+	
+	<!-- seq max값 가져오는 쿼리 추가 -->
+	<select id="WorkSystemDao.read_SeqM_Tg_Sys" resultClass="WorkSystemModel">
+	SELECT MAX(SEQ) AS SEQ FROM PKMS_TARGET_SYSTEM@DBM1_LINK
+	</select>
+	
+	<!-- seq max값 가져오는 쿼리 추가 -->
+	<select id="WorkSystemDao.read_SeqMax_Sub" resultClass="WorkSystemModel">
+		SELECT MAX(SEQ) AS SEQ FROM PKMS_SUB@DBM1_LINK
+	</select>
+	
+	<!-- seq max값 가져오는 쿼리 추가 -->
+	<select id="WorkSystemDao.read_SeqMax_File" resultClass="WorkSystemModel">
+		SELECT MAX(SEQ) AS SEQ FROM PKMS_LINKFILE@DBM1_LINK
+	</select>
+	
+	<select id="WorkSystemDao.read_Seq_S" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT
+			SEQ
+		FROM
+			PKMS_MAIN@DBM1_LINK
+		WHERE
+			NO = #pkg_seq#
+ 		<isNotEmpty prepend="AND" property="work_gubun">
+			WORK_GUBUN = #work_gubun#
+		</isNotEmpty>
+	</select>
+	
+	<select id="WorkSystemDao.read_Equipment" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT
+			SEQ, 
+			EQUIPMENT_SEQ, 
+			TO_CHAR(WORK_DATE, 'yyyy-mm-dd') AS WORK_DATE,
+            (SUBSTR(NVL(START_TIME, '020000'), 0, 2)) AS START_TIME1,
+            (SUBSTR(NVL(START_TIME, '000000'), 3, 2)) AS START_TIME2,
+            (SUBSTR(NVL(END_TIME, '070000'), 0, 2)) AS END_TIME1,
+            (SUBSTR(NVL(END_TIME, '000000'), 3, 2)) AS END_TIME2,
+        	AMPM
+		FROM
+			PKMS.WORK_EQUIPMENT
+		WHERE
+			SEQ IN(			
+				SELECT SEQ
+				FROM PKMS_MAIN@DBM1_LINK 
+				WHERE NO = #pkg_seq#
+					AND	WORK_GUBUN = #work_gubun#
+		            <isNotEmpty prepend="AND" property="master_team_code">
+		            	TEAM_CODE = #master_team_code#
+		            </isNotEmpty>
+			)
+			<isNotEmpty prepend="AND" property="work_date">
+				WORK_DATE = #work_date#
+			</isNotEmpty>
+			<isNotEmpty prepend="AND" property="ampm">
+				AMPM = #ampm#
+			</isNotEmpty>
+	</select>
+	
+	<delete id="WorkSystemDao.delete_Equipment" parameterClass="WorkSystemModel">
+		DELETE FROM PKMS.WORK_EQUIPMENT WHERE SEQ = #seq#
+	</delete>
+	
+	<select id="WorkSystemDao.read_Sys_User_Info" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT
+			SYS.NAME AS TARGET_SYSTEM,
+			SYS.SYSTEM_SEQ,
+			SYS.SYSTEM_USER_ID,
+			IPIR.EMPNO AS JOM_MAN_ID,
+			IPIR.HNAME AS JOB_MAN,
+			IPIR.SOSOK AS JOB_MAN_POST
+		FROM
+		    INF_PERSON_INFO_RCV IPIR,
+		    SYSTEM SYS
+		WHERE
+		    SYS.SYSTEM_SEQ = #system_seq#
+	      AND
+		    IPIR.EMPNO = SYS.SYSTEM_USER_ID
+	</select>
+	
+	<select id="WorkSystemDao.read_Work_Info" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+            IPIR.HNAME AS WORK_NAME,
+            IPIR.MOVETELNO AS WORK_PHONE,
+            IPIR.SOSOK AS WORK_SOSOK
+        FROM
+            INF_PERSON_INFO_RCV IPIR,
+            SYSTEM S
+        WHERE
+            1=1
+          AND
+            S.SYSTEM_SEQ = #system_seq#
+          AND
+            IPIR.EMPNO = S.SYSTEM_USER_ID
+	</select>
+	
+	<!-- <select id="WorkSystemDao.read_Work_Info" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+            IPIR.HNAME AS WORK_NAME,
+            IPIR.MOVETELNO AS WORK_PHONE,
+            IPIR.SOSOK AS WORK_SOSOK
+        FROM
+            INF_PERSON_INFO_RCV IPIR,
+            SYSTEM_USER SU
+        WHERE
+            SU.SYSTEM_SEQ = #system_seq#
+          AND
+            SU.CHARGE_GUBUN = 'VU'
+          AND
+            SU.ORD = 1
+          AND
+            IPIR.EMPNO = SU.USER_ID
+	</select> -->
+	
+	<!-- WORKMANAGE_WORKKIND@DBM1_LINK 참조하여 작업분야 출력 쿼리추가 0422 강수연 -->
+	<select id="WorkSystemDao.readJOB_BUNYA" resultClass="WorkSystemModel">
+        SELECT GUBUN_NAME AS JOB_BUNYA
+		FROM WORKMANAGE_WORKKIND@DBM1_LINK
+		WHERE GUBUN_IDX = 1
+	</select>
+	
+	<!-- WORKMANAGE_WORKKIND@DBM1_LINK 참조하여 작업구분1 출력 쿼리추가 0422 강수연 -->
+	<select id="WorkSystemDao.readJOB_GUBUN" resultClass="WorkSystemModel">
+     	SELECT GUBUN_NAME AS JOB_GUBUN
+		FROM WORKMANAGE_WORKKIND@DBM1_LINK
+		WHERE GUBUN_IDX = 103
+	</select>
+
+	<!-- WORKMANAGE_WORKKIND@DBM1_LINK 참조하여 작업구분2 출력 쿼리추가 0422 강수연 -->
+	<select id="WorkSystemDao.readJOB_GUBUN1" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+ 		SELECT GUBUN_NAME AS JOB_GUBUN1
+		FROM WORKMANAGE_WORKKIND@DBM1_LINK
+		WHERE GUBUN_IDX = #gubun_idx#
+	</select>
+	
+	<!-- 초도 승인 요청자가 작업관리 시스템 초도승인 시 등록자 -->
+	<select id="WorkSystemDao.readIns_Data" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+ 		SELECT
+ 			IPIR.HNAME AS INS_NAME,
+ 			IPIR.EMPNO AS INS_ID,
+ 			IPIR.INDEPT AS INS_SOSOK_CODE,
+ 			IPIR.SOSOK AS INS_SOSOK
+		FROM
+			PKMS.INF_PERSON_INFO_RCV IPIR,
+			PKMS.PKG_STATUS PS
+		WHERE
+		    PS.PKG_SEQ = #pkg_seq#
+		AND
+		    PS.STATUS = 5
+		AND
+		    IPIR.EMPNO = PS.REG_USER
+	</select>
+	
+	<select id="WorkSystemDao.readIns_Data_Pkg21" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+ 		SELECT
+		     IPIR.HNAME AS INS_NAME,
+		     IPIR.EMPNO AS INS_ID,
+		     IPIR.INDEPT AS INS_SOSOK_CODE,
+		     IPIR.SOSOK AS INS_SOSOK
+		FROM
+		    PKMS.INF_PERSON_INFO_RCV IPIR,
+		    PKMS.PKG_STATUS PS
+		WHERE
+		    PS.PKG_SEQ = #pkg_seq#
+		AND
+		    PS.STATUS = #s_status#
+		AND
+		    IPIR.EMPNO = PS.REG_USER
+	</select>
+	
+	<select id="WorkSystemDao.readEq_Pkg21" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+ 		SELECT
+		    NVL(TANGO_ID, '0') AS TANGO_ID
+		    ,NAME AS EQUIPMENT_NAME
+		FROM
+		    PKMS.EQUIPMENT
+		WHERE
+		    EQUIPMENT_SEQ = #equipment_seq#
+	</select>
+	
+	<select id="WorkSystemDao.readTJ" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+            EMPNAME AS CONFIRM_NAME,
+            EMPNO AS MASTER_ID,
+            INDEPT AS MASTER_TEAM_CODE,
+            GUBUN AS MASTER_TEAM_NAME,
+            MOBILE2 AS MASTER_MOVETEL
+        FROM 
+            TEAMJANG_PARTJANG
+        WHERE
+            EMPNO = 
+            	(SELECT
+	                MIN(EMPNO) AS MASTER_ID
+	            FROM
+	                TEAMJANG_PARTJANG
+	            WHERE
+	                GRADE ='T'
+	              AND
+	                INDEPT = #master_team_code#)
+		  AND INDEPT = #master_team_code#
+	</select>
+	
+	<select id="WorkSystemDao.readTJacc" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+            EMPNAME AS CONFIRM_NAME,
+            EMPNO AS MASTER_ID,
+            INDEPT AS MASTER_TEAM_CODE,
+            GUBUN AS MASTER_TEAM_NAME,
+            MOBILE2 AS MASTER_MOVETEL
+        FROM 
+            TEAMJANG_PARTJANG
+        WHERE
+            EMPNO IN 
+            	(SELECT
+	                EMPNO AS MASTER_ID
+	            FROM
+	                TEAMJANG_PARTJANG
+	            WHERE
+	                GRADE ='T'
+	              AND
+	                INDEPT IN (
+	                	SELECT
+						    SUBSTR(INDEPT,5,4) AS MASTER_TEAM_CODE
+						FROM
+						    INF_PERSON_INFO_RCV
+						WHERE
+						    EMPNO IN (
+						        SELECT USER_ID FROM PKMS.SYSTEM_USER
+						        WHERE
+						            SYSTEM_SEQ = #system_seq#
+						            AND CHARGE_GUBUN = #work_gubun#)
+						GROUP BY
+						    INDEPT
+	                ) 
+	            )
+		  AND INDEPT IN (
+			  	SELECT
+				    SUBSTR(INDEPT,5,4) AS MASTER_TEAM_CODE
+				FROM
+				    INF_PERSON_INFO_RCV
+				WHERE
+				    EMPNO IN (
+				        SELECT USER_ID FROM PKMS.SYSTEM_USER
+				        WHERE
+				            SYSTEM_SEQ = #system_seq#
+				            AND CHARGE_GUBUN = #work_gubun#)
+				GROUP BY
+				    INDEPT
+		  )
+	</select>
+	
+	<select id="WorkSystemDao.sub_Team" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+		    INDEPT AS MASTER_TEAM_CODE
+		FROM
+		    PKMS.INF_PERSON_INFO_RCV
+		WHERE
+		    INDEPT != #master_team_code#
+		    AND EMPNO IN (
+		        SELECT
+		            USER_ID
+		        FROM
+		            PKMS.SYSTEM_USER
+		        WHERE
+		            USE_YN = 'Y'
+		            AND SYSTEM_SEQ = #system_seq#
+		            AND USER_GUBUN = 'M'
+		        UNION
+		        SELECT
+		            EU.USER_ID
+		        FROM
+		            PKMS.EQUIPMENT E
+		            , PKMS.EQUIPMENT_USER EU
+		        WHERE
+		            E.USE_YN = 'Y'
+		            AND E.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+		            AND E.SYSTEM_SEQ= #system_seq#
+		    )
+		GROUP BY
+		    INDEPT
+	</select>
+	
+	<select id="WorkSystemDao.readFileTango" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT
+		    FILE_ORG_NAME
+		FROM
+		    PKMS.ATTACH_FILE_INFO
+		WHERE
+		    MASTER_FILE_ID = #master_file_id#
+		    AND LOWER(ATTACH_FILE_ID) LIKE '%' || LOWER(#file_name#) || '%'
+	</select>
+	
+	<select id="WorkSystemDao.readEqAcc" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT NVL(EQP_ID, NVL(CUID, '')) AS TANGO_ID, NVL(SISUL_NAME, '장비이름 없음') AS EQUIPMENT_NAME
+		FROM
+		PKMS.PKG_EQUIPMENT_ACCESS
+		WHERE
+		    PKG_SEQ = #pkg_seq#
+		    AND WORK_GUBUN = #work_gubun#
+		    AND ORD = #ord#
+	</select>
+	
+	<select id="WorkSystemDao.readTeamWorkDate" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+            TO_CHAR(PE.WORK_DATE, 'yyyy-mm-dd') || SUBSTR(NVL(PE.START_TIME, '020000'), 0, 2) || SUBSTR(NVL(PE.END_TIME, '020000'), 0, 2) AS WORK_DATE,
+            PE.AMPM,
+            SUBSTR(I.TEAM_CODE ,5 ,4) AS MASTER_TEAM_CODE,
+            IDIR.SOSOK AS WORK_SOSOK
+        FROM
+            PKMS.PKG_EQUIPMENT PE
+            JOIN
+                PKMS.EQUIPMENT E ON E.EQUIPMENT_SEQ = PE.EQUIPMENT_SEQ
+            JOIN
+                PKMS.IDC I ON I.IDC_SEQ = E.IDC_SEQ
+            JOIN
+                PKMS.INF_DEPT_INFO_RCV IDIR ON IDIR.INDEPT = I.TEAM_CODE 
+        WHERE PE.PKG_SEQ = #pkg_seq#
+	        <isNotEmpty prepend="AND" property="work_gubun">
+            	PE.WORK_GUBUN = #work_gubun#
+	        </isNotEmpty>
+            <isNotEmpty prepend="AND" property="master_team_code">
+            	I.TEAM_CODE = #master_team_code#
+            </isNotEmpty>
+            <isNotEmpty prepend="AND PE.EQUIPMENT_SEQ NOT IN" property="equipment_seqs">            	
+	            <iterate property = "equipment_seqs" open="(" conjunction="," close= ")">
+	            	#equipment_seqs[]#
+	            </iterate>
+            </isNotEmpty>
+        GROUP BY PE.WORK_DATE, PE.AMPM, I.TEAM_CODE, IDIR.SOSOK, PE.START_TIME, PE.END_TIME
+        ORDER BY PE.WORK_DATE, PE.AMPM, I.TEAM_CODE, IDIR.SOSOK, PE.START_TIME, PE.END_TIME
+	</select>
+	
+	<insert id="WorkSystemDao.create_pkms_main" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS_MAIN (
+			IMPO,
+		    SEQ,
+		    NO,
+		    JOB_BUNYA, 
+		    JOB_GUBUN1, 
+		    JOB_GUBUN2, 
+			INS_NAME,
+			INS_ID,
+		    TITLE, 
+			INS_SOSOK,
+			INS_SOSOK_CODE,
+			INS_DATE,
+			BACKGROUND_TARGET,
+		    WORK_CONTENT, 
+		    WORK_PLANDATE_S, 
+		    WORK_PLANDATE_E, 
+			GOJANG_STEP,
+			WORK_EFFECT,
+		    SERVICE_EFFECT_AREA,
+			WORK_SUMMARY,
+			WORK_RANK,
+		    WORK_GUBUN,
+		    TEAM_CODE
+		) VALUES (
+			#impo#,     
+		    #seq#,
+		    #no#,
+		    #job_bunya#,
+		    #job_gubun1#,
+		    #job_gubun2#,
+		    #ins_name#,
+		    #ins_id#,
+		    #title#, 
+		    #ins_sosok#,
+		    #ins_sosok_code#,
+		    TO_DATE(#ins_date#, 'YYYYMMDD'),
+		    #background_target#,
+		    #work_content#,
+		    TO_DATE(#work_plandate_s#, 'YYYY-MM-DD HH24:MI'),
+		    TO_DATE(#work_plandate_e#, 'YYYY-MM-DD HH24:MI'),
+   			#gojang_step#,
+			#work_effect#,
+		    #service_effect_area#,
+			#work_summary#,
+			#work_rank#,
+		    #work_gubun#,
+		    #team_code#
+		)
+	</insert>
+	
+	<insert id="WorkSystemDao.create_pkms_main2" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS_MAIN@DBM1_LINK SELECT * FROM PKMS_MAIN WHERE SEQ = #seq#
+	</insert>
+	
+	<insert id="WorkSystemDao.create_pkms_sub" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS_SUB@DBM1_LINK (
+			SEQ,
+			WORK_SEQ,
+			STATE,
+			MASTER_ID,
+			MASTER_NAME,
+			MASTER_TEAM_CODE,
+			MASTER_TEAM_NAME,
+			MASTER_MOVETEL,
+			C_DATE,
+			WORK_PLANDATE_S,
+			WORK_PLANDATE_E,
+			WORK_NAME,
+			WORK_SOSOK,
+			WORK_PHONE,
+			<isNotEmpty property="work_result_date_s">
+			WORK_RESULT_DATE_S,
+			</isNotEmpty>
+			WORK_RESULT,
+			ORG_GUBUN,
+			MASTER_DATE_S,
+			<isNotEmpty property="work_confirm_name">
+				WORK_CONFIRM_ID,			
+				WORK_CONFIRM_NAME,
+				WORK_CONFIRM_DATE_S,
+			</isNotEmpty>
+			JOB_BUNYA
+		) VALUES (
+			#seq#,
+			#work_seq#,
+			#state#,
+			#master_id#,
+			#master_name#,
+			#master_team_code#,
+			#master_team_name#,
+			#master_movetel#,
+			#c_date#,
+		    TO_DATE(#work_plandate_s#, 'YYYY-MM-DD HH24:MI'),
+		    TO_DATE(#work_plandate_e#, 'YYYY-MM-DD HH24:MI'),
+			#work_name#,
+			#work_sosok#,
+			#work_phone#,
+			<isNotEmpty property="work_result_date_s">			
+			TO_DATE(#work_result_date_s#, 'YYYY-MM-DD'),
+			</isNotEmpty>
+			#work_result#,
+			#org_gubun#,
+			TO_DATE(#master_date_s#, 'YYYYMMDD'),
+			<isNotEmpty property="work_confirm_name">
+				#work_confirm_id#,			
+				#work_confirm_name#,
+				TO_DATE(#work_confirm_date_s#, 'YYYY-MM-DD'),
+			</isNotEmpty>
+			'1'
+		)
+	</insert>
+	
+	<insert id="WorkSystemDao.create_pkms_target" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS_TARGET_SYSTEM@DBM1_LINK (
+			SEQ,
+			WORK_SEQ,
+			JOB_BUNYA,
+			TARGET_SYSTEM,
+			WORK_PLANDATE_S,
+			WORK_PLANDATE_E,
+			FULL_SYSTEM_NAME
+		) VALUES (
+			#seq#,
+			#work_seq#,
+			#job_bunya#,
+			#target_system#,
+		    TO_DATE(#work_plandate_s#, 'YYYY-MM-DD HH24:MI'),
+   		    TO_DATE(#work_plandate_e#, 'YYYY-MM-DD HH24:MI'),
+   		    #full_system_name#
+		)
+	</insert>
+	
+	<update id="WorkSystemDao.update_pkms_main_del" parameterClass="workSystemModel">
+		UPDATE PKMS_MAIN@DBM1_LINK
+			SET
+				DEL_CHK = '1'
+		WHERE SEQ = #seq#
+	</update>
+	
+	<insert id="WorkSystemDao.create_work_equipment" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS.WORK_EQUIPMENT (
+			SEQ, 
+			EQUIPMENT_SEQ, 
+			WORK_DATE,
+			START_TIME,
+        	END_TIME, 
+        	AMPM
+		) VALUES (
+		   #seq#,
+		   #equipment_seq#,
+		   #work_date#,
+		   #start_time1# || #start_time2# || '00',
+		   #end_time1# || #end_time2# || '00',
+		   #ampm#
+		   )
+	</insert>
+	
+	<select id="WorkSystemDao.readFileList" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT FILE_NAME, FILE_ORG_NAME, FILE_PATH
+        FROM ATTACH_FILE_INFO
+		WHERE MASTER_FILE_ID = #master_file_id#
+	</select>
+	
+	<insert id="WorkSystemDao.create_pkms_linkFile" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS_LINKFILE@DBM1_LINK (
+			SEQ, 
+            PKMS_SEQ,
+            FILE_NAME,
+            FILE_ORG_NAME,
+            FILE_PATH,
+            INS_DATE
+		) VALUES (
+			#seq#, 
+            #pkms_seq#,
+            #file_name#,
+            #file_org_name#,
+            #file_path#,
+			SYSDATE
+		)
+	</insert>
+	
+	<!-- iwcs화면 전환 -->
+	<select id="WorkSystemDao.read_IwcsViewSeq" resultClass="WorkSystemModel">
+		SELECT SEQ FROM PKMS_MAIN@DBM1_LINK
+		WHERE
+		    TEAM_CODE = #team_code#
+		 AND
+		    NO = #pkg_seq#
+		 AND
+		    TO_CHAR(WORK_PLANDATE_S,'yyyy-mm-dd') = #work_date#
+		 AND
+		 	WORK_GUBUN = #work_gubun#
+		 AND
+		 	DEL_CHK IS NULL
+	</select>
+	
+	<select id="WorkSystemDao.read_TeamCode" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+		SELECT
+			I.TEAM_CODE
+		FROM
+			PKMS.EQUIPMENT E
+			,PKMS.IDC I
+		WHERE
+		    I.IDC_SEQ = E.IDC_SEQ
+		    AND
+		    E.EQUIPMENT_SEQ = #equipment_seq#
+	</select>
+	
+	<select id="WorkSystemDao.read_TangoSeq" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+		SELECT
+		    SEQ
+		FROM
+		    PKMS.WORK_EQUIPMENT
+	    WHERE
+		    EQUIPMENT_SEQ = #equipment_seq#
+		    AND PKG_SEQ = #pkg_seq#
+		GROUP BY
+		    SEQ
+	</select>
+	
+	<select id="WorkSystemDao.read_MainSeq" resultClass="WorkSystemModel" parameterClass="WorkSystemModel">
+		SELECT
+			WE.SEQ
+		FROM
+			PKMS_MAIN@DBM1_LINK PM
+			,PKMS.WORK_EQUIPMENT WE
+		WHERE PM.NO = #pkg_seq#
+		    AND PM.SEQ = WE.SEQ
+            AND WE.EQUIPMENT_SEQ = #equipment_seq#
+            AND PM.WORK_GUBUN = #work_gubun#
+            AND PM.TEAM_CODE = #team_code#
+	</select>
+	
+	<select id="WorkSystemDao.noCreateList" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+		SELECT
+			EQUIPMENT_SEQ
+		FROM
+			PKMS.WORK_EQUIPMENT
+		WHERE
+			SEQ IN (
+		        SELECT
+				    SEQ
+				FROM
+				    PKMS_MAIN@DBM1_LINK
+				WHERE
+				    NO = #pkg_seq#
+				    AND NVL(DEL_CHK, '0') != '1'
+			)
+	</select>
+	<select id="WorkSystemDao.read21TeamWorkDate" parameterClass="WorkSystemModel" resultClass="WorkSystemModel">
+        SELECT
+            TO_CHAR(PE.START_DATE, 'yyyy-mm-dd') AS START_DATE
+            ,TO_CHAR(PE.END_DATE, 'yyyy-mm-dd') AS END_DATE
+            ,PE.START_TIME AS START_TIME2
+            ,PE.END_TIME AS END_TIME2
+            ,SUBSTR(NVL(PE.START_TIME, '020000'), 0, 2) AS START_TIME1
+            ,SUBSTR(NVL(PE.END_TIME, '020000'), 0, 2) AS END_TIME1
+            ,PE.AMPM
+            ,SUBSTR(I.TEAM_CODE ,5 ,4) AS MASTER_TEAM_CODE
+            ,IDIR.SOSOK AS WORK_SOSOK
+        FROM
+            PKMS.PKG_EQUIPMENT PE
+            JOIN
+                PKMS.EQUIPMENT E ON E.EQUIPMENT_SEQ = PE.EQUIPMENT_SEQ
+            JOIN
+                PKMS.IDC I ON I.IDC_SEQ = E.IDC_SEQ
+            JOIN
+                PKMS.INF_DEPT_INFO_RCV IDIR ON IDIR.INDEPT = I.TEAM_CODE 
+        WHERE PE.PKG_SEQ = #pkg_seq#
+	        <isNotEmpty prepend="AND" property="work_gubun">
+            	PE.WORK_GUBUN = #work_gubun#
+	        </isNotEmpty>
+            <isNotEmpty prepend="AND PE.EQUIPMENT_SEQ NOT IN" property="equipment_seqs">            	
+	            <iterate property = "equipment_seqs" open="(" conjunction="," close= ")">
+	            	#equipment_seqs[]#
+	            </iterate>
+            </isNotEmpty>
+            AND PE.WORK_RESULT IS NULL
+        GROUP BY PE.START_DATE, PE.END_DATE, PE.AMPM, I.TEAM_CODE, IDIR.SOSOK, PE.START_TIME, PE.END_TIME
+        ORDER BY PE.START_DATE, PE.END_DATE, PE.AMPM, I.TEAM_CODE, IDIR.SOSOK, PE.START_TIME, PE.END_TIME
+	</select>
+	<insert id="WorkSystemDao.create_21work_equipment" parameterClass="WorkSystemModel">
+		INSERT INTO PKMS.WORK_EQUIPMENT (
+			SEQ,
+			<isNotEmpty property="pkg_seq">
+			PKG_SEQ,
+			</isNotEmpty>
+			EQUIPMENT_SEQ, 
+			START_DATE,
+			END_DATE,
+			START_TIME,
+        	END_TIME, 
+        	AMPM
+		) VALUES (
+		   #seq#,
+		   <isNotEmpty property="pkg_seq">
+		   #pkg_seq#,
+		   </isNotEmpty>
+		   #equipment_seq#,
+		   #start_date#,
+		   #end_date#,
+		   #start_time1# || #start_time2# || '00',
+		   #end_time1# || #end_time2# || '00',
+		   #ampm#
+		   )
+	</insert>
+</sqlMap>

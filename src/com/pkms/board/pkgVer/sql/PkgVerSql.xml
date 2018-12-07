@@ -1,0 +1,219 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgVer">
+	<typeAlias alias="PkgVerModel" type="com.pkms.board.pkgVer.model.PkgVerModel"/>
+
+<sql id="searchCondition">
+	<isNotEmpty property="search_reg_date_start" open="AND">
+   		PV.UPDATE_DATE BETWEEN TO_DATE(#search_reg_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss') AND TO_DATE(#search_reg_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+	</isNotEmpty>
+	<isNotEmpty property="search_system_seq" open="AND">
+		PV.SYSTEM_SEQ = #search_system_seq#
+	</isNotEmpty>
+</sql>
+
+<select id="pkgVerDao.readList" parameterClass="PkgVerModel" resultClass="PkgVerModel">
+/* pkgVerDao.readList */
+	<isEqual property="isPaging" compareValue="true">
+	<isNotEqual property="pageGubun" compareValue="Y">
+	<![CDATA[
+		SELECT
+            GROUP_NAME,
+            SYSTEM_NAME,
+            SYSTEM_SEQ,
+            PKG_VER,
+            SYS_SKT_USER,
+            SYS_BP_USER,
+            VER_NOTE,
+            CONTENT,
+            BP_PHONE,
+            SKT_PHONE,
+            BP_NAME,
+            UPDATE_DATE,
+            UPDATE_NAME,
+            UPDATE_USER
+        FROM (
+	        SELECT A.*
+	        FROM (
+	]]>
+			 	</isNotEqual>
+			 	</isEqual> 
+			 	
+			      SELECT
+                        S.GROUP_NAME,
+						S.SYSTEM_NAME,
+ 						PV.SYSTEM_SEQ,
+    					PV.PKG_VER, 
+    					PV.SYS_SKT_USER, 
+    					PV.SYS_BP_USER, 
+    					PV.VER_NOTE, 
+    					PV.BP_PHONE, 
+    					PV.SKT_PHONE, 
+    					PV.BP_NAME, 
+    					PV.UPDATE_DATE, 
+    					PV.UPDATE_NAME, 
+    					PV.UPDATE_USER,  
+     					PV.CONTENT, 
+    					ROWNUM AS RN 
+    
+    			FROM PKG_VERSION PV,
+     				(SELECT 
+                    	<!-- G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, -->
+                    	G2.GROUP2_SEQ, G2.NAME GROUP_NAME,
+                    	<!-- G3.GROUP3_SEQ, G3.NAME GROUP3_NAME, -->
+                    	S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+                                                                       
+                    FROM PKMS.GROUP1 G1,
+                         PKMS.GROUP2 G2,
+                         PKMS.GROUP3 G3,
+                         PKMS.SYSTEM S
+                    
+                    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                      AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                      AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                      AND G1.USE_YN = 'Y'
+                      AND G2.USE_YN = 'Y'
+                      AND G3.USE_YN = 'Y'   
+                      AND S.USE_YN = 'Y'
+                      ) S
+   
+    			WHERE PV.SYSTEM_SEQ = S.SYSTEM_SEQ
+					<include refid="searchCondition"/>
+				
+					
+					<isEqual property="isPaging" compareValue="true">
+					<isNotEqual property="pageGubun" compareValue="Y">
+					) A WHERE RN <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+					WHERE RN  > #firstIndex#
+					</isNotEqual>
+					          
+				</isEqual> 
+</select>
+
+
+<select id="pkgVerDao.readTotalCount" parameterClass="PkgVerModel" resultClass="int">
+/* pkgVerDao.readTotalCount */
+	SELECT
+		COUNT(*) AS COUNT
+	FROM
+		PKG_VERSION PV
+	WHERE PV.USE_YN = 'Y'
+	<include refid="searchCondition"/>
+	<!-- ORDER_SEQ DESC -->
+</select>
+<select id="pkgVerDao.read" parameterClass="PkgVerModel" resultClass="PkgVerModel">
+          SELECT
+           S.GROUP_NAME,
+           S.SYSTEM_NAME,
+           PV.SYSTEM_SEQ,
+           PV.PKG_VER, 
+           PV.SYS_SKT_USER, 
+           PV.SYS_BP_USER, 
+           PV.VER_NOTE, 
+           PV.BP_PHONE, 
+           PV.SKT_PHONE, 
+           PV.BP_NAME, 
+           PV.UPDATE_DATE, 
+           PV.UPDATE_NAME, 
+           PV.UPDATE_USER,  
+           PV.CONTENT
+ 
+     FROM PKG_VERSION PV,
+          (SELECT 
+             G2.GROUP2_SEQ, G2.NAME GROUP_NAME,
+             S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+                                                            
+         FROM PKMS.GROUP1 G1,
+              PKMS.GROUP2 G2,
+              PKMS.GROUP3 G3,
+              PKMS.SYSTEM S
+         
+         WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+           AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+           AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+           AND G1.USE_YN = 'Y'
+           AND G2.USE_YN = 'Y'
+           AND G3.USE_YN = 'Y'   
+           AND S.USE_YN = 'Y'
+           ) S
+
+     WHERE  S.SYSTEM_SEQ = PV.SYSTEM_SEQ
+         AND PV.USE_YN = 'Y'
+         AND  PV.SYSTEM_SEQ = #system_seq#
+		
+</select>
+
+<insert id="pkgVerDao.create" parameterClass="PkgVerModel">
+<!-- 	<selectKey keyProperty="ver_seq" resultClass="String">
+		SELECT ver_seq.nextval FROM dual
+	</selectKey> -->
+	INSERT INTO PKMS.PKG_VERSION
+		(
+			SYSTEM_SEQ,    
+ 			PKG_VER, 
+            SYS_SKT_USER, 
+            SYS_BP_USER, 
+            VER_NOTE, 
+            BP_PHONE, 
+            SKT_PHONE, 
+            BP_NAME, 
+            UPDATE_DATE, 
+            UPDATE_NAME, 
+            UPDATE_USER,  
+            CONTENT	
+		) VALUES
+		(
+			#system_seq#,
+ 			#pkg_ver#, 
+            #sys_skt_user#, 
+            #sys_bp_user#, 
+            #ver_note#, 
+            #bp_phone#, 
+            #skt_phone#, 
+            #bp_name#, 
+            sysdate, 
+            #session_user_name#, 
+            #session_user_id#,  
+            #content#	
+		)
+		
+</insert>
+
+<update id="pkgVerDao.update" parameterClass="PkgVerModel">
+	    UPDATE
+	    	PKMS.PKG_VERSION
+        SET
+            SYSTEM_SEQ = #system_seq#,
+            PKG_VER = #pkg_ver#,
+            SYS_SKT_USER = #sys_skt_user#,
+            SYS_BP_USER = #sys_bp_user#,
+            VER_NOTE = #ver_note#,
+            CONTENT = #content#,
+            UPDATE_NAME = #session_user_name#,
+            UPDATE_DATE = sysdate,
+			UPDATE_USER = #session_user_id#,
+			BP_PHONE = #bp_phone#,
+			SKT_PHONE = #skt_phone#,
+			BP_NAME = #bp_name#
+        WHERE SYSTEM_SEQ = #system_seq#
+</update>
+
+<delete id="pkgVerDao.delete" parameterClass="PkgVerModel">
+	DELETE FROM PKMS.PKG_VERSION
+	WHERE
+		SYSTEM_SEQ = #system_seq#
+</delete>
+
+<!-- <select id="pkgVerDao.readList2" parameterClass="PkgVerModel" resultClass="PkgVerModel">
+SELECT G2.NAME GROUP_NAME2 , G3.NAME GROUP_NAME3
+FROM
+(SELECT * FROM GROUP2 WHERE USE_YN='Y') G2,
+(SELECT * FROM GROUP3 WHERE USE_YN='Y') G3
+WHERE G2.GROUP2_SEQ = #group2_seq# AND G3.GROUP2_SEQ = #group2_seq#
+</select> -->
+
+
+
+</sqlMap>
+

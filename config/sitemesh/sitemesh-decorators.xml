@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<decorators defaultdir="/WEB-INF/jsp/decorators">
+
+	<!-- 제외할 패턴 -->
+	<excludes>
+		<pattern>/j_spring_security_check.do</pattern>
+		<pattern>/j_spring_security_logout.do</pattern>
+
+		<pattern>/InvalidSession_Read.do</pattern>
+		<pattern>/common/attachfile/AttachFile_read.do</pattern>
+		<pattern>/pkgmg/pkg/Owms_Ajax_Read.do</pattern>
+		<pattern>/Chart_Popup_Read.do</pattern>
+		<!-- 
+		<pattern>/Login_Delete_After.do</pattern>
+		<pattern>/Login_Delete.do</pattern>
+		<pattern>/Login_Create_Fail.do</pattern>
+		<pattern>/Login.do</pattern>
+		<pattern>/Login_Read.do</pattern>
+		 -->
+
+		<pattern>/common/Message*</pattern>
+		<pattern>/common/Error*</pattern>
+		
+		<pattern>/Notice_Popup*</pattern>
+	</excludes>
+
+	<!-- Ajax 패턴 -->
+	<decorator name="ajax" page="blank.jsp">
+		<pattern>*_Create.do</pattern>
+		<pattern>*_create.do</pattern>
+		<pattern>*_Update.do</pattern>
+		<pattern>*_update.do</pattern>
+		<pattern>*_Delete.do</pattern>
+		<pattern>*_delete.do</pattern>
+		<pattern>*_Ajax_*.do</pattern>
+		<pattern>*_ExcelDownload.do</pattern>
+		<pattern>*_ExcelUpload.do</pattern>
+	</decorator>
+
+	<!-- Login 패턴 -->
+	<decorator name="login" page="login.jsp">
+		<pattern>/Login_*.do</pattern>
+	</decorator>
+
+	<!-- Popup 패턴 -->
+	<decorator name="popup" page="popup.jsp">
+		<pattern>*_Popup_*.do</pattern>
+	</decorator>
+
+	<!-- 메인 별도 -->
+	<decorator name="main" page="main.jsp">
+		<pattern>/Main.do</pattern>
+	</decorator>
+
+	<!-- 모바일용 -->
+	<decorator name="mobile" page="mobile.jsp">
+		<pattern>/M_*.do</pattern>
+		<pattern>/M.do</pattern>
+	</decorator>
+
+	<!-- 기본 패턴 -->
+	<decorator name="default" page="default.jsp">
+		<pattern>*.do</pattern>
+	</decorator>
+
+	<decorator name="panel" page="panel.jsp" />
+
+</decorators>

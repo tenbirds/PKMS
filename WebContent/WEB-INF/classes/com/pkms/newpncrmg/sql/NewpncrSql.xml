@@ -1,0 +1,567 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="NewPncr">
+	
+	<typeAlias alias="NewpncrModel" type="com.pkms.newpncrmg.model.NewpncrModel"/>
+	<typeAlias alias="SysRoadMapModel" type="com.pkms.sys.common.model.SysRoadMapModel" />
+	
+	<resultMap class="SysRoadMapModel" id="SysRoadMapReadList">
+		<result property="road_map_seq" column="road_map_seq"/>
+		<result property="system_seq" column="system_seq"/>
+		<result property="content" column="content"/>
+		<result property="code" column="code"/>
+		<result property="start_date" column="start_date"/>
+		<result property="end_date" column="end_date"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_date" column="reg_date"/>
+		<result property="update_user" column="update_user"/>
+		<result property="update_date" column="update_date"/>
+		<result property="code_desc" column="code_desc"/>
+		<result property="name" column="name"/>
+		<result property="hname" column="hname"/>
+		<result property="mapping" column="mapping"/>
+		<result property="mapping_list" select="SystemDAO.pncrTitle" column="${road_map_seq=road_map_seq}"/>
+	</resultMap>
+	
+	
+	<resultMap id="NewpncrModelRead" class="NewpncrModel">
+		<result property="new_pn_cr_seq" column="new_pn_cr_seq"/>
+		<result property="new_pn_cr_no" column="new_pn_cr_no"/>
+		<result property="title" column="title"/>
+		<result property="new_pncr_gubun" column="new_pncr_gubun"/>
+		<result property="priority" column="priority"/>
+		<result property="priority_name" column="priority_name"/>
+		<result property="system_seq" column="system_seq"/>
+		<result property="system_name" column="system_name"/>
+		<result property="group1_name" column="group1_name"/>
+		<result property="group2_name" column="group2_name"/>
+		<result property="group3_name" column="group3_name"/>
+		<result property="problem_gubun" column="problem_gubun"/>
+		<result property="problem_gubun_name" column="problem_gubun_name"/>
+		<result property="state" column="state"/>
+		<result property="reject_flag" column="reject_flag"/>
+		<result property="problem" column="problem"/>
+		<result property="requirement" column="requirement"/>
+		<result property="master_file_id" column="master_file_id"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_name" column="reg_name"/>
+		<result property="reg_date" column="reg_date"/>
+		<result property="sosok" column="sosok"/>
+	</resultMap>
+	
+	<resultMap class="NewpncrModel" id="NewpncrModelBpCommentRead">
+		<result property="manager_comment" column="manager_comment"/>
+		<result property="bp_comment" column="bp_comment"/>
+		<result property="refine_comment" column="refine_comment"/>
+		<result property="reject_comment" column="reject_comment"/>
+	</resultMap>
+	
+	<sql id="search">
+		<isNotEmpty property="search_reg_date_start" open="AND">
+         	N.REG_DATE BETWEEN TO_DATE(#search_reg_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss') AND TO_DATE(#search_reg_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+         </isNotEmpty>
+         <isNotEmpty property="search_system_seq" open="AND">
+         	<isEqual property="system_search_gubun" compareValue="1">
+         		G.GROUP1_SEQ = #search_system_seq#
+         	</isEqual>
+         	<isEqual property="system_search_gubun" compareValue="2">
+         		G.GROUP2_SEQ = #search_system_seq#
+         	</isEqual>
+         	<isEqual property="system_search_gubun" compareValue="3">
+         		G.GROUP3_SEQ = #search_system_seq#
+         	</isEqual>
+         	<isEqual property="system_search_gubun" compareValue="4">
+         		G.SYSTEM_SEQ = #search_system_seq#
+         	</isEqual>
+         </isNotEmpty>
+         <isNotEmpty property="search_reg_user" open="AND">
+         	N.REG_USER = #search_reg_user#
+         </isNotEmpty>
+         <isNotEmpty property="search_indept" open="AND">
+         	P.INDEPT = #search_indept#
+         </isNotEmpty>
+         <isNotEmpty property="searchKeyword" open="AND">
+         	<isEqual property="searchCondition" compareValue="0">
+         		LOWER(N.TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+         	</isEqual>
+         	<isEqual property="searchCondition" compareValue="1">
+         		LOWER(N.PROBLEM) LIKE '%' || LOWER(#searchKeyword#) || '%'
+         	</isEqual>
+         	<isEqual property="searchCondition" compareValue="2">
+         		LOWER(N.REQUIREMENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+         	</isEqual>
+         	<isEqual property="searchCondition" compareValue="3">
+         		LOWER(N.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+         	</isEqual>
+         </isNotEmpty>
+         <isNotEmpty property="searchNew_pncr_gubun" open="AND">
+         	N.NEW_PNCR_GUBUN = #searchNew_pncr_gubun#
+         </isNotEmpty>
+         <isNotEmpty property="search_state" open="AND">
+         	N.STATE = #search_state#
+         </isNotEmpty>
+         <isNotEmpty property="reject_flag" open="AND">
+         	N.REJECT_FLAG = #reject_flag#
+         </isNotEmpty>
+	</sql>
+	
+	<sql id="role">
+ 		<isEqual property="session_user_type" compareValue="B" open="AND">
+  	 		(S.BP_NUM = #session_user_group_id# 
+  	 		 OR S.BP_NUM1 = #session_user_group_id# OR S.BP_NUM2 = #session_user_group_id# OR S.BP_NUM3 = #session_user_group_id# OR S.BP_NUM4 = #session_user_group_id#
+  	 		) AND N.STATE <![CDATA[<>]]> '0'
+     	</isEqual>
+     	<isEqual property="session_user_type" compareValue="M">
+	     	<isNotEmpty property="searchRoleCondition" open="AND">
+	          	<isEqual property="searchRoleCondition" compareValue="0">
+	          		N.REG_USER = #session_user_id#
+	          	</isEqual>
+	          	<isEqual property="searchRoleCondition" compareValue="1">
+		          	<isNotEmpty property="systemKey">
+		          		N.SYSTEM_SEQ IN
+		          		<iterate conjunction="," property="systemKey" open="(" close=")">
+		          			#systemKey[]#
+		          		</iterate>
+	          		</isNotEmpty>
+		          	<isEmpty property="systemKey">
+		          	1 = 2
+	          		</isEmpty>
+	          	</isEqual>
+	          	<isEqual property="searchRoleCondition" compareValue="2">
+	          		1 = 1
+	          	</isEqual>
+	         </isNotEmpty>
+     	</isEqual>
+     	<isEqual property="isMain" compareValue="true" open="AND">
+     		N.STATE = 3 AND N.REJECT_FLAG = 'Y' or N.STATE <![CDATA[<>]]> 3
+     		<isEqual property="session_user_type" compareValue="B" open="AND">
+  	 			(S.BP_NUM = #session_user_group_id# 
+  	 		 	  OR S.BP_NUM1 = #session_user_group_id# OR S.BP_NUM2 = #session_user_group_id# OR S.BP_NUM3 = #session_user_group_id# OR S.BP_NUM4 = #session_user_group_id#
+  	 			) AND N.STATE <![CDATA[<>]]> '0'
+     		</isEqual>
+     	</isEqual>
+	</sql>
+	
+	<select id="NewpncrDao.readList" parameterClass="NewpncrModel" resultClass="NewpncrModel">
+		<isEqual property="isPaging" compareValue="true">
+		<![CDATA[
+			SELECT
+			    NEW_PN_CR_SEQ, NEW_PN_CR_NO, STATE, NEW_PNCR_GUBUN, SYSTEM_SEQ, SYSTEM_NAME, TITLE, REG_DATE, REG_USER
+			    , REG_NAME, PRIORITY_NAME, PROBLEM, REQUIREMENT, PROBLEM_GUBUN_NAME, BP_COMMENT, REJECT_COMMENT, SOSOK
+				, GROUP1_NAME, GROUP2_NAME, GROUP3_NAME, MANAGER_COMMENT, REFINE_COMMENT
+			    FROM (
+			        SELECT A.*
+			        FROM (
+		]]>
+		</isEqual>
+		            SELECT 
+					      N.NEW_PN_CR_SEQ
+					    , CASE
+					        WHEN N.NEW_PNCR_GUBUN = '신규'  THEN '신규 - ' || N.NEW_PN_CR_SEQ
+					        WHEN N.NEW_PNCR_GUBUN = '보완'  THEN '보완 - ' || N.NEW_PN_CR_SEQ
+					        WHEN N.NEW_PNCR_GUBUN = '개선'  THEN '개선 - ' || N.NEW_PN_CR_SEQ  
+					      END  AS NEW_PN_CR_NO
+					    , CASE
+			             	 WHEN N.STATE = '0' AND N.REJECT_FLAG = 'N' THEN '검토요청'
+					         WHEN N.STATE = '1' AND N.REJECT_FLAG = 'N' THEN '협력사 검토 요청'
+					         WHEN N.STATE = '2' AND N.REJECT_FLAG = 'N' THEN '검토완료'
+					         WHEN N.STATE = '4' AND N.REJECT_FLAG = 'N' THEN '보류'
+					         WHEN N.STATE = '3' AND N.REJECT_FLAG = 'N' THEN '반영'
+					         WHEN N.STATE = '1' AND N.REJECT_FLAG = 'Y' THEN '반려'
+					         WHEN N.STATE = '3' AND N.REJECT_FLAG = 'Y' THEN '반려'
+					         WHEN N.STATE = '9' AND N.REJECT_FLAG = 'Y' THEN '반려'
+					      END AS STATE
+					    , N.NEW_PNCR_GUBUN
+					    , N.SYSTEM_SEQ
+<!-- 					    , DECODE(G.GROUP1_SEQ, '', '', G.GROUP1_NAME || '>' || G.GROUP2_NAME || '>' || G.GROUP3_NAME || '>' || G.SYSTEM_NAME) SYSTEM_NAME -->
+						, G.GROUP1_NAME
+						, G.GROUP2_NAME
+						, G.GROUP3_NAME
+						, G.SYSTEM_NAME
+					    , TO_CHAR (N.REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+					    , N.TITLE
+					    , N.REG_USER, P.HNAME AS REG_NAME
+					    , ROW_NUMBER() OVER (ORDER BY NEW_PN_CR_SEQ DESC) AS RN
+					    , CASE
+                              WHEN N.PRIORITY = '0' THEN 'Critical'
+                              WHEN N.PRIORITY = '1' THEN 'Major'
+                              WHEN N.PRIORITY = '2' THEN 'Minor'
+                              WHEN N.PRIORITY = '3' THEN 'Normal'
+                          END AS PRIORITY_NAME
+                        , N.PROBLEM
+                        , N.REQUIREMENT
+                        , CASE
+					      	WHEN N.PROBLEM_GUBUN = '0' THEN '호처리'
+					      	WHEN N.PROBLEM_GUBUN = '1' THEN '프로세스'
+					      	WHEN N.PROBLEM_GUBUN = '2' THEN '상태관리불량'
+					      	WHEN N.PROBLEM_GUBUN = '3' THEN '시험진단관리'
+					      	WHEN N.PROBLEM_GUBUN = '4' THEN '과금'
+					      	WHEN N.PROBLEM_GUBUN = '5' THEN '통계(OMC)'
+					      	WHEN N.PROBLEM_GUBUN = '6' THEN 'H/W(보드 문제등)'
+					      	WHEN N.PROBLEM_GUBUN = '7' THEN '기타'
+					      END AS PROBLEM_GUBUN_NAME
+		            	, N.BP_COMMENT
+		            	, N.REJECT_COMMENT
+		            	, N.SOSOK, N.MANAGER_COMMENT, N.REFINE_COMMENT
+					FROM PKMS.NEW_PN_CR N
+					JOIN PKMS.SYSTEM S ON N.SYSTEM_SEQ = S.SYSTEM_SEQ
+					JOIN PKMS.INF_PERSON_INFO_RCV P ON N.REG_USER = P.EMPNO
+					JOIN 
+					(
+					    SELECT 
+					        G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+					        S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+					    FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+					    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+					    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+					    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+					    AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' 
+					) G ON N.SYSTEM_SEQ = G.SYSTEM_SEQ
+					WHERE N.USE_YN = 'Y'
+		           	<include refid="role"/>
+		            <include refid="search"/>
+		            ORDER BY NEW_PN_CR_SEQ DESC
+		<isEqual property="isPaging" compareValue="true">
+		            ) A  WHERE RN <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		WHERE RN  > #firstIndex#
+		</isEqual>
+	</select>
+	
+	<select id="NewpncrDao.readTotalCount" parameterClass="NewpncrModel" resultClass="int">
+		SELECT 
+		     COUNT(*) AS COUNT 
+		FROM PKMS.NEW_PN_CR N
+		JOIN PKMS.SYSTEM S ON N.SYSTEM_SEQ = S.SYSTEM_SEQ
+		JOIN PKMS.INF_PERSON_INFO_RCV P ON N.REG_USER = P.EMPNO
+		JOIN 
+		(
+		    SELECT 
+		        G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		        S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+		    FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		    AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' 
+		) G ON N.SYSTEM_SEQ = G.SYSTEM_SEQ
+		WHERE N.USE_YN = 'Y'
+        <include refid="role"/>
+        <include refid="search"/>
+	</select>
+		
+	<insert id="NewpncrDao.create" parameterClass="NewpncrModel">
+		<selectKey keyProperty="new_pn_cr_seq" resultClass="String">
+			select new_pn_cr_seq.nextval from dual
+		</selectKey>
+		INSERT INTO PKMS.NEW_PN_CR
+		(
+			  NEW_PN_CR_SEQ
+			, TITLE
+			, NEW_PNCR_GUBUN
+			, PRIORITY
+			, SYSTEM_SEQ
+			, PROBLEM_GUBUN
+			, PROBLEM
+			, REQUIREMENT
+			, MASTER_FILE_ID
+			, STATE
+			, REG_USER
+			, SOSOK
+		)VALUES
+		(
+			  #new_pn_cr_seq#
+			, #title#
+			, #new_pncr_gubun#
+			, #priority#
+			, #system_seq#
+			, #problem_gubun#
+			, #problem#
+			, #requirement#
+			, #master_file_id#
+			, #state#
+			, #session_user_id#
+			, #session_user_group_name#
+		)
+	</insert>
+	
+	<select id="NewpncrDao.read" parameterClass="NewpncrModel" resultMap="NewpncrModelRead" >
+		SELECT
+		      N.NEW_PN_CR_SEQ
+		    , CASE
+		        WHEN N.NEW_PNCR_GUBUN = '신규'  THEN '신규 - ' || N.NEW_PN_CR_SEQ
+		        WHEN N.NEW_PNCR_GUBUN = '보완'  THEN '보완 - ' || N.NEW_PN_CR_SEQ
+		        WHEN N.NEW_PNCR_GUBUN = '개선'  THEN '개선 - ' || N.NEW_PN_CR_SEQ  
+		      END  AS NEW_PN_CR_NO 
+		    , N.TITLE
+		    , N.NEW_PNCR_GUBUN
+		    , N.PRIORITY
+		    , CASE
+		      	WHEN N.PRIORITY = '0' THEN 'Critical'
+		      	WHEN N.PRIORITY = '1' THEN 'Major'
+		      	WHEN N.PRIORITY = '2' THEN 'Minor'
+		      	WHEN N.PRIORITY = '3' THEN 'Normal'
+		      END AS PRIORITY_NAME
+		    , N.SYSTEM_SEQ
+<!-- 		    , DECODE(G.GROUP1_SEQ, '', '', G.GROUP1_NAME || '>' || G.GROUP2_NAME || '>' || G.GROUP3_NAME || '>' || G.SYSTEM_NAME) SYSTEM_NAME -->
+			, G.GROUP1_NAME
+			, G.GROUP2_NAME
+			, G.GROUP3_NAME
+			, G.SYSTEM_NAME
+		    , N.PROBLEM_GUBUN
+		    , CASE
+		      	WHEN N.PROBLEM_GUBUN = '0' THEN '호처리'
+		      	WHEN N.PROBLEM_GUBUN = '1' THEN '프로세스'
+		      	WHEN N.PROBLEM_GUBUN = '2' THEN '상태관리불량'
+		      	WHEN N.PROBLEM_GUBUN = '3' THEN '시험진단관리'
+		      	WHEN N.PROBLEM_GUBUN = '4' THEN '과금'
+		      	WHEN N.PROBLEM_GUBUN = '5' THEN '통계(OMC)'
+		      	WHEN N.PROBLEM_GUBUN = '6' THEN 'H/W(보드 문제등)'
+		      	WHEN N.PROBLEM_GUBUN = '7' THEN '기타'
+		      END AS PROBLEM_GUBUN_NAME
+		    , N.STATE
+		    , N.REJECT_FLAG
+		    , N.PROBLEM
+		    , N.REQUIREMENT
+		    , N.MASTER_FILE_ID
+		    , N.REG_USER
+		    , N.REG_DATE
+		    , P.HNAME AS REG_NAME
+		    , N.SOSOK
+		FROM PKMS.NEW_PN_CR N
+		JOIN PKMS.SYSTEM S ON N.SYSTEM_SEQ = S.SYSTEM_SEQ
+		JOIN PKMS.INF_PERSON_INFO_RCV P ON N.REG_USER = P.EMPNO
+		JOIN 
+		(
+		    SELECT 
+		        G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		        S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+		    FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		    AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' 
+		) G ON N.SYSTEM_SEQ = G.SYSTEM_SEQ
+		WHERE N.NEW_PN_CR_SEQ = #new_pn_cr_seq#
+	</select>
+	
+	<update id="NewpncrDao.update" parameterClass="NewpncrModel">
+		UPDATE PKMS.NEW_PN_CR
+		SET
+			  TITLE = #title#
+			, NEW_PNCR_GUBUN = #new_pncr_gubun#
+			, PRIORITY = #priority#
+			, SYSTEM_SEQ = #system_seq#
+			, PROBLEM_GUBUN = #problem_gubun# 
+			, PROBLEM = #problem#
+			, REQUIREMENT = #requirement#
+			, MASTER_FILE_ID = #master_file_id#
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+		WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+	</update>
+	
+	<update id="NewpncrDao.delete" parameterClass="NewpncrModel">
+		UPDATE PKMS.NEW_PN_CR
+		SET
+			  USE_YN = 'N'
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+		WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+	</update>
+	
+	<update id="NewpncrDao.stateInfo_update" parameterClass="NewpncrModel">
+		UPDATE PKMS.NEW_PN_CR
+		SET	
+			  STATE = #state#	
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+			<isEqual property="stateInfo" compareValue="approveRequest">
+			, MANAGER_COMMENT = #manager_comment#
+			</isEqual>
+			<isEqual property="stateInfo" compareValue="confirm">
+			 <!-- , BP_COMMENT = #bp_comment#  -->
+			</isEqual>
+			<isEqual property="stateInfo" compareValue="refine">
+			, REFINE_COMMENT = #refine_comment#
+			</isEqual>
+			<isEqual property="stateInfo" compareValue="reject_1">
+			, REJECT_COMMENT = #manager_comment#
+			, REJECT_FLAG = #reject_flag#
+			</isEqual>
+			<isEqual property="stateInfo" compareValue="reject_2">
+			, REJECT_COMMENT = #refine_comment#
+			, REJECT_FLAG = #reject_flag#
+			</isEqual>
+			<isEqual property="stateInfo" compareValue="reject_9">
+			, REJECT_COMMENT = #refine_comment#
+			, REJECT_FLAG = #reject_flag#
+			</isEqual>
+			<isEqual property="stateInfo" compareValue="saveRepl">
+			, BP_COMMENT = #bp_comment#
+			</isEqual>
+			
+		WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+	</update>
+	
+	<select id="NewpncrDao.bpComment_read" parameterClass="NewpncrModel" resultMap="NewpncrModelBpCommentRead">
+		SELECT 
+	      MANAGER_COMMENT
+	    , BP_COMMENT
+	    , REFINE_COMMENT
+	    , REJECT_COMMENT 
+		FROM PKMS.NEW_PN_CR WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+	</select>
+	
+	
+<!-- 답글 추가 0905 -ksy-->
+	
+	<insert id="NewpncrDao.createRepl" parameterClass="NewpncrModel">
+		<!-- <selectKey keyProperty="new_pn_cr_re_seq" resultClass="String">
+			SELECT new_pn_cr_re_seq.nextval FROM DUAL
+		</selectKey>  -->
+	/*NewpncrDao.createRepl*/
+		INSERT INTO PKMS.NEW_PN_CR_REPL
+			(
+			  NEW_PN_CR_SEQ
+			, NEW_PN_CR_RE_SEQ
+			, MANAGER_REPL
+			, BP_REPL
+			, REG_USER_RE
+			, REG_DATE_RE
+			, UPDATE_DATE_RE
+			)
+		VALUES
+			(
+			  #new_pn_cr_seq#
+			, NEW_PN_CR_RE_SEQ.NEXTVAL
+			, #manager_repl#
+			, #bp_repl#
+			, #session_user_id#
+			, sysdate
+			, #update_date_re#
+			)
+	</insert>
+
+	<select id="NewpncrDao.readListRepl" parameterClass="NewpncrModel" resultClass="NewpncrModel">
+	/*NewpncrDao.readListRepl*/
+		SELECT NR.NEW_PN_CR_SEQ
+            ,NR.NEW_PN_CR_RE_SEQ
+            ,NR.MANAGER_REPL
+            ,NR.BP_REPL
+            ,NR.REG_DATE_RE
+            ,NR.UPDATE_DATE_RE
+            ,NR.REG_USER_RE
+            ,NVL(BP.BP_USER_NAME,SK.HNAME) AS REG_NAME_RE
+		FROM NEW_PN_CR_REPL NR
+		LEFT JOIN INF_PERSON_INFO_RCV SK ON NR.REG_USER_RE = SK.EMPNO 
+		LEFT JOIN BP_USER BP ON NR.REG_USER_RE = BP.BP_USER_ID
+		WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+		ORDER BY NR.REG_DATE_RE ASC
+	
+	</select>
+	
+	<update id="NewpncrDao.updateRepl" parameterClass="NewpncrModel" >
+	/*NewpncrDao.updateRepl*/	
+		UPDATE NEW_PN_CR_REPL 
+		SET 
+		<isNotEmpty property="manager_repl">
+			MANAGER_REPL = #manager_repl# ,
+		</isNotEmpty>
+		<isNotEmpty property="bp_repl">
+			BP_REPL = #bp_repl# ,
+		</isNotEmpty>
+			UPDATE_DATE_RE = SYSDATE
+		WHERE NEW_PN_CR_RE_SEQ = #new_pn_cr_re_seq#
+	
+	</update>
+	<select id="NewpncrDao.readListChart" parameterClass="NewpncrModel" resultMap="SysRoadMapReadList" remapResults="true">
+		SELECT  lm.road_map_seq,
+				lm.system_seq,
+				lm.content,
+				lm.code,
+				TO_CHAR(lm.START_DATE,'YYYY-MM-DD')start_date,
+       			TO_CHAR(lm.END_DATE,'YYYY-MM-DD')end_date,
+				lm.reg_user,
+				lm.reg_date,
+				lm.update_user,
+				lm.update_date,
+				lmc.code_desc,
+				sys.name,
+				ipir.hname
+				<isNotEmpty property="new_pn_cr_seq">				
+				,lmm.mapping
+				</isNotEmpty>
+				<isEmpty property="new_pn_cr_seq">
+				,'N' as mapping
+				</isEmpty>
+		FROM 	road_map lm 
+							LEFT JOIN ROAD_MAP_CODE lmc on LM.CODE = lmc.code
+							LEFT JOIN SYSTEM sys on lm.system_seq = sys.system_seq
+							LEFT JOIN INF_PERSON_INFO_RCV ipir on SYS.SYSTEM_USER_ID = IPIR.EMPNO
+			<isNotEmpty property="new_pn_cr_seq">
+							LEFT JOIN ROAD_MAP_MAPPING LMM ON lm.ROAD_MAP_SEQ = lmm.ROAD_MAP_SEQ
+			</isNotEmpty>
+		WHERE   lm.system_seq = #system_seq#
+		  <isNotEmpty property="new_pn_cr_seq">
+		 AND lmm.NEW_PN_CR_SEQ = #new_pn_cr_seq#
+		  </isNotEmpty>
+		ORDER by lm.code, start_date
+	</select>
+	<select id="NewpncrDao.chartRead" parameterClass="SysRoadMapModel" resultClass="SysRoadMapModel">
+			SELECT  road_map_seq,
+					system_seq,
+					content,
+					code,
+					TO_CHAR(START_DATE,'YYYY-MM-DD')start_date,
+	       			TO_CHAR(END_DATE,'YYYY-MM-DD')end_date,
+					reg_user,
+					reg_date,
+					update_user,
+					update_date,
+			FROM 	ROAD_MAP
+			WHERE ROAD_MAP_SEQ = #road_map_seq#
+	</select>
+
+	<insert id="NewpncrDao.createRoadMapMapping" parameterClass="SysRoadMapModel">
+		INSERT INTO 
+					ROAD_MAP_MAPPING
+				(
+					ROAD_MAP_MAPPING_SEQ, 
+					ROAD_MAP_SEQ, 
+					NEW_PN_CR_SEQ
+			     )VALUES
+			     (
+	     			ROAD_MAP_MAPPING_SEQ.NEXTVAL, 
+	     			#road_map_seq#, 
+	     			#new_pn_cr_seq#
+				 )
+	</insert>
+	<update	id="NewpncrDao.updateRoadMapMapping" parameterClass="SysRoadMapModel">
+		UPDATE ROAD_MAP_MAPPING
+		   SET MAPPING = 'Y'
+		      ,TITLE = #title#
+		 WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+		   AND ROAD_MAP_SEQ = #road_map_seq# 
+	</update>
+	<select id="NewpncrDao.chartMappingSystemSeqList" parameterClass="NewpncrModel" resultClass="String">
+		SELECT A.SYSTEM_SEQ
+		FROM road_map a	LEFT JOIN road_map_mapping b
+			 ON a.road_map_seq = b.road_map_seq
+		WHERE b.new_pn_cr_seq = #new_pn_cr_seq#
+		GROUP BY A.SYSTEM_SEQ
+	</select>
+	<select id="NewpncrDao.systemList" parameterClass="SysRoadMapModel" resultClass="SysRoadMapModel">
+		SELECT system_seq, name 
+		  FROM system
+	     WHERE system_seq in
+	     	<iterate property="system_seqs" conjunction="," open="(" close=")">
+	      		#system_seqs[]#
+	      	</iterate>
+	</select>
+	<delete id="NewpncrDao.deleteRoadMapMapping" parameterClass="NewpncrModel">
+		DELETE 
+		  FROM ROAD_MAP_MAPPING 
+		 WHERE NEW_PN_CR_SEQ = #new_pn_cr_seq#
+	</delete>
+</sqlMap>

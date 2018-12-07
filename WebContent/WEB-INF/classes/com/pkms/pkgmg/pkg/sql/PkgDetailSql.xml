@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgDetail">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+	<typeAlias alias="PkgDetailModel" type="com.pkms.pkgmg.pkg.model.PkgDetailModel" />
+	<typeAlias alias="PkgDetailVariableModel" type="com.pkms.pkgmg.pkg.model.PkgDetailVariableModel" />
+
+	<resultMap id="PkgDetailVariableModelList" class="PkgDetailVariableModel">
+		<result property="pkg_detail_seq" column="pkg_detail_seq" />
+		<result property="ord" column="ord" />
+		<result property="content" column="content" />
+	</resultMap> 
+
+	<insert id="PkgDetailDAO.create" parameterClass="PkgDetailModel">
+		<selectKey keyProperty="pkg_detail_seq" resultClass="String">
+			select pkg_detail_seq.nextval from dual
+		</selectKey>
+		INSERT INTO PKMS.PKG_DETAIL (
+           PKG_SEQ, PKG_DETAIL_SEQ, NO,
+           NEW_PN_CR_GUBUN, NEW_PN_CR_SEQ, REG_USER) 
+        VALUES ( 
+           #pkg_seq#, #pkg_detail_seq#, #no#,
+           #new_pn_cr_gubun#, #new_pn_cr_seq#, #session_user_id#)
+	</insert>
+
+	<select id="PkgDetailDAO.readList" parameterClass="PkgModel" resultClass="PkgDetailModel">
+		/*PkgDetailDAO.readList*/
+		SELECT 
+			A.PKG_SEQ, A.PKG_DETAIL_SEQ, A.NO, 
+			A.NEW_PN_CR_GUBUN, A.NEW_PN_CR_SEQ, A.USE_YN, 
+			A.REG_USER, A.REG_DATE, A.UPDATE_USER, 
+			A.UPDATE_DATE,
+			NVL((CASE
+				WHEN B.NEW_PNCR_GUBUN = '신규'  THEN '신규 - ' || B.NEW_PN_CR_SEQ
+                WHEN B.NEW_PNCR_GUBUN = '보완'  THEN '보완 - ' || B.NEW_PN_CR_SEQ
+                WHEN B.NEW_PNCR_GUBUN = '개선'  THEN '개선 - ' || B.NEW_PN_CR_SEQ 
+			END ), 0) AS NEW_PN_CR_NO
+		FROM PKMS.PKG_DETAIL A, PKMS.NEW_PN_CR B
+		WHERE A.NEW_PN_CR_SEQ = B.NEW_PN_CR_SEQ(+)
+			AND A.PKG_SEQ = #pkg_seq#
+		<isNotEmpty prepend="AND" property="pkg_detail_seq">
+			A.PKG_DETAIL_SEQ = #pkg_detail_seq#
+		</isNotEmpty>
+		ORDER BY A.PKG_DETAIL_SEQ
+	</select>
+
+	<select id="PkgDetailDAO.read" parameterClass="PkgDetailModel" resultMap="PkgDetailVariableModelList">
+
+		SELECT 
+		   PKG_DETAIL_SEQ, ORD, CONTENT
+		FROM PKMS.PKG_DETAIL_VARIABLE
+		WHERE USE_YN = 'Y'
+		  AND PKG_DETAIL_SEQ = #pkg_detail_seq#
+		ORDER BY ORD
+	</select>
+
+	<delete id="PkgDetailDAO.delete" parameterClass="PkgModel">
+		DELETE FROM PKMS.PKG_DETAIL
+		WHERE PKG_SEQ = #pkg_seq#
+	</delete>
+
+
+<!-- 보완적용내역 신규/보완/개선 구분값 수정 추가 1002 - ksy -->
+	<update id="PkgDetailDAO.updateNPC_gubun" parameterClass="PkgDetailModel">
+	/*PkgDetailDAO.updateNPC_gubun*/
+	 	UPDATE PKG_DETAIL 
+        SET NEW_PN_CR_GUBUN = #new_pn_cr_gubun#
+        WHERE PKG_SEQ = #pkg_seq# AND PKG_DETAIL_SEQ = #pkg_detail_seq#
+	
+	</update>
+
+</sqlMap>

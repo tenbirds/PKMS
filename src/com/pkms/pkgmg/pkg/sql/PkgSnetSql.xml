@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgSnet">
+
+	<typeAlias alias="VerifyTemModel" type="com.pkms.verify_tem_mg.model.VerifyTemModel" />
+	
+	<insert id="PkgSnetDAO.pkgStatusSecurity_create" parameterClass="VerifyTemModel">
+		INSERT INTO SNET_CONFIG_PKMS
+		(
+			SEQ_NUM, 
+			PKG_NM, 
+			USER_ID, 
+			USER_NM 
+		)
+		VALUES
+		(
+			#seq_num#,  
+			#pkg_nm#, 
+			#user_id#, 
+			#user_nm# 
+		)
+	</insert>
+	
+	<select id="PkgSnetDAO.getAudit_Rate" parameterClass="VerifyTemModel" resultClass="int">
+		SELECT
+			IFNULL(MAX(AUDIT_RATE),0) AS AUDIT_RATE
+		FROM
+			SNET_AUDIT_REPORT_PKMS
+		WHERE
+			SEQ_NUM = #seq_num#
+	</select>
+
+</sqlMap>
+	

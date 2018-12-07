@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="SampleFile">
+
+	<typeAlias alias="SampleModel" type="com.pkms.sample.model.SampleModel" />
+
+	<insert id="SampleDAO.create" parameterClass="SampleModel">
+		<![CDATA[
+			INSERT INTO SAMPLE 
+				( ID
+				  , USER_NAME
+				  , DESCRIPTION
+				  , USE_YN
+				  , RECV_YN
+				  , AUTH_ADMIN_YN
+				  , AUTH_MANAGER_YN
+				  , AUTH_OPER_YN
+				  , SEX
+				  , PASSWD
+				  , REG_USER
+				  , REG_DATE
+				  , FILE_ID )
+			VALUES ( #id#
+				  , #user_name#
+				  , #description#
+				  , #use_yn#
+				  , #recv_yn#
+				  , 'Y'
+				  , 'Y'
+				  , 'Y'
+				  , #sex#
+				  , #passwd#
+				  , #session_user_name#
+				  , SYSDATE
+				  , #file_id# )
+		]]>
+	</insert>
+
+	<update id="SampleDAO.update" parameterClass="SampleModel">
+		<![CDATA[
+			UPDATE SAMPLE 
+			SET 
+			  DESCRIPTION=#description#
+			, USE_YN=#use_yn#
+			, RECV_YN=DECODE(#recv_yn#, '1', 'Y', 'N')       
+			, AUTH_ADMIN_YN='Y' 
+			, AUTH_MANAGER_YN='Y'  
+			, AUTH_OPER_YN='Y' 
+			, SEX=#sex#          
+			, PASSWD=#passwd#  
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE  
+			WHERE ID=#id#
+		]]>
+	</update>
+
+	<delete id="SampleDAO.delete" parameterClass="SampleModel">
+		<![CDATA[
+			DELETE FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</delete>
+
+	<select id="SampleDAO.read" parameterClass="SampleModel" resultClass="SampleModel">
+		<![CDATA[
+			SELECT
+				ID, USER_NAME, DESCRIPTION, USE_YN, DECODE(RECV_YN, 'Y', 1, 0) AS RECV_YN, SEX, PASSWD,  REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE, FILE_ID
+			FROM SAMPLE 
+			WHERE ID=#id#
+		]]>
+	</select>
+
+
+	<select id="SampleDAO.readList" parameterClass="SampleModel" resultClass="SampleModel">
+		<![CDATA[
+		SELECT 
+            ID, USER_NAME, DESCRIPTION, USE_YN, REG_USER 
+        FROM (
+             SELECT ROWNUM AS RNUM, A.* FROM (
+                SELECT
+                ID, USER_NAME, DESCRIPTION, USE_YN, REG_USER
+                FROM PKMS.SAMPLE
+                WHERE 1=1
+		]]>
+				<isNotEmpty property="searchKeyword">
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						ID = #searchKeyword#
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						USER_NAME LIKE '%' || #searchKeyword# || '%'
+					</isEqual>
+				</isNotEmpty>
+		<![CDATA[
+                ORDER BY ID DESC
+            ) A WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+        ) WHERE RNUM > #firstIndex#
+		]]>
+	</select>
+
+	<select id="SampleDAO.readTotalCount" parameterClass="SampleModel" resultClass="int">
+		SELECT COUNT(*) totcnt
+		FROM SAMPLE
+		WHERE 1=1
+		<isNotEmpty property="searchKeyword">
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				ID = #searchKeyword#
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				USER_NAME LIKE '%' || #searchKeyword# || '%'
+			</isEqual>
+		</isNotEmpty>
+	</select>
+
+</sqlMap>

@@ -1,0 +1,24 @@
+@charset "utf-8";
+/* 개발에 필요한 css 정의 */
+
+.pscroll {overflow:auto; padding:8px; border:1; border-style:solid; border-color:#EBEBEB;}
+
+/* 모바일 관련 */
+#centercolumn_mobile {
+ border: 0;
+ margin: 5px 10px;
+ display: inline; /* IE Hack */
+ padding: 0px;
+ width: 470px;
+ float: left;
+ min-height: 500px;
+ z-index:2;
+ }
+
+.login_mobile {background:url(/images/login_bg.gif) no-repeat left 200px; width:400px; height:400px; margin:0 auto; }
+.login_inp_mobile {width:280px; float:left; position: absolute; top:100px; left:50px; }
+.login_form_mobile {width:180px; float:left; position: absolute; top:10px; left:0px; }
+.login_form_mobile li {height:25px;}
+/* 모바일 관련 */
+
+

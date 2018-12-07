@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Faq">
+
+	<typeAlias alias="FaqModel" type="com.pkms.board.faq.model.FaqModel" />
+		<resultMap id="faqModelRead" class="FaqModel">
+		<result property="faq_seq" column="faq_seq"/>
+		<result property="title" column="title"/>
+		<result property="reg_name" column="reg_name"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_date" column="reg_date"/>
+		<result property="update_user" column="update_user"/>
+		<result property="update_name" column="update_name"/>
+		<result property="update_date" column="update_date"/>
+		<result property="master_file_id" column="master_file_id"/>
+		<result property="content" column="content"/>
+	</resultMap>
+	
+	<select id="faqDao.readList" parameterClass="FaqModel" resultClass="FaqModel">
+		SELECT
+			FAQ_SEQ, TITLE, REG_NAME, REG_DATE
+		FROM ( SELECT 
+				A.*
+			FROM 
+				( SELECT 
+					  FAQ_SEQ
+					, TITLE
+					, REG_NAME
+					, TO_CHAR (REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+					, ROW_NUMBER () OVER (ORDER BY FAQ_SEQ DESC) AS RN
+				    FROM FAQ
+				WHERE use_yn = 'Y'
+				<isNotNull property="searchKeyword">
+               	 	<isNotEmpty property="searchKeyword">
+						<isEqual prepend="AND" property="searchCondition" compareValue="0">
+							LOWER(TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition" compareValue="1">
+							LOWER(CONTENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition"  compareValue="2">
+							LOWER(REG_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+					</isNotEmpty>
+				</isNotNull>
+				ORDER BY faq_seq DESC
+				) A WHERE RN  <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		 WHERE RN  > #firstIndex#
+	</select>
+	
+	<select id="faqDao.readTotalCount" parameterClass="FaqModel" resultClass="int">
+		SELECT 
+			  COUNT(*) AS CNT
+	    FROM FAQ
+		WHERE use_yn = 'Y'
+		<isNotNull property="searchKeyword">
+			<isNotEmpty property="searchKeyword">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					LOWER(TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(CONTENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition"  compareValue="2">
+					LOWER(REG_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isNotEmpty>
+		</isNotNull>
+	</select>
+	
+	<insert id="faqDao.create" parameterClass="FaqModel">
+		insert into PKMS.FAQ
+		    (
+		        faq_seq,
+		        title,
+		        content,
+		        master_file_id,
+		        reg_user,
+		        reg_name
+		    )
+		    values
+		    (
+		        faq_seq.nextval,
+		        #title#,
+		        #content#,
+		        #master_file_id#,
+		        #session_user_id#,
+		        #session_user_name#
+		    )
+	</insert>
+	
+	<select id="faqDao.read" parameterClass="FaqModel" resultMap="faqModelRead">
+		SELECT
+		      FAQ_SEQ
+		    , TITLE
+		    , REG_NAME
+		    , REG_USER
+		    , TO_CHAR(REG_DATE, 'YYYY-MM-DD  HH24:MI:SS') REG_DATE
+		    , UPDATE_USER
+		    , UPDATE_NAME
+		    , TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD  HH24:MI:SS') UPDATE_DATE
+		    , MASTER_FILE_ID
+		    , CONTENT
+		from PKMS.FAQ
+		where faq_seq = #faq_seq#
+	</select>
+	
+	<update id="faqDao.update" parameterClass="FaqModel">
+		update PKMS.FAQ
+		set 
+			title = #title#,
+			content = #content#,
+			update_name = #session_user_name#,
+			update_user = #session_user_id#,
+			update_date = sysdate
+		where faq_seq = #faq_seq#
+	</update>
+	
+	<update id="faqDao.delete" parameterClass="FaqModel">
+		update PKMS.FAQ
+		set 
+			use_yn = 'N',
+			update_name = #session_user_name#,
+			update_user = #session_user_id#,
+			update_date = sysdate
+		where faq_seq = #faq_seq#
+	</update>
+	
+</sqlMap>

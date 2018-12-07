@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkmsCode">
+
+	<typeAlias alias="PkmsCodeModel" type="com.pkms.common.pkmscode.model.PkmsCodeModel" />
+
+	<select id="PkmsCodeDAO.readList" parameterClass="PkmsCodeModel" resultClass="PkmsCodeModel">
+		<![CDATA[
+		SELECT 
+            GUBUN, COMMON_CODE, NAME, COL1, COL2, COL3, COL4, ORD, REMARK 
+        FROM PKMS.COMMON_CODE
+        	WHERE  GUBUN = #gubun#
+        	ORDER BY ORD ASC
+		]]>
+	</select>
+
+
+</sqlMap>

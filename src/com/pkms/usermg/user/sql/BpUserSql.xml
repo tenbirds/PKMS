@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="BpUser">
+
+	<typeAlias alias="BpUserModel" type="com.pkms.usermg.user.model.BpUserModel" />
+
+	<insert id="BpUserDAO.create" parameterClass="BpUserModel">
+		<![CDATA[
+			INSERT INTO PKMS.BP_USER 
+			( 
+				    BP_USER_ID    
+				  , BP_NUM     
+				  , BP_USER_PW    
+				  , BP_USER_NAME  
+				  , BP_USER_PHONE1 
+				  , BP_USER_PHONE2 
+				  , BP_USER_PHONE3 
+				  , BP_USER_EMAIL      
+				  , APPROVAL_STATE     
+				  , USE_YN     
+				  , REG_USER   
+				  , REG_DATE   
+		    )
+			VALUES 
+			( 
+				    #bp_user_id#
+				  , #bp_num#
+				  , #bp_user_pw#
+				  , #bp_user_name#
+				  , #bp_user_phone1#
+				  , #bp_user_phone2#
+				  , #bp_user_phone3#
+				  , #bp_user_email#
+				  , #approval_state#      
+				  , 'Y'
+		]]>
+				  <isNotEmpty property="session_user_name">                 
+				  , #session_user_name#
+				  </isNotEmpty>
+				  <isEmpty property="session_user_name">
+				  , 'BP'
+				  </isEmpty>  
+		<![CDATA[
+				  , SYSDATE
+		    )
+		]]>
+	</insert>
+
+	<update id="BpUserDAO.update" parameterClass="BpUserModel">
+		<![CDATA[
+			UPDATE PKMS.BP_USER 
+			SET 
+				  BP_USER_NAME   	= #bp_user_name#
+				, BP_USER_PHONE1  	= #bp_user_phone1#
+				, BP_USER_PHONE2  	= #bp_user_phone2#
+				, BP_USER_PHONE3  	= #bp_user_phone3#
+				, BP_USER_EMAIL     = #bp_user_email#      
+		]]>
+				<isNotEmpty property="approval_state">    
+				, APPROVAL_STATE     = #approval_state#
+				</isNotEmpty>
+				<isNotEmpty property="bp_user_pw">    
+				, BP_USER_PW     	= #bp_user_pw#
+				</isNotEmpty>
+				<isNotEmpty property="session_user_name">
+				, UPDATE_USER 		= #session_user_name#
+				</isNotEmpty>
+				<isEmpty property="session_user_name">
+				, UPDATE_USER         = 'BP'
+				</isEmpty>  
+		<![CDATA[
+				, UPDATE_DATE 		= SYSDATE
+			WHERE BP_USER_ID=#bp_user_id#
+		]]>
+	</update>
+
+	<delete id="BpUserDAO.updateYN" parameterClass="BpUserModel">
+		<![CDATA[
+			UPDATE PKMS.BP_USER 
+			SET USE_YN = #use_yn#
+			WHERE BP_USER_ID=#bp_user_id#
+		]]>
+	</delete>
+
+	<select id="BpUserDAO.read" parameterClass="BpUserModel" resultClass="BpUserModel">
+		<![CDATA[
+			SELECT T1.APPROVAL_STATE, 
+			       T1.BP_USER_ID, 
+			       T1.BP_NUM, 
+			       T1.BP_USER_PW, 
+			       T1.BP_USER_NAME, 
+			       T1.BP_USER_PHONE1, 
+			       T1.BP_USER_PHONE2, 
+			       T1.BP_USER_PHONE3, 
+			       T1.BP_USER_EMAIL, 
+			       T1.USE_YN, 
+			       T1.REG_USER, 
+			       T1.REG_DATE, 
+			       T1.UPDATE_USER, 
+			       T1.UPDATE_DATE ,
+			        (SELECT BP_NAME 
+			         FROM PKMS.BP_MASTER 
+			        WHERE BP_NUM =T1.BP_NUM
+			       ) BP_NAME 
+			  FROM PKMS.BP_USER T1
+			 WHERE BP_USER_ID=#bp_user_id#  
+			       AND USE_YN = 'Y' 
+		]]>
+	</select>
+
+	<select id="BpUserDAO.readCount" parameterClass="BpUserModel" resultClass="java.lang.Integer">
+		<![CDATA[
+			SELECT
+				count(*)
+			FROM PKMS.BP_USER 
+			WHERE BP_USER_ID=#bp_user_id#
+		]]>
+	</select>
+
+
+	<select id="BpUserDAO.readList" parameterClass="BpUserModel" resultClass="BpUserModel">
+		<![CDATA[
+			SELECT
+				APPROVAL_STATE, BP_USER_ID, BP_USER_NAME, BP_USER_EMAIL, USE_YN,  BP_USER_PHONE1, BP_USER_PHONE2, BP_USER_PHONE3, REG_DATE
+			FROM PKMS.BP_USER
+			WHERE  BP_NUM = #bp_num# AND USE_YN = #use_yn#
+			ORDER BY BP_USER_NAME, REG_DATE ASC
+		]]>
+	</select>
+	
+		<select id="BpUserDAO.bp_sys_readList" parameterClass="BpUserModel" resultClass="BpUserModel">
+		<![CDATA[
+            SELECT DECODE(B.GROUP1_SEQ, '', '', B.GROUP1_NAME || '>' || B.GROUP2_NAME || '>' || B.GROUP3_NAME || '>' || B.SYSTEM_NAME) GROUP_DEPTH
+            FROM 
+                  SYSTEM_USER A,
+                 (SELECT 
+                       G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                       G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                       G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                       S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                       S.BP_NUM
+                  FROM PKMS.GROUP1 G1,
+                       PKMS.GROUP2 G2,
+                       PKMS.GROUP3 G3,
+                       PKMS.SYSTEM S
+                  WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                    AND G1.USE_YN = 'Y'
+                    AND G2.USE_YN = 'Y'
+                    AND G3.USE_YN = 'Y'
+               ) B
+            WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+              AND A.USER_ID = #bp_user_id#
+		]]>
+	</select>
+
+<!--  협력업체 담당자 삭제시 해당 시스템의 담당자 목록 동시 삭제 - ksy (0826)-->
+ 	<delete id="BpUserDAO.deleteDamdang" parameterClass="BpUserModel">
+		DELETE
+ 		FROM SYSTEM_USER 
+ 		WHERE USER_ID = #bp_user_id#
+	</delete>
+</sqlMap>

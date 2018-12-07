@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Diary">
+
+	<typeAlias alias="DiaryModel" type="com.pkms.pkgmg.diary.model.DiaryModel" />
+
+	<select id="DiaryDAO.readListApply" parameterClass="DiaryModel" resultClass="DiaryModel">
+		SELECT
+	        PE.PKG_SEQ, PE.WORK_GUBUN, PE.EQUIPMENT_SEQ 
+	        ,S.SYSTEM_SEQ, S.NAME AS SYSTEM_NAME
+	        ,I.TEAM_NAME, E.NAME AS TITLE
+	        ,PE.START_TIME, PE.END_TIME, TO_CHAR(PE.WORK_DATE, 'YYYY-MM-DD') WORK_DATE
+	        ,(SELECT MAX(TO_CHAR(WORK_DATE, 'YYYY-MM-DD')) FROM PKMS.PKG_EQUIPMENT WHERE PKG_SEQ = PE.PKG_SEQ) AS FINAL_DATE
+	        ,G.GROUP1_SEQ
+        FROM PKMS.PKG_EQUIPMENT PE
+             ,(
+                 SELECT 
+                     G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                     S.SYSTEM_SEQ, S.NAME SYSTEM_NAME, E.EQUIPMENT_SEQ, E.IDC_SEQ
+                 FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S, PKMS.EQUIPMENT E
+                 WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                 AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                 AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                 AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'
+                 AND E.SYSTEM_SEQ = S.SYSTEM_SEQ
+             ) G
+             ,PKMS.SYSTEM S, PKMS.EQUIPMENT E, PKMS.IDC I
+        WHERE PE.WORK_DATE IS NOT NULL
+          AND PE.EQUIPMENT_SEQ = G.EQUIPMENT_SEQ
+          AND PE.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ
+          AND S.SYSTEM_SEQ=E.SYSTEM_SEQ
+          AND I.IDC_SEQ=E.IDC_SEQ 
+		<isEqual property="session_user_type" compareValue="M">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				((SELECT count(1) FROM PKMS.SYSTEM_USER SU, PKMS.EQUIPMENT E WHERE E.EQUIPMENT_SEQ=PE.EQUIPMENT_SEQ AND E.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='M' AND SU.USER_ID=#session_user_id#)
+				+ (SELECT count(1) FROM PKMS.EQUIPMENT_USER EU WHERE PE.EQUIPMENT_SEQ=EU.EQUIPMENT_SEQ AND EU.USER_ID=#session_user_id#)) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="2">
+				(SELECT COUNT(1) FROM PKMS.IDC WHERE IDC_SEQ=G.IDC_SEQ AND TEAM_CODE=#session_user_group_id#) > 0
+			</isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				(SELECT count(1) FROM PKMS.SYSTEM_USER SU, PKMS.EQUIPMENT E WHERE E.EQUIPMENT_SEQ=PE.EQUIPMENT_SEQ AND E.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='B' AND SU.USER_ID=#session_user_id#) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.SYSTEM S, PKMS.EQUIPMENT E WHERE E.EQUIPMENT_SEQ=PE.EQUIPMENT_SEQ AND E.SYSTEM_SEQ=S.SYSTEM_SEQ 
+				AND (S.BP_NUM=#session_user_group_id# OR S.BP_NUM1=#session_user_group_id# OR S.BP_NUM2=#session_user_group_id# OR S.BP_NUM3=#session_user_group_id# OR S.BP_NUM4=#session_user_group_id#)) > 0
+			</isEqual>
+		</isEqual>
+	</select>
+
+	<select id="DiaryDAO.readListVerity" parameterClass="DiaryModel" resultClass="DiaryModel">
+		SELECT
+		PM.PKG_SEQ, PM.SYSTEM_SEQ,
+		(SELECT S.NAME FROM PKMS.SYSTEM S WHERE PM.SYSTEM_SEQ=S.SYSTEM_SEQ)  TITLE,
+		TO_CHAR(PM.VERIFY_DATE_START, 'YYYY-MM-DD') VERIFY_DATE_START,
+		TO_CHAR(PM.VERIFY_DATE_END, 'YYYY-MM-DD') VERIFY_DATE_END,
+		STATUS
+		FROM PKMS.PKG_MASTER PM
+		WHERE VERIFY_DATE_START IS NOT NULL
+		<isEqual property="session_user_type" compareValue="M">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				((SELECT count(1) FROM PKMS.SYSTEM_USER SU WHERE PM.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='M' AND SU.USER_ID=#session_user_id#)
+				+ (SELECT count(1) FROM PKMS.EQUIPMENT_USER EU, PKMS.EQUIPMENT E  WHERE E.EQUIPMENT_SEQ=EU.EQUIPMENT_SEQ AND PM.SYSTEM_SEQ=E.SYSTEM_SEQ AND EU.USER_ID=#session_user_id#)) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="2">
+				(SELECT COUNT(1) FROM PKMS.IDC I, PKMS.EQUIPMENT E WHERE E.IDC_SEQ=I.IDC_SEQ AND PM.SYSTEM_SEQ=E.SYSTEM_SEQ AND I.TEAM_CODE=#session_user_group_id#) > 0
+			</isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				(SELECT count(1) FROM PKMS.SYSTEM_USER SU WHERE PM.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='B' AND SU.USER_ID=#session_user_id#) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.SYSTEM S WHERE PM.SYSTEM_SEQ=S.SYSTEM_SEQ 
+				AND (S.BP_NUM=#session_user_group_id# OR S.BP_NUM1=#session_user_group_id# OR S.BP_NUM2=#session_user_group_id# OR S.BP_NUM3=#session_user_group_id# OR S.BP_NUM4=#session_user_group_id#)) > 0
+			</isEqual>
+		</isEqual>
+	</select>
+	
+	<select id="DiaryDAO.readListApply_Excel" parameterClass="DiaryModel" resultClass="DiaryModel">
+        SELECT
+	        TO_CHAR(PE.WORK_DATE, 'YYYY-MM-DD') AS WORK_DATE,
+	        (SELECT PM.TITLE FROM PKMS.PKG_MASTER PM, PKMS.SYSTEM S WHERE PE.PKG_SEQ=PM.PKG_SEQ AND S.SYSTEM_SEQ=PM.SYSTEM_SEQ) AS PKG_TITLE, 
+	        (SELECT S.NAME FROM PKMS.SYSTEM S, PKMS.EQUIPMENT E WHERE PE.EQUIPMENT_SEQ=E.EQUIPMENT_SEQ AND S.SYSTEM_SEQ=E.SYSTEM_SEQ) AS SYSTEM_NAME,
+	        (SELECT E.NAME FROM PKMS.EQUIPMENT E WHERE PE.EQUIPMENT_SEQ=E.EQUIPMENT_SEQ) AS TITLE,
+	        (SELECT I.TEAM_NAME FROM PKMS.IDC I, PKMS.EQUIPMENT E WHERE PE.EQUIPMENT_SEQ=E.EQUIPMENT_SEQ AND I.IDC_SEQ=E.IDC_SEQ) AS TEAM_NAME,
+	        (CASE WHEN PE.WORK_GUBUN = 'S' THEN '초도' ELSE '확대' END) AS WORK_GUBUN
+        FROM PKMS.PKG_EQUIPMENT PE
+            JOIN
+             (
+                 SELECT 
+                     G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                     S.SYSTEM_SEQ, S.NAME SYSTEM_NAME, E.EQUIPMENT_SEQ, E.IDC_SEQ
+                 FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S, PKMS.EQUIPMENT E
+                 WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                 AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                 AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                 AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'
+                 AND E.SYSTEM_SEQ = S.SYSTEM_SEQ
+             ) G ON PE.EQUIPMENT_SEQ = G.EQUIPMENT_SEQ
+        WHERE
+        	PE.WORK_DATE IS NOT NULL
+       	  AND
+        	TO_CHAR(PE.WORK_DATE, 'YYYY-MM') = #excel_date#
+		<isEqual property="session_user_type" compareValue="M">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				((SELECT count(1) FROM PKMS.SYSTEM_USER SU, PKMS.EQUIPMENT E WHERE E.EQUIPMENT_SEQ=PE.EQUIPMENT_SEQ AND E.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='M' AND SU.USER_ID=#session_user_id#)
+				+ (SELECT count(1) FROM PKMS.EQUIPMENT_USER EU WHERE PE.EQUIPMENT_SEQ=EU.EQUIPMENT_SEQ AND EU.USER_ID=#session_user_id#)) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="2">
+				(SELECT COUNT(1) FROM PKMS.IDC WHERE IDC_SEQ=G.IDC_SEQ AND TEAM_CODE=#session_user_group_id#) > 0
+			</isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				(SELECT count(1) FROM PKMS.SYSTEM_USER SU, PKMS.EQUIPMENT E WHERE E.EQUIPMENT_SEQ=PE.EQUIPMENT_SEQ AND E.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='B' AND SU.USER_ID=#session_user_id#) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.SYSTEM S, PKMS.EQUIPMENT E WHERE E.EQUIPMENT_SEQ=PE.EQUIPMENT_SEQ AND E.SYSTEM_SEQ=S.SYSTEM_SEQ 
+				AND (S.BP_NUM=#session_user_group_id# OR S.BP_NUM1=#session_user_group_id# OR S.BP_NUM2=#session_user_group_id# OR S.BP_NUM3=#session_user_group_id# OR S.BP_NUM4=#session_user_group_id#)) > 0
+			</isEqual>
+		</isEqual>
+        ORDER BY 
+        	WORK_DATE, PKG_TITLE, SYSTEM_NAME, TITLE, TEAM_NAME, WORK_GUBUN 
+	</select>
+	
+	<select id="DiaryDAO.readListVerity_Excel" parameterClass="DiaryModel" resultClass="DiaryModel">
+        SELECT
+        	TO_CHAR(PM.VERIFY_DATE_START, 'YYYY-MM-DD') VERIFY_DATE_START,
+        	TO_CHAR(PM.VERIFY_DATE_END, 'YYYY-MM-DD') VERIFY_DATE_END,
+        	PM.PKG_SEQ, PM.SYSTEM_SEQ, TITLE AS PKG_TITLE,
+        	(SELECT S.NAME FROM PKMS.SYSTEM S WHERE PM.SYSTEM_SEQ=S.SYSTEM_SEQ)  TITLE
+        FROM PKMS.PKG_MASTER PM
+        WHERE VERIFY_DATE_START IS NOT NULL
+          AND
+        	((SELECT count(1) FROM PKMS.PKG_MASTER WHERE TO_CHAR(PM.VERIFY_DATE_START, 'YYYY-MM') = #excel_date#)
+        	+ (SELECT count(1) FROM PKMS.PKG_MASTER WHERE TO_CHAR(PM.VERIFY_DATE_END, 'YYYY-MM') = #excel_date#)) > 0
+        
+		<isEqual property="session_user_type" compareValue="M">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				((SELECT count(1) FROM PKMS.SYSTEM_USER SU WHERE PM.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='M' AND SU.USER_ID=#session_user_id#)
+				+ (SELECT count(1) FROM PKMS.EQUIPMENT_USER EU, PKMS.EQUIPMENT E  WHERE E.EQUIPMENT_SEQ=EU.EQUIPMENT_SEQ AND PM.SYSTEM_SEQ=E.SYSTEM_SEQ AND EU.USER_ID=#session_user_id#)) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="2">
+				(SELECT COUNT(1) FROM PKMS.IDC I, PKMS.EQUIPMENT E WHERE E.IDC_SEQ=I.IDC_SEQ AND PM.SYSTEM_SEQ=E.SYSTEM_SEQ AND I.TEAM_CODE=#session_user_group_id#) > 0
+			</isEqual>
+		</isEqual>
+		<isEqual property="session_user_type" compareValue="B">
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="0">
+				(SELECT count(1) FROM PKMS.SYSTEM_USER SU WHERE PM.SYSTEM_SEQ=SU.SYSTEM_SEQ AND SU.USER_GUBUN='B' AND SU.USER_ID=#session_user_id#) > 0
+			</isEqual>
+			<isEqual prepend="AND" property="userDiaryCondition" compareValue="1">
+				(SELECT count(1) FROM PKMS.SYSTEM S WHERE PM.SYSTEM_SEQ=S.SYSTEM_SEQ 
+				AND (S.BP_NUM=#session_user_group_id# OR S.BP_NUM1=#session_user_group_id# OR S.BP_NUM2=#session_user_group_id# OR S.BP_NUM3=#session_user_group_id# OR S.BP_NUM4=#session_user_group_id#)) > 0
+			</isEqual>
+		</isEqual>
+		ORDER BY
+			VERIFY_DATE_START, VERIFY_DATE_END, PM.PKG_SEQ, PM.SYSTEM_SEQ, PKG_TITLE, TITLE
+	</select>
+
+</sqlMap>

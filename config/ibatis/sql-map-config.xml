@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMapConfig PUBLIC "-//ibatis.apache.org//DTD SQL Map Config 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-config-2.dtd">
+
+<sqlMapConfig>
+	<sqlMap resource="com/pkms/sample/sql/SampleSql.xml" />
+	
+	<!-- SK 조직 정보 관리 -->
+	<sqlMap resource="com/pkms/org/sql/OrgSql.xml" />
+	
+	<sqlMap resource="com/pkms/board/notice/sql/NoticeSql.xml" />
+	<sqlMap resource="com/pkms/board/qna/sql/QnaSql.xml" />
+	<sqlMap resource="com/pkms/board/qna/sql/CommentSql.xml" />
+	<sqlMap resource="com/pkms/board/request/sql/RequestSql.xml" />
+	<sqlMap resource="com/pkms/board/request/sql/RequestUserSql.xml" />
+	<sqlMap resource="com/pkms/board/pkgVer/sql/PkgVerSql.xml" />
+	<sqlMap resource="com/pkms/board/faq/sql/FaqSql.xml" />
+	<sqlMap resource="com/pkms/board/report/sql/SolutionReportSql.xml" />
+	
+	<!-- 20181121 eryoon 추가 -->
+	
+
+	<!-- PKG 검증요청 -->
+	<sqlMap resource="com/pkms/pkgmg/pkg21/sql/Pkg21Sql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg21/sql/Pkg21StatusSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgTab1Sql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgTab2Sql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgStatusSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgStatusVerifySql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgEquipmentSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgUserSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgDetailSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgDetailVariablSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgDetailSearchSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/pkg/sql/PkgDetailNewPnCrSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/schedule/sql/ScheduleSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/diary/sql/DiarySql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/mobile/sql/MobileSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/wired/sql/WiredSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/access/sql/AccessSql.xml" />
+	<sqlMap resource="com/pkms/pkgmg/wired/sql/WiredStatusSql.xml" />	
+		
+	<!-- 첨부파일 관리 -->
+	<sqlMap resource="com/pkms/common/attachfile/sql/AttachFileSql.xml" />
+	
+	<!-- 메뉴 관리 -->
+	<sqlMap resource="com/pkms/common/menu/sql/MenuSql.xml" />
+	
+	<!-- 공통 코드 관리 -->
+	<sqlMap resource="com/pkms/common/pkmscode/sql/PkmsCodeSql.xml" />
+
+	<!-- 사용자 관리 -->
+	<sqlMap resource="com/pkms/usermg/user/sql/SktUserSql.xml" />
+	<sqlMap resource="com/pkms/usermg/user/sql/BpUserSql.xml" />
+	<sqlMap resource="com/pkms/usermg/bp/sql/BpSql.xml" />
+	<sqlMap resource="com/pkms/usermg/auth/sql/AuthSql.xml" />
+	<sqlMap resource="com/pkms/usermg/auth/sql/AuthUserSql.xml" />
+
+	<!-- 템플릿 관련 -->	
+	<sqlMap resource="com/pkms/tempmg/sql/TempmgSql.xml" />	
+	<sqlMap resource="com/pkms/tempmg/sql/TempmgColumnSql.xml" />
+	<sqlMap resource="com/pkms/verify_tem_mg/sql/VerifyTemSql.xml" />
+	<sqlMap resource="com/pkms/verify_tem_mg/sql/VerifyTemMgSql.xml" />
+	
+	<!-- 문서 자료실 -->	
+	<sqlMap resource="com/pkms/tempmg/sql/DocumentmgSql.xml" />
+	
+	<!-- Admin 관련 -->	
+	<sqlMap resource="com/pkms/verify_tem_mg/sql/PkgCheckListMgSql.xml" />
+	<sqlMap resource="com/pkms/tempmg/sql/CodemgSql.xml" />
+	
+	<!-- 시스템 관리 -->
+	<sqlMap resource="com/pkms/sys/group1/sql/Group1Sql.xml" />
+	<sqlMap resource="com/pkms/sys/group2/sql/Group2Sql.xml" />
+	<sqlMap resource="com/pkms/sys/group3/sql/Group3Sql.xml" />
+	<sqlMap resource="com/pkms/sys/system/sql/SystemSql.xml" />
+	<sqlMap resource="com/pkms/sys/system/sql/SystemUserSql.xml" />
+	<sqlMap resource="com/pkms/sys/equipment/sql/EquipmentSql.xml" />
+	<sqlMap resource="com/pkms/sys/equipment/sql/EquipmentUserSql.xml" />
+	<sqlMap resource="com/pkms/sys/idc/sql/IdcSql.xml" />
+	
+	<!-- 시스템 트리 관리 -->
+	<sqlMap resource="com/pkms/sys/tree/sql/TreeSql.xml" />
+	<!-- 시스템 파일 관리 -->
+	<sqlMap resource="com/pkms/sys/file/sql/FileSql.xml" />
+	
+	<!-- 신규/PN/CR -->
+	<sqlMap resource="com/pkms/newpncrmg/sql/NewpncrSql.xml"/>
+	<sqlMap resource="com/pkms/newpncrmg/sql/NewpncrDuplicateCheckSql.xml"/>
+	
+	<!-- owms 과금처리-->
+	<sqlMap resource="com/pkms/common/owms/sql/OwmsSql.xml"/>
+	
+	<!-- workSystem 작업 연동 -->
+	<sqlMap resource="com/pkms/common/workSystem/sql/WorkSystemSql.xml"/>
+	
+	<!-- 통계/보고서 -->
+	<sqlMap resource="com/pkms/statsmg/stats/sql/StatsSql.xml"/>
+	<sqlMap resource="com/pkms/statsmg/reports/sql/QuarterlyReportSql.xml"/>
+	<sqlMap resource="com/pkms/statsmg/reports/sql/WeeklyReportSql.xml"/>
+	
+	<!-- Sms -->
+	<sqlMap resource="com/pkms/common/sms/sql/SmsSql.xml"/>
+	
+	<!-- Login Cnt -->
+	<sqlMap resource="com/pkms/common/login/sql/LoginSql.xml"/>
+	
+	<!-- ONS db -->
+	<sqlMap resource="com/pkms/batch/sktdb/sql/SktDbScheduleSql.xml"/>
+	
+	<!-- newMail -->
+	<sqlMap resource="com/pkms/common/newmail/sql/NewMailSql.xml"/>
+
+
+</sqlMapConfig>

@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgTab1">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+
+	<insert id="pkgTab1DAO.create" parameterClass="PkgModel">
+		<selectKey keyProperty="pkg_seq" resultClass="String">
+			select pkg_master_seq.nextval from dual
+		</selectKey>
+	<![CDATA[
+		INSERT INTO PKMS.PKG_MASTER (
+            PKG_SEQ, TITLE, ROAMING_LINK, VER, BYPASS_TRAFFIC,
+            VER_GUBUN, SER_YN, SER_CONTENT, 
+            CONTENT, STATUS, STATUS_DEV,
+            SYSTEM_SEQ,  
+			DEV_YN,
+			PE_YN,
+            PE_EDIT_TITLE,
+            PE_CONTENT,   
+			PE_TEST_DATE, 
+			PE_EQUIP_IP,  
+			PE_EQUIP_PORT,
+			PE_NO_1,      
+			PE_NO_2,      
+			PE_NO_3,      
+			PE_NO_4,      
+			PE_NO_5,      
+			PE_GUBUN,     
+            REG_USER, REG_USER_GUBUN,
+            SER_DOWNTIME,
+            PE_YN_COMMENT, ROAMING_LINK_COMMENT, RM_ISSUE_COMMENT
+            ,BRANCH_TYPE)
+        VALUES ( 
+            #pkg_seq#, #title#, #roaming_link#, #ver#, #bypass_traffic#,
+            #ver_gubun#, #ser_yn#, #ser_content#, 
+            #content#, #status#, #status_dev#,
+            #system_seq#, 
+            #dev_yn#,
+            #pe_yn#,
+			#pe_edit_title#,
+			#pe_content#,
+			#pe_test_date#,
+			#pe_equip_ip#,
+			#pe_equip_port#,
+			#pe_no_1#,
+			#pe_no_2#,
+			#pe_no_3#,
+			#pe_no_4#,
+			#pe_no_5#,
+			#pe_gubun#,
+            #session_user_id#, #session_user_type#,
+            #ser_downtime#,
+            #pe_yn_comment#, #roaming_link_comment#, #rm_issue_comment#
+            ,'PKMS')
+	]]>
+	</insert>
+
+	<update id="pkgTab1DAO.update" parameterClass="PkgModel">
+        UPDATE PKMS.PKG_MASTER SET
+               TITLE             = #title#,
+               ROAMING_LINK		 = #roaming_link#,
+               BYPASS_TRAFFIC    = #bypass_traffic#,
+               VER               = #ver#,
+               VER_GUBUN         = #ver_gubun#,
+               SER_YN            = #ser_yn#,
+               SER_CONTENT       = #ser_content#,
+               CONTENT           = #content#,
+               SYSTEM_SEQ        = #system_seq#,
+               DEV_YN			 = #dev_yn#,
+               <isEqual property="dev_yn" compareValue="D">
+               STATUS_DEV		 = #status_dev#,
+               </isEqual>
+			   <isEqual property="status" compareValue="0">
+			   <isEqual property="pe_yn" compareValue="Y">
+			   PE_YN= #pe_yn#,
+			   PE_EDIT_TITLE = #pe_edit_title#,
+			   PE_CONTENT = #pe_content#,
+			   PE_TEST_DATE = #pe_test_date#,
+		 	   PE_EQUIP_IP = #pe_equip_ip#,
+			   PE_EQUIP_PORT = #pe_equip_port#,
+			   PE_NO_1 = #pe_no_1#,
+			   PE_NO_2 = #pe_no_2#,
+			   PE_NO_3 = #pe_no_3#,
+			   PE_NO_4 = #pe_no_4#,
+			   PE_NO_5 = #pe_no_5#,
+			   PE_GUBUN = #pe_gubun#,
+			   PE_YN_COMMENT = #pe_yn_comment#,
+			   </isEqual>
+ 				<isEqual property="pe_yn" compareValue="N">
+			   PE_YN='',
+			   PE_EDIT_TITLE = '',
+			   PE_CONTENT = '',
+			   PE_TEST_DATE = '',
+		 	   PE_EQUIP_IP = '',
+			   PE_EQUIP_PORT = '',
+			   PE_NO_1 = '',
+			   PE_NO_2 ='',
+			   PE_NO_3 = '',
+			   PE_NO_4 = '',
+			   PE_NO_5 = '',
+			   PE_GUBUN = '',
+			   PE_YN_COMMENT = '',
+			   </isEqual> 
+			   </isEqual>
+               UPDATE_USER       = #session_user_id#,
+               UPDATE_USER_GUBUN = #session_user_type#,
+               UPDATE_DATE       = sysdate,
+               SER_DOWNTIME = #ser_downtime#,
+               ROAMING_LINK_COMMENT = #roaming_link_comment#,
+			   RM_ISSUE_COMMENT = #rm_issue_comment#
+        WHERE  PKG_SEQ           = #pkg_seq#
+	</update>
+
+
+</sqlMap>

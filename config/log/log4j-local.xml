@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>  
+<!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
+<log4j:configuration xmlns:log4j="http://jakarta.apache.org/log4j/">
+
+<!-- ***************************** 로컬 개발 ********************************* -->
+	<!-- 로그
+	 -->
+	 <appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{MM-dd HH:mm:ss}] %-5p %F:%L : %m%n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.StringMatchFilter">
+			<param name="StringToMatch" value="Access is denied" />
+			<param name="AcceptOnMatch" value="false" />
+		</filter>
+	</appender>
+<!-- 
+	<appender name="stdout" class="org.apache.log4j.ConsoleAppender">
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] [%c{1}] [%L] [%p] %m %n" />
+		</layout>
+		<filter class="org.apache.log4j.varia.StringMatchFilter">
+			<param name="StringToMatch" value="Access is denied" />
+			<param name="AcceptOnMatch" value="false" />
+		</filter>
+	</appender>
+ -->	
+	<appender name="file" class="org.apache.log4j.FileAppender">
+		<param name="File" value="d:/pkmslog/pkms_ServiceLog.log"/>
+		<param name="Append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] [%c{1}] [%L] [%p] %m %n" />
+		</layout>
+	</appender>
+
+<!-- ***************************** 로컬 개발 ********************************* -->
+
+<!-- ***************************** 개발서버 배포용 ********************************* -->	
+	<!-- 
+	<appender name="file" class="org.apache.log4j.FileAppender">
+		<param name="File" value="/home/usr/log/pkmsLog/ServiceLog.log"/>
+		<param name="Append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] [%c{1}] [%L] [%p] %m %n" />
+		</layout>
+	</appender>
+
+	<appender name="dailyout" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="/home/usr/log/pkmsLog/pkms_dailyout.log" />
+		<param name="Append" value="true" />
+		<param name="DatePattern" value="'.'yyMMdd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%t> [%d{yyyy-MM-dd HH:mm:ss}] [%c{1}] [%L] [%p] %m %n" />
+		</layout>
+	</appender>
+	-->
+	
+<!-- ***************************** 개발서버 배포용 ********************************* -->
+
+<!-- ***************************** 상용서버 WEB1, WEB2 배포용 ********************************* -->	
+	<!-- file 로그, 연동 sms, mail  
+	<appender name="file" class="org.apache.log4j.FileAppender">
+		<param name="File" value="/log/pkmsLog/pkms_ServiceLog.log"/>
+		<param name="Append" value="true" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="[%d{yyyy-MM-dd HH:mm:ss}] [%c{1}] [%L] [%p] %m %n" />
+		</layout>
+	</appender>
+
+	<appender name="dailyout" class="org.apache.log4j.DailyRollingFileAppender">
+		<param name="file" value="/log/pkmsLog/pkms_dailyout.log" />
+		<param name="Append" value="true" />
+		<param name="DatePattern" value="'.'yyMMdd" />
+		<layout class="org.apache.log4j.PatternLayout">
+			<param name="ConversionPattern" value="%t> [%d{yyyy-MM-dd HH:mm:ss}] [%c{1}] [%L] [%p] %m %n" />
+		</layout>
+	</appender>
+	-->
+<!-- ***************************** 상용서버 WEB1, WEB2 배포용 ********************************* -->
+<!-- 		
+	<logger name="com.pkms.common.mail.service.MailService">
+		<level value="DEBUG"></level>
+		<appender-ref ref="file"/>
+	</logger>
+	
+	<logger name="com.pkms.common.sms.service.SmsService">
+		<level value="DEBUG"></level>
+		<appender-ref ref="file"/>
+	</logger>
+	
+	<logger name="com.pkms.pkgmg.pkg.service.PkgStatusService">
+		<level value="DEBUG"></level>
+		<appender-ref ref="file"/>
+	</logger>
+ -->	
+ 
+	<logger name="log4j.logger.com.ibatis">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+
+	<logger name="log4j.logger.com.ibatis.common.jdbc.SimpleDataSource">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+
+	<logger name="log4j.logger.com.ibatis.common.jdbc.ScriptRunner">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+	
+	<logger name="log4j.logger.com.ibatis.sqlmap.engine.impl.SqlMapClientDelegate">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+
+	<logger name="log4j.logger.java.sql.Connection">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+	
+	<logger name="log4j.logger.java.sql.Statement">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+	
+	<logger name="log4j.logger.java.sql.PreparedStatement">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+
+	<logger name="log4j.logger.java.sql.ResultSet">
+		<level value="DEBUG"></level>
+		<appender-ref ref="stdout"/>
+	</logger>
+
+	<!-- 서버용
+	<root>
+		<level value="DEBUG" />
+		<appender-ref ref="dailyout" />
+	</root>	
+	-->
+	
+	<!-- 로컬용	
+	-->
+	<root>
+		<level value="DEBUG" />
+		<appender-ref ref="stdout" />
+	</root>
+</log4j:configuration>  

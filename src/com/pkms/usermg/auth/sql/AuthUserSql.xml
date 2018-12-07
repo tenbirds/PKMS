@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="AuthUser">
+
+	<typeAlias alias="AuthUserModel" type="com.pkms.usermg.auth.model.AuthUserModel" />
+
+	<insert id="AuthUserDAO.create" parameterClass="java.util.List">
+		INSERT ALL
+		<dynamic>
+			<iterate conjunction=" ">
+				<![CDATA[
+					INTO PKMS.USER_AUTH_ROLE (AUTH_ROLE, USER_ID, USER_GUBUN)
+					VALUES (#[].auth_role#, #[].user_id#, #[].user_gubun#)
+				]]>
+			</iterate>
+		</dynamic>
+		SELECT * FROM DUAL
+	</insert>
+
+	<select id="AuthUserDAO.read" parameterClass="AuthUserModel" resultClass="AuthUserModel">
+		<![CDATA[
+			SELECT 
+			   	#auth_user_id# AS AUTH_USER_ID,
+                (SELECT DECODE(COUNT(*), 0, 0, 1) FROM PKMS.USER_AUTH_ROLE WHERE USER_ID = #auth_user_id# AND USER_GUBUN = 'M' AND AUTH_ROLE = 'ROLE_ADMIN') AS AUTH_ROLE_ADMIN, 
+                (SELECT DECODE(COUNT(*), 0, 0, 1) FROM PKMS.USER_AUTH_ROLE WHERE USER_ID = #auth_user_id# AND USER_GUBUN = 'M' AND AUTH_ROLE = 'ROLE_MANAGER') AS AUTH_ROLE_MANAGER, 
+                (SELECT DECODE(COUNT(*), 0, 0, 1) FROM PKMS.USER_AUTH_ROLE WHERE USER_ID = #auth_user_id# AND USER_GUBUN = 'M' AND AUTH_ROLE = 'ROLE_OPERATOR') AS AUTH_ROLE_OPERATOR 
+			FROM
+                DUAL
+		]]>
+	</select>
+
+	<delete id="AuthUserDAO.delete" parameterClass="AuthUserModel">
+		<![CDATA[
+			DELETE PKMS.USER_AUTH_ROLE
+			WHERE USER_GUBUN = 'M' AND USER_ID = #auth_user_id#
+		]]>
+	</delete>
+
+</sqlMap>

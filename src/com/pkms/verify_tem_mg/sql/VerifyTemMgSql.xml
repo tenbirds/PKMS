@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="VerifyTemMg">
+	<typeAlias alias="VerifyTemModel" type="com.pkms.verify_tem_mg.model.VerifyTemModel" />
+	
+	<insert id="VerifyTemMgDAO.create_verifyManage" parameterClass="VerifyTemModel">
+		<selectKey keyProperty="verify_seq" resultClass="String">
+			SELECT PKMS.VERIFY_SEQ.nextval FROM dual
+		</selectKey>
+		INSERT INTO VERIFYTEM_MANAGE 
+		(
+			VERIFY_SEQ,
+			VERIFY_TYPE,
+			VERIFY_TITLE,
+			REG_DATE,
+			REG_USER
+		)
+		VALUES
+		(
+			#verify_seq#,
+			#verify_type#,
+			#verify_title#,
+			SYSDATE,
+			#session_user_id#
+		)
+	</insert>
+	
+	<insert id="VerifyTemMgDAO.create_verifyTem" parameterClass="VerifyTemModel">
+		INSERT INTO VERIFYTEM_MANAGE_TEM
+		(
+			VERIFY_SEQ,
+			VERIFY_VER,
+			QUEST_SEQ,
+			SYSTEM_SEQ
+		)
+		VALUES
+		(
+			#verify_seq#,
+			#verify_ver#,
+			#quest_seq#,
+			#system_seq#
+		)
+	</insert>
+	
+	<select id="VerifyTemMgDAO.readList_verifyTem" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		<isEqual property="isPaging" compareValue="true">
+			<![CDATA[
+				SELECT
+					*
+		        FROM (
+	            	SELECT 
+	            		ROWNUM AS RNUM
+	            		, A.* 
+	            	FROM (
+			]]>
+		</isEqual>
+		SELECT * FROM (
+			SELECT 
+				TM.VERIFY_SEQ, 
+				TM.VERIFY_VER, 
+				MN.VERIFY_TITLE, 
+				MN.REG_DATE, 
+				MN.VERIFY_TYPE,
+				MN.REG_USER,
+				TM.SYSTEM_SEQ,
+				( 	SELECT (G1.NAME || '>' || G2.NAME || '>' || G3.NAME || '>' || S.NAME) AS SYSTEM_NAME
+					FROM PKMS.GROUP1 G1,
+						PKMS.GROUP2 G2,
+						PKMS.GROUP3 G3,
+						PKMS.SYSTEM S
+					WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+						AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+						AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+						AND G1.USE_YN = 'Y'
+						AND G2.USE_YN = 'Y'
+						AND G3.USE_YN = 'Y'
+						AND SYSTEM_SEQ = TM.SYSTEM_SEQ 
+				) AS SYSTEM_NAME,
+				(SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = REG_USER) AS REG_NAME
+			FROM VERIFYTEM_MANAGE_TEM TM, VERIFYTEM_MANAGE MN
+			WHERE TM.VERIFY_SEQ = MN.VERIFY_SEQ AND MN.VERIFY_TYPE = #verify_type#
+			GROUP BY TM.VERIFY_SEQ, TM.VERIFY_VER, MN.VERIFY_TITLE, MN.REG_DATE, MN.VERIFY_TYPE, MN.REG_USER, TM.SYSTEM_SEQ
+			ORDER BY TM.VERIFY_SEQ DESC , TM.VERIFY_VER ASC )
+			<isNotEmpty property="searchKeyword">
+				WHERE VERIFY_TITLE LIKE '%' || #searchKeyword# || '%'
+			</isNotEmpty>
+			<isEqual property="isPaging" compareValue="true">
+	         <![CDATA[
+		         	) A WHERE ROWNUM  <=  #firstIndex# + #recordCountPerPage#
+		        ) WHERE RNUM > #firstIndex#
+	        ]]>
+		</isEqual>
+	</select>
+	
+	<select id="VerifyTemMgDAO.readList_verifyTem_totalCnt" parameterClass="VerifyTemModel" resultClass="int">
+		SELECT count(VERIFY_SEQ) FROM (
+			SELECT 
+				TM.VERIFY_SEQ, 
+				TM.VERIFY_VER, 
+				MN.VERIFY_TITLE, 
+				MN.REG_DATE, 
+				MN.VERIFY_TYPE,
+				MN.REG_USER,
+				(SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = REG_USER) AS REG_NAME
+			FROM VERIFYTEM_MANAGE_TEM TM, VERIFYTEM_MANAGE MN
+			WHERE TM.VERIFY_SEQ = MN.VERIFY_SEQ AND MN.VERIFY_TYPE = #verify_type#
+			GROUP BY TM.VERIFY_SEQ, TM.VERIFY_VER, MN.VERIFY_TITLE, MN.REG_DATE, MN.VERIFY_TYPE, MN.REG_USER
+			ORDER BY TM.VERIFY_SEQ DESC , TM.VERIFY_VER ASC )
+			<isNotEmpty property="searchKeyword">
+				WHERE VERIFY_TITLE LIKE '%' || #searchKeyword# || '%'
+			</isNotEmpty>
+	</select>
+	
+	<select id="VerifyTemMgDAO.read_verifyTem" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT 
+			TM.VERIFY_SEQ, 
+			TM.VERIFY_VER, 
+			MN.VERIFY_TITLE, 
+			TM.QUEST_SEQ,
+			MN.REG_USER,
+			TM.SYSTEM_SEQ  
+		FROM 
+			(SELECT * FROM  VERIFYTEM_MANAGE_TEM WHERE VERIFY_SEQ = #verify_seq# and verify_ver = #verify_ver#) TM ,
+			(SELECT * FROM VERIFYTEM_MANAGE WHERE VERIFY_TYPE = #verify_type#) MN
+		WHERE TM.VERIFY_SEQ = MN.VERIFY_SEQ
+	</select>
+	
+	<delete id="VerifyTemMgDAO.delete_verifyMG_Tem" parameterClass="VerifyTemModel">
+		DELETE FROM VERIFYTEM_MANAGE_TEM
+		WHERE VERIFY_SEQ = #verify_seq# and VERIFY_VER = #verify_ver#
+	</delete>
+	
+	<delete id="VerifyTemMgDAO.delete_verifyMG" parameterClass="VerifyTemModel">
+		DELETE FROM VERIFYTEM_MANAGE
+		WHERE VERIFY_SEQ = #verify_seq#
+	</delete>
+	
+	<select id="VerifyTemMgDAO.getNewVer" parameterClass="VerifyTemModel" resultClass="int">
+		SELECT MAX(VERIFY_VER)+1 NEW_VER FROM VERIFYTEM_MANAGE_TEM
+            WHERE VERIFY_SEQ = #verify_seq#
+	</select>
+	
+	<select id="VerifyTemMgDAO.check4PKGusing_temp" parameterClass="VerifyTemModel" resultClass="String">
+		SELECT PKG_SEQ 
+		FROM PKG_VERIFY_GUBUN 
+		WHERE VERIFY_SEQ = #verify_seq# AND VERIFY_VER = #verify_ver#
+	</select>
+	
+	<select id="VerifyTemMgDAO.read_sysName_verifyTem" parameterClass="String" resultClass="String">
+		SELECT 
+			(G1.NAME || '>' || G2.NAME || '>' || G3.NAME || '>' || S.NAME) AS SYSTEM_NAME
+		FROM
+			PKMS.GROUP1 G1,
+			PKMS.GROUP2 G2,
+			PKMS.GROUP3 G3,
+			PKMS.SYSTEM S
+		WHERE
+		    G1.GROUP1_SEQ = G2.GROUP1_SEQ
+			AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+			AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+			AND G1.USE_YN = 'Y'
+			AND G2.USE_YN = 'Y'
+			AND G3.USE_YN = 'Y'
+			AND SYSTEM_SEQ = #system_seq#
+	</select>
+	
+	
+
+</sqlMap>

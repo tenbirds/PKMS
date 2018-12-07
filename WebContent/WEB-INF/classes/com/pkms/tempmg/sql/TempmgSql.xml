@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Tempmg">
+
+	<typeAlias alias="TempmgModel" type="com.pkms.tempmg.model.TempmgModel" />
+
+	<insert id="TempmgDAO.create" parameterClass="TempmgModel">
+		<selectKey keyProperty="new_tpl_seq" resultClass="String">
+			SELECT PKMS.TEMPLATE_SEQ.nextval FROM dual
+		</selectKey>
+		<![CDATA[
+			INSERT INTO PKMS.TEMPLATE
+				( 
+					TPL_SEQ,
+					ORD,
+					TITLE,
+					POSITION,
+					USE_YN,
+					REG_USER,
+					REG_DATE
+				  )
+			SELECT
+					#new_tpl_seq#,
+					ORD,
+					TITLE,
+					POSITION,
+					#use_yn#,
+					#session_user_id#,
+					SYSDATE
+			FROM PKMS.TEMPLATE
+			WHERE TPL_SEQ = #tpl_seq#
+		]]>
+	</insert>
+
+	<select id="TempmgDAO.read" parameterClass="TempmgModel" resultClass="TempmgModel">
+		SELECT
+			TPL_SEQ
+			, (TO_CHAR(REG_DATE, 'yyyymmdd') || '-' || TPL_SEQ) AS TPL_VER
+			, USE_YN
+		FROM PKMS.TEMPLATE
+		WHERE 1 = 1
+		<isNotEmpty property="tpl_seq" prepend="AND">
+			TPL_SEQ = #tpl_seq# AND ROWNUM = 1
+		</isNotEmpty>
+		<isEmpty property="tpl_seq">
+			<isEqual prepend="AND" property="use_yn" compareValue="Y">
+				USE_YN = 'Y' AND ROWNUM = 1
+			</isEqual>
+			<isEqual prepend="AND" property="use_yn" compareValue="N">
+				ROWNUM = 0
+			</isEqual>
+		</isEmpty>
+	</select>
+
+	<select id="TempmgDAO.readList" parameterClass="TempmgModel" resultClass="TempmgModel">
+		<isEqual property="isPaging" compareValue="true">
+		<![CDATA[
+			SELECT
+				*
+	        FROM (
+            	SELECT 
+            		ROWNUM AS RNUM
+            		, A.* 
+            	FROM (
+		]]>
+		</isEqual>
+		            SELECT 
+		            	TPL_SEQ
+		            	, TO_CHAR(REG_DATE, 'yyyy-mm-dd') AS REG_DATE
+	            	    , TPL_VER
+		            	, NVL(CNT, 0) AS CNT
+		            	, DECODE(USE_YN, 'Y', '사용', '사용 안함') AS USE_YN
+		            FROM (
+			            SELECT
+			            	Y.TPL_SEQ, X.CNT, Y.USE_YN, Y.REG_DATE
+		            	    , (TO_CHAR(Y.REG_DATE, 'yyyymmdd') || '-' || Y.TPL_SEQ) AS TPL_VER
+			            FROM (
+			                SELECT
+			                	TPL_SEQ, count(TPL_SEQ) AS CNT
+			                FROM PKMS.TEMPLATE
+			                WHERE POSITION = 'V'
+			                GROUP BY TPL_SEQ
+			                ) X, 
+			                PKMS.TEMPLATE Y
+		                WHERE X.TPL_SEQ(+) = Y.TPL_SEQ
+		                AND Y.ORD = (SELECT MIN(ORD) FROM PKMS.TEMPLATE WHERE TPL_SEQ = Y.TPL_SEQ)
+		            )
+			        WHERE 1 = 1
+				<isNotEmpty property="searchKeyword">
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						TPL_VER LIKE '%' || #searchKeyword# || '%'
+					</isEqual>
+				</isNotEmpty>
+	                ORDER BY TPL_SEQ DESC
+		<isEqual property="isPaging" compareValue="true">
+		<![CDATA[
+	            ) A WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+	        ) WHERE RNUM > #firstIndex#
+		]]>
+		</isEqual>
+	</select>
+
+	<select id="TempmgDAO.readTotalCount" parameterClass="TempmgModel" resultClass="int">
+		<![CDATA[
+        SELECT
+            COUNT(TPL_SEQ) totcnt
+        FROM (
+            SELECT * FROM (
+                SELECT
+                    X.TPL_SEQ
+            	, (TO_CHAR(Y.REG_DATE, 'yyyymmdd') || '-' || X.TPL_SEQ) AS TPL_VER
+                FROM (
+                    SELECT
+                        TPL_SEQ
+                    FROM PKMS.TEMPLATE
+	                WHERE POSITION = 'V'
+                    GROUP BY TPL_SEQ
+                    ORDER BY TPL_SEQ DESC
+                    ) X, 
+                    PKMS.TEMPLATE Y
+                WHERE X.TPL_SEQ(+) = Y.TPL_SEQ
+                AND Y.ORD = (SELECT MIN(ORD) FROM PKMS.TEMPLATE WHERE TPL_SEQ = Y.TPL_SEQ)
+	        )
+	        WHERE 1 = 1
+		]]>
+		<isNotEmpty property="searchKeyword">
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				TPL_VER LIKE '%' || #searchKeyword# || '%'
+			</isEqual>
+		</isNotEmpty>
+		)
+	</select>
+
+	<update id="TempmgDAO.update" parameterClass="TempmgModel">
+		<![CDATA[
+			UPDATE PKMS.TEMPLATE
+			SET 
+				USE_YN  	  = #use_yn#
+				, UPDATE_USER = #session_user_id#
+				, UPDATE_DATE = SYSDATE
+			WHERE TPL_SEQ = #tpl_seq#
+		]]>
+	</update>
+	
+	<update id="TempmgDAO.updateOther" parameterClass="TempmgModel">
+		<![CDATA[
+			UPDATE PKMS.TEMPLATE
+			SET 
+				USE_YN  	  = #use_yn#
+				, UPDATE_USER = #session_user_id#
+				, UPDATE_DATE = SYSDATE
+			WHERE TPL_SEQ != #tpl_seq#
+		]]>
+	</update>
+
+</sqlMap>

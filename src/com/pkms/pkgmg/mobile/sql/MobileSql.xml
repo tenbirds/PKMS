@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Mobile">
+
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+
+	<select id="MobileDAO.read" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT 
+		     PM.PKG_SEQ,
+		     PM.TITLE,
+		     PM.VER,
+		     PM.VER_GUBUN, 
+		     DECODE(SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+		     PM.STATUS,
+		     PM.CONTENT,
+		     PM.SER_YN,
+		     NVL(PM.SER_DOWNTIME, '0') AS SER_DOWNTIME,
+		     PM.PE_YN,
+		     PM.MASTER_FILE_ID,
+		     PM.ROAMING_LINK,
+		     SYS.SYSTEM_USER_ID,
+		     SYS.SYSTEM_SEQ,
+		     (SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = SYS.SYSTEM_USER_ID) AS SYSTEM_USER_NAME,
+		     PM.PE_YN_COMMENT, PM.ROAMING_LINK_COMMENT, NVL(PM.RM_ISSUE_COMMENT, '내용 없음') AS RM_ISSUE_COMMENT, PM.SER_CONTENT,
+		     PM.DEV_YN,
+		     PM.ON_YN, PM.NON_YN, PM.CHA_YN, PM.SEC_YN, PM.VOL_YN, PM.STATUS_DEV
+		FROM PKMS.PKG_MASTER PM,
+		    (SELECT 
+		         G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+		         G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+		         G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		         S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+		         S.BP_NUM, S.SYSTEM_USER_ID
+		    FROM PKMS.GROUP1 G1,
+		         PKMS.GROUP2 G2,
+		         PKMS.GROUP3 G3,
+		         PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		      AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		      AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		      AND G1.USE_YN = 'Y'
+		      AND G2.USE_YN = 'Y'
+		      AND G3.USE_YN = 'Y') SYS
+		WHERE PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ(+)
+          AND PM.PKG_SEQ = #pkg_seq#
+	</select>
+<!--
+	<select id="MobileDAO.readList" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT 
+		     PM.PKG_SEQ,
+		     PM.TITLE,
+		     PM.VER, 
+		     DECODE(SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+		     PM.STATUS
+		FROM PKMS.PKG_USER PU,
+		     PKMS.PKG_MASTER PM,
+		    (SELECT 
+		         G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+		         G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+		         G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		         S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+		         S.BP_NUM
+		    FROM PKMS.GROUP1 G1,
+		         PKMS.GROUP2 G2,
+		         PKMS.GROUP3 G3,
+		         PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		      AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		      AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		      AND G1.USE_YN = 'Y'
+		      AND G2.USE_YN = 'Y'
+		      AND G3.USE_YN = 'Y') SYS
+		WHERE PU.PKG_SEQ = PM.PKG_SEQ(+)
+		  AND PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ(+)
+		  AND PU.STATUS = 'R'
+		  AND PM.STATUS = 5
+		  AND PU.USER_ID = #session_user_id#
+		  AND ROWNUM <![CDATA[<]]> 10
+	</select>
+-->	
+	
+	<select id="MobileDAO.readList" parameterClass="PkgModel" resultClass="PkgModel">
+        SELECT * FROM(
+	        SELECT
+			    PM.*, PU.CHARGE_GUBUN, NVL(PU.STATUS, 'F') AS STATUS_CHK
+			FROM
+			(
+			SELECT 
+			   PM.PKG_SEQ
+			   ,PM.TITLE
+			   ,PM.VER
+			   ,SYS.NAME AS GROUP_DEPTH
+			   ,PM.STATUS
+			   ,PM.DEV_YN
+			   ,PM.STATUS_DEV
+			   ,C.NAME AS STATUS_NAME
+			   ,PM.URGENCY_YN
+			   ,NVL(PM.BRANCH_TYPE, 'PKMS') AS BRANCH_TYPE
+			   ,TO_CHAR(PM.REG_DATE,'YYYY-MM-DD') AS REG_DATE
+			FROM
+			   PKMS.PKG_MASTER PM
+			   ,PKMS.COMMON_CODE C
+			   ,PKMS.SYSTEM SYS
+			WHERE
+			   PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ(+)
+			   AND PM.STATUS = C.COMMON_CODE(+)
+			   AND SYS.USE_YN = 'Y'
+			   AND PM.STATUS NOT IN ('0', '109', '99', '119', '129', '139', '149', '199', '9')
+			   AND NVL(PM.BRANCH_TYPE, 'PKMS') IN ('PKMS', 'CORE')
+			   AND ( 
+			(SELECT COUNT (1)
+			        FROM PKMS.SYSTEM_USER SU
+			       WHERE     SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+			             AND SU.USER_GUBUN = 'M'
+			             AND SU.USER_ID = #session_user_id#) +                
+			(SELECT COUNT (1)
+			   FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			  WHERE     SYS.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+			        AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+			        AND EU.USER_ID = #session_user_id#)
+			) > 0
+			) PM
+			,(
+			SELECT
+			    T2.*
+			FROM
+			    (SELECT
+			        PKG_SEQ
+			        ,MIN(ORD) AS ORD
+			        ,CHARGE_GUBUN
+			        ,STATUS
+			    FROM
+			        PKMS.PKG_USER
+			    WHERE
+			        STATUS = 'R'
+			    GROUP BY
+			        PKG_SEQ
+			        ,CHARGE_GUBUN
+			        ,STATUS) T1
+			    , PKMS.PKG_USER T2
+			WHERE
+			    T2.PKG_SEQ  = T1.PKG_SEQ
+			    AND T2.ORD = T1.ORD
+			    AND T2.CHARGE_GUBUN = T1.CHARGE_GUBUN
+			    AND T2.STATUS = T1.STATUS
+			    AND T2.USER_ID = #session_user_id#
+			) PU
+			WHERE
+			PM.PKG_SEQ = PU.PKG_SEQ(+)
+			ORDER BY STATUS_CHK DESC, PM.REG_DATE DESC
+		)
+		WHERE 1 = 1
+			AND TO_DATE(REG_DATE, 'YYYY-MM-DD') <![CDATA[>=]]> TO_DATE(#startD#, 'YYYY-MM-DD') 
+   			AND TO_DATE(REG_DATE, 'YYYY-MM-DD') <![CDATA[<=]]> TO_DATE(#endD#, 'YYYY-MM-DD')
+<!-- 			AND ROWNUM <![CDATA[<]]> 50 -->
+			ORDER BY STATUS_CHK DESC, REG_DATE DESC
+
+	</select>
+	<!-- <select id="MobileDAO.readList" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT 
+		     PM.PKG_SEQ,
+		     PM.TITLE,
+		     PM.VER, 
+		     DECODE(SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+		     PM.STATUS,
+		     C.NAME AS STATUS_NAME,
+		     PU.STATUS AS STATUS_CHK
+		FROM PKMS.PKG_USER PU,
+		     PKMS.PKG_MASTER PM,
+		     PKMS.COMMON_CODE C,
+		    (SELECT 
+		         G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+		         G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+		         G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		         S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+		         S.BP_NUM
+		    FROM PKMS.GROUP1 G1,
+		         PKMS.GROUP2 G2,
+		         PKMS.GROUP3 G3,
+		         PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		      AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		      AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		      AND G1.USE_YN = 'Y'
+		      AND G2.USE_YN = 'Y'
+		      AND G3.USE_YN = 'Y') SYS
+		WHERE PU.PKG_SEQ = PM.PKG_SEQ(+)
+		  AND PM.SYSTEM_SEQ = SYS.SYSTEM_SEQ(+)
+		  AND PM.STATUS = C.COMMON_CODE(+)
+		  AND PU.USER_ID = #session_user_id#
+		  AND ROWNUM <![CDATA[<]]> 50
+		ORDER BY PM.PKG_SEQ DESC
+	</select> -->
+	
+	<select id="MobileDAO.readList_bp_step3" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+		    NO as BP_STEP3_NO, NEW_PN_CR_GUBUN AS BP_STEP3_NEW_PN_CR_GUBUN,
+		    (SELECT CONTENT FROM  PKMS.PKG_DETAIL_VARIABLE WHERE ORD = 0 AND  PKG_DETAIL_SEQ = X.PKG_DETAIL_SEQ) AS BP_STEP3_CONTENT_ORD_0,
+		    (SELECT CONTENT FROM  PKMS.PKG_DETAIL_VARIABLE WHERE ORD = 1 AND  PKG_DETAIL_SEQ = X.PKG_DETAIL_SEQ) AS BP_STEP3_CONTENT_ORD_1,
+		    (SELECT CONTENT FROM  PKMS.PKG_DETAIL_VARIABLE WHERE ORD = 2 AND  PKG_DETAIL_SEQ = X.PKG_DETAIL_SEQ) AS BP_STEP3_CONTENT_ORD_2,
+		    (SELECT CONTENT FROM  PKMS.PKG_DETAIL_VARIABLE WHERE ORD = 17 AND  PKG_DETAIL_SEQ = X.PKG_DETAIL_SEQ) AS BP_STEP3_CONTENT_ORD_18,
+		    (SELECT CONTENT FROM  PKMS.PKG_DETAIL_VARIABLE WHERE ORD = 18 AND  PKG_DETAIL_SEQ = X.PKG_DETAIL_SEQ) AS BP_STEP3_CONTENT_ORD_19
+		FROM
+		(
+		    SELECT 
+		        PKG_SEQ, PKG_DETAIL_SEQ, NO, NEW_PN_CR_GUBUN
+		    FROM PKMS.PKG_DETAIL
+		    WHERE PKG_SEQ = #pkg_seq#
+		)X
+		ORDER BY NO
+	</select>
+	
+	<select id="MobileDAO.read_skt_step3" parameterClass="PkgModel" resultClass="PkgModel">
+        SELECT 
+           A.PKG_SEQ, A.STATUS, A.COL1, 
+           A.COL2, A.COL3, A.COL4, 
+           A.COL5, A.COL6, A.COL7, 
+           A.COL8, A.COL9, A.COL10, 
+           A.COL11, A.COL12, A.COL13, 
+           A.COL14, A.COL15, A.COL16, 
+           A.COL17, A.COL18, A.COL19, 
+           A.COL20, A.COL21, A.COL22,
+           A.COL23, A.COL24, A.COL25,
+           A.COL26, A.USE_YN, A.REG_USER, 
+           TO_CHAR(A.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+           TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE,
+           A.UPDATE_USER,
+           B.HNAME AS REG_USER_NAME,
+           B.HNAME AS UPDATE_USER_NAME
+        FROM PKMS.PKG_STATUS A,
+             PKMS.INF_PERSON_INFO_RCV B
+        WHERE A.REG_USER = B.EMPNO(+)
+          AND A.PKG_SEQ = #pkg_seq#
+          AND A.STATUS = 3
+	</select>
+	
+	<select id="MobileDAO.read_progress" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT
+		    NEW_COL1, PN_COL1, CR_COL1, 
+		    NEW_COL2, PN_COL2, CR_COL2, 
+		    NEW_COL3, PN_COL3, CR_COL3,
+		    NEW_COL4, PN_COL4, CR_COL4 
+		FROM
+		    (select count(*) as new_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '신규'),
+		    (select count(*) as pn_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '보완'),
+		    (select count(*) as cr_col1 from pkg_detail where pkg_seq = #pkg_seq# and new_pn_cr_gubun = '개선'),
+		    (select nvl(sum(content),0)  as new_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '신규'),
+		    (select nvl(sum(content),0)  as pn_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '보완'),
+		    (select nvl(sum(content),0)  as cr_col2 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 17 and a.new_pn_cr_gubun = '개선') ,
+		    (select nvl(sum(content),0)  as new_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '신규'),
+		    (select nvl(sum(content),0)  as pn_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '보완'),
+		    (select nvl(sum(content),0)  as cr_col3 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 18 and a.new_pn_cr_gubun = '개선'),
+		    (select count(*)  as new_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '신규'),     
+		    (select count(*)  as pn_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '보완'),       
+		    (select count(*)  as cr_col4 from pkg_detail a join pkg_detail_variable b on a.pkg_detail_seq = b.pkg_detail_seq
+		        where a.pkg_seq = #pkg_seq# and b.ord = 2 and (content like 'OK' or content like 'NOK' or content like 'COK') and a.new_pn_cr_gubun = '개선')
+	</select>
+
+</sqlMap>

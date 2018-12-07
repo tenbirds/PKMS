@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Sms">
+
+	<typeAlias alias="SmsModel" type="com.pkms.common.sms.model.SmsModel"/>
+	
+	<insert id="SmsDao.create" parameterClass="SmsModel">
+		INSERT INTO PKMS.SMS_REQ_TB
+			(
+				  SMS_NO
+				, LOG_NO
+				, SRCCALLNO
+				, DESTCID
+				, DESTCALLNO
+				, PORTEDFLAG
+				, TID
+				, CB
+				, MSG
+			)
+		VALUES
+			(
+				  sms_req_tb_seq.nextval
+				, #log_no#
+				, #srccallno#
+				, #destcid#
+				, #destcallno#
+				, #portedflag#
+				, #tid#
+				, #cb#
+				, #msg#
+			)
+	</insert>
+	
+	<update id="SmsDao.update" parameterClass="SmsModel">
+		UPDATE PKMS.SMS_REQ_TB
+		SET
+			STATUS = #status#
+		WHERE SMS_NO = #sms_no#
+	</update>
+	
+	<select id="SmsDao.readList" parameterClass="SmsModel" resultClass="SmsModel">
+		SELECT * FROM PKMS.SMS_REQ_TB WHERE STATUS = '0' ORDER BY SMS_NO ASC
+	</select>
+
+</sqlMap>

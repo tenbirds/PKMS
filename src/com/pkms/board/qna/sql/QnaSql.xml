@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Qna">
+
+	<typeAlias alias="QnaModel" type="com.pkms.board.qna.model.QnaModel" />
+	
+	
+	<resultMap id="qnaModelRead" class="QnaModel">
+		<result property="qna_seq" column="qna_seq"/>
+		<result property="title" column="title"/>
+		<result property="reg_name" column="reg_name"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_date" column="reg_date"/>
+		<result property="update_user" column="update_user"/>
+		<result property="update_name" column="update_name"/>
+		<result property="update_date" column="update_date"/>
+		<result property="master_file_id" column="master_file_id"/>
+		<result property="content" column="content"/>
+		<result property="cnt" column="cnt"/>
+	</resultMap>
+	
+	<select id="qnaDao.readList" parameterClass="QnaModel" resultClass="QnaModel">
+		SELECT
+			QNA_SEQ, TITLE, REG_NAME, REG_DATE, CNT
+		FROM ( SELECT 
+				A.*
+			FROM 
+				( SELECT 
+					  A.QNA_SEQ
+					, A.TITLE
+					, REG_NAME
+					, TO_CHAR (REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+					, DECODE(B.CNT, NULL, 0, B.CNT) AS CNT
+					, ROW_NUMBER () OVER (ORDER BY A.QNA_SEQ DESC) AS RN
+				    FROM QNA A
+				    LEFT JOIN 
+				   (
+				        SELECT 
+				            QNA_SEQ, COUNT(QNA_COMMENT_SEQ) AS CNT 
+				        FROM QNA_COMMENT WHERE USE_YN = 'Y'
+				        GROUP BY QNA_SEQ        
+				   ) B  ON A.QNA_SEQ = B.QNA_SEQ
+				WHERE use_yn = 'Y'
+				<isNotNull property="searchKeyword">
+               	 	<isNotEmpty property="searchKeyword">
+						<isEqual prepend="AND" property="searchCondition" compareValue="0">
+							LOWER(TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition" compareValue="1">
+							LOWER(CONTENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+						<isEqual prepend="AND" property="searchCondition"  compareValue="2">
+							LOWER(REG_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+						</isEqual>
+					</isNotEmpty>
+				</isNotNull>
+				ORDER BY qna_seq DESC
+				) A WHERE RN  <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		 WHERE RN  > #firstIndex#
+	</select>
+	
+	<select id="qnaDao.readTotalCount" parameterClass="QnaModel" resultClass="int">
+		SELECT 
+			  COUNT(*) AS CNT
+	    FROM QNA A
+	    LEFT JOIN 
+		   (
+		        SELECT 
+		            QNA_SEQ, COUNT(QNA_COMMENT_SEQ) AS CNT 
+		        FROM QNA_COMMENT WHERE USE_YN = 'Y'
+		        GROUP BY QNA_SEQ        
+		   ) B  ON A.QNA_SEQ = B.QNA_SEQ
+		WHERE use_yn = 'Y'
+		<isNotNull property="searchKeyword">
+			<isNotEmpty property="searchKeyword">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+					LOWER(TITLE) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition" compareValue="1">
+					LOWER(CONTENT) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+				<isEqual prepend="AND" property="searchCondition"  compareValue="2">
+					LOWER(REG_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+				</isEqual>
+			</isNotEmpty>
+		</isNotNull>
+	</select>
+	
+	<insert id="qnaDao.create" parameterClass="QnaModel">
+		insert into PKMS.QNA
+		    (
+		        qna_seq,
+		        title,
+		        content,
+		        master_file_id,
+		        reg_user,
+		        reg_name
+		    )
+		    values
+		    (
+		        qna_seq.nextval,
+		        #title#,
+		        #content#,
+		        #master_file_id#,
+		        #session_user_id#,
+		        #session_user_name#
+		    )
+	</insert>
+	
+	<select id="qnaDao.read" parameterClass="QnaModel" resultMap="qnaModelRead">
+		SELECT
+		      A.QNA_SEQ
+		    , A.TITLE
+		    , A.REG_NAME
+		    , A.REG_USER
+		    , TO_CHAR(A.REG_DATE, 'YYYY-MM-DD  HH24:MI:SS') REG_DATE
+		    , A.UPDATE_USER
+		    , A.UPDATE_NAME
+		    , TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD  HH24:MI:SS') UPDATE_DATE
+		    , A.MASTER_FILE_ID
+		    , CONTENT
+		    , DECODE(B.CNT, NULL, 0, B.CNT) AS CNT 
+		from PKMS.QNA A
+		LEFT JOIN
+		(
+		    SELECT 
+		        QNA_SEQ, COUNT(QNA_COMMENT_SEQ) AS CNT 
+		    FROM QNA_COMMENT WHERE USE_YN = 'Y' AND QNA_SEQ = #qna_seq#
+		    GROUP BY QNA_SEQ
+		) B ON A.QNA_SEQ = B.QNA_SEQ
+		where A.qna_seq = #qna_seq#
+	</select>
+	
+	<update id="qnaDao.update" parameterClass="QnaModel">
+		update PKMS.QNA
+		set 
+			title = #title#,
+			content = #content#,
+			update_name = #session_user_name#,
+			update_user = #session_user_id#,
+			update_date = sysdate
+		where qna_seq = #qna_seq#
+	</update>
+	
+	<update id="qnaDao.delete" parameterClass="QnaModel">
+		update PKMS.QNA
+		set 
+			use_yn = 'N',
+			update_name = #session_user_name#,
+			update_user = #session_user_id#,
+			update_date = sysdate
+		where qna_seq = #qna_seq#
+	</update>
+	
+</sqlMap>

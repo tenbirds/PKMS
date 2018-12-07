@@ -1,0 +1,288 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Group1">
+
+	<typeAlias alias="SysModel" type="com.pkms.sys.common.model.SysModel" />
+
+	<insert id="Group1DAO.create" parameterClass="SysModel">
+		<![CDATA[
+			INSERT INTO PKMS.GROUP1 
+				  ( 
+				  	GROUP1_SEQ
+				  ,	NAME
+				  ,	USE_YN
+				  , REG_USER
+				  , REG_DATE
+				  )
+			VALUES 
+				  (
+				    #group1_seq#
+				  , #name#
+				  , 'Y'
+				  , #session_user_name#
+				  , SYSDATE
+				  )
+		]]>
+	</insert>
+
+	<select id="Group1DAO.NextSeq" resultClass="java.lang.String">
+		<![CDATA[
+			SELECT PKMS.GROUP1_SEQ.NEXTVAL FROM DUAL
+		]]>
+	</select>
+
+
+	<select id="Group1DAO.read" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				GROUP1_SEQ, NAME, USE_YN, 
+				REG_USER,
+	            TO_CHAR(REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+				UPDATE_USER, 
+	            TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE
+			FROM PKMS.GROUP1 
+			WHERE USE_YN='Y' AND GROUP1_SEQ=#group1_seq#
+		]]>
+	</select>
+
+
+	<select id="Group1DAO.readList" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				G1.GROUP1_SEQ, G1.NAME, G1.USE_YN, G1.REG_USER, G1.REG_DATE, G1.UPDATE_USER, G1.UPDATE_DATE
+			FROM PKMS.GROUP1 G1 
+		]]>
+			<isEqual property="session_user_type" compareValue="B">
+				, GROUP2 G2, GROUP3 G3, SYSTEM S
+			</isEqual>
+			WHERE G1.USE_YN='Y'
+			<isEqual prepend="AND" property="session_user_type" compareValue="B">
+					G1.GROUP1_SEQ = G2.GROUP1_SEQ
+				AND
+					G2.GROUP2_SEQ = G3.GROUP2_SEQ
+				AND
+					G3.GROUP3_SEQ = S.GROUP3_SEQ
+				AND S.SYSTEM_SEQ IN
+				 (
+	                 SELECT SYSTEM_SEQ 
+	                 FROM SYSTEM_USER
+	                 WHERE USER_ID = #session_user_id#
+	                 GROUP BY SYSTEM_SEQ
+                 )
+			GROUP BY G1.GROUP1_SEQ, G1.NAME, G1.USE_YN, G1.REG_USER, G1.REG_DATE, G1.UPDATE_USER, G1.UPDATE_DATE
+			</isEqual>
+			ORDER BY G1.NAME ASC
+	</select>
+
+
+	<update id="Group1DAO.update" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE GROUP1 
+			SET 
+			  NAME=#name#
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE  
+			WHERE GROUP1_SEQ=#group1_seq#
+		]]>
+	</update>
+
+	<delete id="Group1DAO.delete" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE GROUP1 
+			SET 
+			  USE_YN='N'
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE  
+			WHERE GROUP1_SEQ=#group1_seq#
+		]]>
+	</delete>
+	
+	<select id="Group1DAO.searchList_0" parameterClass="SysModel" resultClass="SysModel">
+			SELECT
+			    SYS.SYSTEM_SEQ,
+			    SYS.GROUP1_SEQ,
+			    SYS.GROUP2_SEQ,
+			    SYS.GROUP3_SEQ,
+			    DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_FULL_NAME
+			FROM
+				<isEqual property="companyCondition" compareValue="sys">
+				    SYSTEM_USER SU,
+				     (SELECT G1.GROUP1_SEQ,
+				         G1.NAME GROUP1_NAME,
+				         G2.GROUP2_SEQ,
+				         G2.NAME GROUP2_NAME,
+				         G3.GROUP3_SEQ,
+				         G3.NAME GROUP3_NAME,
+				         S.SYSTEM_SEQ,
+				         S.NAME SYSTEM_NAME
+				    FROM PKMS.GROUP1 G1,
+				         PKMS.GROUP2 G2,
+				         PKMS.GROUP3 G3,
+				         PKMS.SYSTEM S
+				    WHERE     1 = 1
+				         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+				         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+				         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+				         AND G1.USE_YN = 'Y'
+				         AND G2.USE_YN = 'Y'
+				         AND G3.USE_YN = 'Y'
+				         AND S.USE_YN = 'Y'
+						 AND LOWER(S.NAME) LIKE '%' || LOWER(#searchInput#) || '%'
+				         ) SYS
+
+			WHERE
+			    SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ
+
+				</isEqual>
+				<isEqual property="companyCondition" compareValue="eq">
+				    EQUIPMENT_USER EU,
+				     (SELECT G1.GROUP1_SEQ,
+				         G1.NAME GROUP1_NAME,
+				         G2.GROUP2_SEQ,
+				         G2.NAME GROUP2_NAME,
+				         G3.GROUP3_SEQ,
+				         G3.NAME GROUP3_NAME,
+				         S.SYSTEM_SEQ,
+				         S.NAME SYSTEM_NAME,
+				         E.EQUIPMENT_SEQ,
+				         E.NAME EQUIPMENT_NAME
+				    FROM PKMS.GROUP1 G1,
+				         PKMS.GROUP2 G2,
+				         PKMS.GROUP3 G3,
+				         PKMS.SYSTEM S,
+				         PKMS.EQUIPMENT E
+				    WHERE     1 = 1
+				         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+				         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+				         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+				         AND S.SYSTEM_SEQ = E.SYSTEM_SEQ
+				         AND G1.USE_YN = 'Y'
+				         AND G2.USE_YN = 'Y'
+				         AND G3.USE_YN = 'Y'
+				         AND S.USE_YN = 'Y'
+				         AND E.USE_YN = 'Y'
+						 AND LOWER(E.NAME) LIKE '%' || LOWER(#searchInput#) || '%'
+				         ) SYS
+			WHERE
+			    SYS.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+				</isEqual>
+			GROUP BY
+			    SYS.GROUP1_NAME,
+			    SYS.GROUP2_NAME,
+			    SYS.GROUP3_NAME,
+			    SYS.SYSTEM_NAME,
+			    SYS.GROUP1_SEQ,
+			    SYS.GROUP2_SEQ,
+			    SYS.GROUP3_SEQ,
+			    SYS.SYSTEM_SEQ
+			ORDER BY
+			    SYS.GROUP1_NAME,
+			    SYS.GROUP2_NAME,
+			    SYS.GROUP3_NAME,
+			    SYS.SYSTEM_NAME,
+			    SYS.GROUP1_SEQ,
+			    SYS.GROUP2_SEQ,
+			    SYS.GROUP3_SEQ,
+			    SYS.SYSTEM_SEQ
+	</select>
+	<select id="Group1DAO.searchList_1" parameterClass="SysModel" resultClass="SysModel">
+			SELECT
+			    SYS.SYSTEM_SEQ,
+			    SYS.GROUP1_SEQ,
+			    SYS.GROUP2_SEQ,
+			    SYS.GROUP3_SEQ,
+			    DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_FULL_NAME
+				,IPIR.HNAME AS SYSTEM_USER_NAME
+				,IPIR.SOSOK AS USER_SOSOK_NAME
+			FROM
+				<isEqual property="companyCondition" compareValue="sys">
+				    SYSTEM_USER SU,
+				     (SELECT G1.GROUP1_SEQ,
+				         G1.NAME GROUP1_NAME,
+				         G2.GROUP2_SEQ,
+				         G2.NAME GROUP2_NAME,
+				         G3.GROUP3_SEQ,
+				         G3.NAME GROUP3_NAME,
+				         S.SYSTEM_SEQ,
+				         S.NAME SYSTEM_NAME
+				    FROM PKMS.GROUP1 G1,
+				         PKMS.GROUP2 G2,
+				         PKMS.GROUP3 G3,
+				         PKMS.SYSTEM S
+				    WHERE     1 = 1
+				         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+				         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+				         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+				         AND G1.USE_YN = 'Y'
+				         AND G2.USE_YN = 'Y'
+				         AND G3.USE_YN = 'Y'
+				         AND S.USE_YN = 'Y'
+				         ) SYS
+					,INF_PERSON_INFO_RCV IPIR
+			WHERE
+			    SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ
+			    AND
+			  		IPIR.EMPNO = SU.USER_ID
+			  	AND
+			    	LOWER(IPIR.HNAME) LIKE '%' || LOWER(#searchInput#) || '%'
+				</isEqual>
+				<isEqual property="companyCondition" compareValue="eq">
+				    EQUIPMENT_USER EU,
+				     (SELECT G1.GROUP1_SEQ,
+				         G1.NAME GROUP1_NAME,
+				         G2.GROUP2_SEQ,
+				         G2.NAME GROUP2_NAME,
+				         G3.GROUP3_SEQ,
+				         G3.NAME GROUP3_NAME,
+				         S.SYSTEM_SEQ,
+				         S.NAME SYSTEM_NAME,
+				         E.EQUIPMENT_SEQ,
+				         E.NAME EQUIPMENT_NAME
+				    FROM PKMS.GROUP1 G1,
+				         PKMS.GROUP2 G2,
+				         PKMS.GROUP3 G3,
+				         PKMS.SYSTEM S,
+				         PKMS.EQUIPMENT E
+				    WHERE     1 = 1
+				         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+				         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+				         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+				         AND S.SYSTEM_SEQ = E.SYSTEM_SEQ
+				         AND G1.USE_YN = 'Y'
+				         AND G2.USE_YN = 'Y'
+				         AND G3.USE_YN = 'Y'
+				         AND S.USE_YN = 'Y'
+				         AND E.USE_YN = 'Y'
+				         ) SYS
+						 ,INF_PERSON_INFO_RCV IPIR
+			WHERE
+			    SYS.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+				AND
+					IPIR.EMPNO = EU.USER_ID
+			  	AND
+			    	LOWER(IPIR.HNAME) LIKE '%' || LOWER(#searchInput#) || '%'
+				</isEqual>
+			GROUP BY
+			    SYS.GROUP1_NAME,
+			    SYS.GROUP2_NAME,
+			    SYS.GROUP3_NAME,
+			    SYS.SYSTEM_NAME,
+			    SYS.GROUP1_SEQ,
+			    SYS.GROUP2_SEQ,
+			    SYS.GROUP3_SEQ,
+			    SYS.SYSTEM_SEQ
+				,IPIR.HNAME
+				,IPIR.SOSOK
+			ORDER BY
+			    SYS.GROUP1_NAME,
+			    SYS.GROUP2_NAME,
+			    SYS.GROUP3_NAME,
+			    SYS.SYSTEM_NAME,
+			    SYS.GROUP1_SEQ,
+			    SYS.GROUP2_SEQ,
+			    SYS.GROUP3_SEQ,
+			    SYS.SYSTEM_SEQ
+	</select>
+	
+</sqlMap>

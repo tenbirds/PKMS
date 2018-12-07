@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Comment">
+
+	<typeAlias alias="QnaModel" type="com.pkms.board.qna.model.QnaModel" />
+	
+	<resultMap id="CommentModelReadList" class="QnaModel">
+		<result property="qna_comment_seq" column="qna_comment_seq"/>
+		<result property="qna_seq" column="qna_seq"/>
+		<result property="content" column="content"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_name" column="reg_name"/>
+		<result property="reg_date" column="reg_date"/>
+	</resultMap>
+	
+	<select id="CommentDao.readList" parameterClass="QnaModel" resultMap="CommentModelReadList">
+	<![CDATA[
+		SELECT
+		    QNA_COMMENT_SEQ,
+		    QNA_SEQ,
+		    CONTENT,
+		    REG_USER,
+		    REG_NAME,
+		    TO_CHAR(REG_DATE, 'YYYY-MM-DD HH:MI:SS') AS REG_DATE
+		FROM PKMS.QNA_COMMENT
+		WHERE USE_YN = 'Y'
+		AND QNA_SEQ =  #qna_seq#
+		ORDER BY REG_DATE ASC
+	]]>
+	</select>
+	
+	<insert id="Comment.create" parameterClass="QnaModel">
+		insert into PKMS.QNA_COMMENT
+		(
+			qna_comment_seq,
+			qna_seq,
+			content,
+			reg_user,
+			reg_name
+		)
+		values
+		(
+			qna_comment_seq.nextval,
+			#qna_seq#,
+			#content#,
+			#session_user_id#,
+			#session_user_name#
+		)
+	</insert>
+	
+	<update id="Comment.delete" parameterClass="QnaModel">
+		update PKMS.QNA_COMMENT
+		set 
+			use_yn = 'N',
+			update_name = #session_user_name#,
+			update_user = #session_user_id#,
+			update_date = sysdate
+		where qna_comment_seq = #qna_comment_seq#
+	</update>
+	
+</sqlMap>

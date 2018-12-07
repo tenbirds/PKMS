@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Auth">
+
+	<typeAlias alias="AuthModel" type="com.pkms.usermg.auth.model.AuthModel" />
+
+	<insert id="AuthDAO.create" parameterClass="java.util.List">
+		INSERT ALL
+		<dynamic>
+			<iterate conjunction=" ">
+				<![CDATA[
+					INTO PKMS.USER_AUTH_ROLE (AUTH_ROLE, USER_ID, USER_GUBUN)
+					VALUES (#[].auth_role#, #[].user_id#, 'M')
+				]]>
+			</iterate>
+		</dynamic>
+		SELECT * FROM dual
+	</insert>
+
+	<select id="AuthDAO.readList" parameterClass="AuthModel" resultClass="AuthModel">
+		<![CDATA[
+		SELECT 
+		   AUTH_ROLE, USER_ID, USER_GUBUN
+		FROM
+			PKMS.USER_AUTH_ROLE
+		WHERE
+			USER_GUBUN = 'M' AND AUTH_ROLE = #auth_role#
+		]]>
+	</select>
+
+	<delete id="AuthDAO.delete" parameterClass="AuthModel">
+		<![CDATA[
+			DELETE PKMS.USER_AUTH_ROLE
+			WHERE USER_GUBUN = 'M' AND AUTH_ROLE = #auth_role#
+		]]>
+	</delete>
+
+</sqlMap>

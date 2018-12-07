@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+				http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<context:property-placeholder location="/WEB-INF/config/spring/database.properties" />
+ 	 <!--
+ 	  * org.springframework.jdbc.datasource.DriverManagerDataSource : 
+ 	 	    DB 연결을 요청할 때 마다 새로운 객체를 생성
+ 	 	    멀티스레드 사용 가능
+ 	 	    
+ 	  * org.springframework.jdbc.datasource.SingleConnectionDataSource
+ 	   		오직 하나의 DB에 연결 객체를 생성해 두고 요청할때 그 객체 전달
+ 	   		멀티스레드 사용 불가 ( 둘 이상의 스레드가 하나의 자원에 접근 하므로 Thread safe 하지 않음)	    
+ 	 -->
+ 	  
+	<!-- local, dev 용 
+	-->
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true" 
+			p:driverClassName="${jdbc.oracle.driver}" 
+			p:url="${jdbc.oracle.url}"
+		    p:username="${jdbc.oracle.username}" 
+		    p:password="${jdbc.oracle.password}" />
+<!-- 	
+ 	<bean id="dataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource" destroy-method="finalize" lazy-init="true">
+		<property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+		<property name="driverClassName" value="core.log.jdbc.driver.OracleDriver" />
+		<property name="url" value="jdbc:oracle:thin:@220.86.29.35:1521:orcl"/>
+		<property name="username" value="pkms"/>
+		<property name="password" value="insoft123"/>
+	</bean>
+ -->		
+    <!-- oracle 상용 
+    <bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close">
+        <property name="driverClassName" value="oracle.jdbc.driver.OracleDriver"/>
+		<property name="url" value="jdbc:oracle:thin:@90.90.30.196:1521:dbmdb"/>
+		<property name="username" value="pkms"/>
+		<property name="password" value="!insoft123"/>
+    	<property name="defaultAutoCommit" value="true"/>
+	    <property name="initialSize" value="5"/>
+	    <property name="maxActive" value="30"/>
+	    <property name="maxIdle" value="5"/>
+	    <property name="maxWait" value="30000"/>
+	    <property name="validationQuery" value="SELECT 1 FROM DUAL"/>
+	    <property name="testOnBorrow" value="true"/>
+	    <property name="testOnReturn" value="false"/>
+	    <property name="testWhileIdle" value="true"/>
+	    <property name="timeBetweenEvictionRunsMillis" value="60000"/>        
+    </bean>	
+	-->
+	
+	<!-- local, dev 개발기 -->
+ 	<!--
+	-->
+
+	<bean id="dataSource-snet" class="org.apache.commons.dbcp.BasicDataSource" destroy-method="close" lazy-init="true" 
+			p:driverClassName="${jdbc.mysql.driver}" 
+			p:url="${jdbc.mysql.url}"
+		    p:username="${jdbc.mysql.username}" 
+		    p:password="${jdbc.mysql.password}" />
+<!-- 
+ 	<bean id="dataSource-snet" class="org.springframework.jdbc.datasource.DriverManagerDataSource" destroy-method="finalize" lazy-init="true">
+		<property name="driverClassName" value="org.mariadb.jdbc.Driver"/>
+		<property name="driverClassName" value="core.log.jdbc.driver.MysqlDriver"/>
+		<property name="url" value="jdbc:mysql://220.86.29.35:3306/snet"/>
+		<property name="username" value="pkms"/>
+		<property name="password" value="pkguardms!2017"/>
+	</bean>
+ -->	
+	<!-- switch -->
+	
+	
+	<!-- skt 상용
+ 	<bean id="dataSource-snet" class="org.springframework.jdbc.datasource.DriverManagerDataSource">
+		<property name="driverClassName" value="org.mariadb.jdbc.Driver"/>
+		<property name="url" value="jdbc:mysql://60.11.7.48:11521/snet"/>
+		<property name="username" value="pkms"/>
+		<property name="password" value="pkguardms!2017"/>
+	</bean>
+	-->
+	
+	<!-- 	snet sqlmap setup for ibatis database layer -->
+	<bean id="sqlMapClientSnet" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+ 		<property name="configLocation" value="/WEB-INF/config/ibatis/snet-sql-map-config.xml"/>
+		<property name="dataSource" ref="dataSource-snet"/>
+	</bean>
+	
+	<!-- SqlMap setup for iBATIS Database Layer -->
+	<bean id="sqlMapClient" class="org.springframework.orm.ibatis.SqlMapClientFactoryBean">
+ 		<property name="configLocation" value="/WEB-INF/config/ibatis/sql-map-config.xml"/>
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+		
+</beans>

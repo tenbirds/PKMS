@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<beans:beans xmlns="http://www.springframework.org/schema/security" xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+                        http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.1.xsd">
+
+	<debug />
+
+	<global-method-security pre-post-annotations="enabled" />
+
+	<!-- 페이지 권한 설정에서 제외 할 URL 등록 -->
+	<!-- 
+	<http pattern="/Login.do" security="none" />
+	<http pattern="/Login_Delete.do" security="none" />
+	 --> 
+	
+	<!-- SSL 적용 BP 서버만 제외 항목 Login_Read.do
+	-->
+	<http pattern="/Login_Read.do" security="none" />
+
+	<http pattern="/InvalidSession_Read.do" security="none" />
+	<http pattern="/Login_Delete.do" security="none" />
+	<http pattern="/Login_Delete_After.do" security="none" />
+	<http pattern="/Login_Create_Fail.do" security="none" />
+	<http pattern="/Access_Denied.do" security="none" />
+	
+	<http pattern="/common/login/BpAdd_Popup_Read.do" security="none" />
+	<http pattern="/common/login/BpAddDetail_Popup_UserAdd.do" security="none" />
+	<http pattern="/common/login/BpAddDetail_Popup_Read.do" security="none" />
+	<http pattern="/usermg/user/SktUserBp_Popup_Read.do" security="none" />
+	<http pattern="/usermg/user/SktManagerUser_Ajax_ReadList.do" security="none" />
+	<http pattern="/usermg/bp/BpAdd_Ajax_Duplicate_Read.do" security="none" />
+	<http pattern="/usermg/bp/Bp_Ajax_Create.do" security="none" />
+	<http pattern="/usermg/bp/Bp_Ajax_Update.do" security="none" />
+	<http pattern="/usermg/bp/Password_Popup_Search.do" security="none" />
+	<http pattern="/usermg/bp/Id_Find_Ajax_Read.do" security="none" />
+	<http pattern="/usermg/bp/Pass_Ajax_Update.do" security="none" />
+	<http pattern="/usermg/user/BpUser_Ajax_Duplicate_Read.do" security="none" />
+	<http pattern="/usermg/user/BpAddUser_Ajax_Read.do" security="none" />
+	<http pattern="/usermg/user/BpAddUser_Ajax_UserAdd.do" security="none" />
+	<http pattern="/usermg/user/BpUser_Ajax_ReadList.do" security="none" />
+	<http pattern="/usermg/user/BpUser_Ajax_Create.do" security="none" />
+	<http pattern="/usermg/user/BpUser_Ajax_Update.do" security="none" />
+	<http pattern="/usermg/user/BpUser_Ajax_Delete.do" security="none" />
+	<http pattern="/usermg/user/SktUser_Ajax_ReadEmpno.do" security="none" />
+
+	<http pattern="/Notice_Popup.do" security="none" />
+	<http pattern="/jsp/main/manual.mht" security="none" />
+	<http pattern="/Tnet.do" security="none" />
+
+	<http pattern="/sys/system/System_Popup_Read_detail.do" security="none" />
+	<http pattern="/usermg/user/SktUser_Popup_Read_detail.do" security="none" />
+	<!--
+		disable-url-rewriting="true"
+		URL 뒤에 jsessionid 붙지 않도록 하기 위함
+	 -->
+
+	<http auto-config="false" use-expressions="true" disable-url-rewriting="true" entry-point-ref="loginUrlAuthenticationEntryPoint">
+
+		<!-- 권한 그룹: ROLE_ADMIN, ROLE_MANAGER, ROLE_OPERATOR -->
+		<!-- 페이지 별 권한 설정 -->
+		
+		<!-- login -->
+		<!-- 
+		<intercept-url pattern="/InvalidSession_Read.do" access="permitAll" />
+		<intercept-url pattern="/Login_Delete.do" access="permitAll" />
+		<intercept-url pattern="/Login_Read.do" access="permitAll" />
+		 -->
+		
+		<!-- SSL 적용 BP 서버만
+		<intercept-url pattern="/Login_Read.do" access="permitAll" requires-channel="https"/>
+		-->
+		
+		<!-- 파일다운로드 -->
+		<intercept-url pattern="/common/**" access="permitAll" />
+		
+		<intercept-url pattern="/Sso_Read.do" access="permitAll" /> 
+		<intercept-url pattern="/Pkms_Work_Read.do" access="permitAll" />
+		<intercept-url pattern="/Pkms_Mobile_Read.do" access="permitAll" />  
+		
+		<!-- bp 사용자 신청 -->
+		<!-- <intercept-url pattern="/usermg/bp/Bp_Read.do" access="permitAll" />  -->
+		<intercept-url pattern="/usermg/bp/Bp_Read.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')" />
+		<intercept-url pattern="/usermg/bp/Bp_ReadList.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')" />
+		
+		<!-- 로그인/아웃 관련 -->
+		<intercept-url pattern="/Login_Create_After.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- SKT 인사, 부서정보 갱신 URL -->
+		<intercept-url pattern="/SKT_DB_DEPT_Create.do" access="hasAnyRole('ROLE_ADMIN')" />
+		<intercept-url pattern="/SKT_DB_PERSON_Create.do" access="hasAnyRole('ROLE_ADMIN')" />
+		
+		<!-- 메인 --> 
+		<intercept-url pattern="/Main.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		<intercept-url pattern="/Work_Popup_List.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')"  />
+		<intercept-url pattern="/WorkLimitSave.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')"  />
+		<intercept-url pattern="/Manual_Popup_Notice.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')"  />
+
+		<!-- mobile -->
+		<intercept-url pattern="/M.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')" />
+		
+		<!-- bp 정보 수정 -->
+		<intercept-url pattern="/common/top/MyBpAddUser_Ajax_Read.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_BP')" />
+		<intercept-url pattern="/common/top/MyBp_Read.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_BP')" />
+		
+		<!-- board -->
+		<intercept-url pattern="/board/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- 04.04 추가 - 강수연 -->
+		<!-- PkgVer -->
+		<intercept-url pattern="/board/pkgVer/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')" />
+		
+		
+		<!-- NEWPNCR -->
+		<intercept-url pattern="/newpncrmg/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- pkg -->
+		<intercept-url pattern="/pkgmg/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- 통계 -->
+		<intercept-url pattern="/statsmg/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		<intercept-url pattern="/Chart_Popup_Read.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- 시스템 -->
+		<intercept-url pattern="/sys/system/System_Popup_Read.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		<intercept-url pattern="/sys/system/SystemAuth_Popup_Read.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		<intercept-url pattern="/sys/system/System_Bp_Popup_ReadList.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		<intercept-url pattern="/sys/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- 템플릿 -->
+		<intercept-url pattern="/tempmg/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER')" />
+		<intercept-url pattern="/verify_tem_mg/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER')" />
+		
+		<!-- 권한관리 -->
+		<intercept-url pattern="/usermg/auth/**" access="hasAnyRole('ROLE_ADMIN')" />
+		
+		<!-- 사용자관리 -->
+		<intercept-url pattern="/usermg/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<!-- 협력업체/담당자관리 > 승인담당자 선택 팝업 --> 
+		<intercept-url pattern="/usermg/user/SktManagerUser_Ajax_ReadList.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')"  />
+		
+		<!-- 업체담당자 목록 -->
+		<intercept-url pattern="/usermg/user/BpUser_Ajax_ReadList.do" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR')"  />
+		
+		<!-- 샘플 -->		
+		<intercept-url pattern="/sample/**" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER', 'ROLE_OPERATOR', 'ROLE_BP')" />
+		
+		<intercept-url pattern="/**" access="hasAnyRole('ROLE_ADMIN')" />
+		
+		<!-- and hasIpAddress('192.168.1.0/24')" /> -->
+		<!-- 		
+		<intercept-url pattern="/**" access="isAuthenticated()" /> 
+		-->
+
+		<!-- Allow all other requests. In a real application you should adopt a whitelisting approach where access is not allowed 
+			by default -->
+		<!-- 
+		<intercept-url pattern="/**" access="permitAll" />
+		 -->
+
+		<!-- 기본 login-form을 사용하지 않고 재 구현된 filter를 이용 -->
+		<custom-filter position="FORM_LOGIN_FILTER" ref="customUsernamePasswordAuthenticationFilter" />
+
+		<!-- 로그아웃 처리 관련 URL 지정 -->
+		<logout logout-url="/j_spring_security_logout.do" logout-success-url="/Login_Delete_After.do" delete-cookies="JSESSIONID"/>
+							
+		<!-- <remember-me /> -->
+		<!-- Uncomment to enable X509 client authentication support <x509 /> -->
+		<!-- Uncomment to limit the number of sessions a user can have -->
+
+		<!-- 타임 아웃 시 호출 될 URL 지정 -->
+		<session-management invalid-session-url="/InvalidSession_Read.do">
+			<concurrency-control max-sessions="1" error-if-maximum-exceeded="true" />
+		</session-management>
+
+		<!-- 접근 권한이 없을 때 사용 될 URL 지정 -->
+		<access-denied-handler error-page="/Access_Denied.do" />
+		
+	</http>
+
+	<!-- 로그인 폼 페이지 지정 -->
+	<beans:bean id="loginUrlAuthenticationEntryPoint" class="org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint">
+		<beans:property name="loginFormUrl" value="/Login_Read.do" />
+	</beans:bean>
+
+	<!-- UsernamePasswordAuthenticationFilter 확장 (기본 정보 이외의 parameter를 처리 하기 위하여) -->
+	<beans:bean id="customUsernamePasswordAuthenticationFilter" class="com.pkms.common.security.filter.CustomUsernamePasswordAuthenticationFilter">
+		<beans:property name="authenticationManager" ref="authenticationManager" />
+		<beans:property name="authenticationFailureHandler" ref="failureHandler" />
+		<beans:property name="authenticationSuccessHandler" ref="successHandler" />
+		<!-- 로그인 처리 URL 지정 -->
+		<beans:property name="filterProcessesUrl" value="/j_spring_security_check.do" />
+	</beans:bean>
+
+	<!-- 로그인 성공 시 호출 되는 URL 지정 -->
+	<beans:bean id="successHandler"
+		class="org.springframework.security.web.authentication.SavedRequestAwareAuthenticationSuccessHandler">
+		<!-- com.pkms.common.login.controller.LoginController 참조 -->
+		<!-- 
+		<beans:property name="defaultTargetUrl" value="/Main.do" />
+		--> 
+		<beans:property name="defaultTargetUrl" value="/Login_Create_After.do" />
+		<beans:property name="alwaysUseDefaultTargetUrl" value="true"/>
+	</beans:bean>
+
+	<!-- 로그인 실패 시 호출 되는 URL 지정 -->
+	<beans:bean id="failureHandler" class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler">
+		<!-- com.pkms.common.login.controller.LoginController 참조 -->
+		<beans:property name="defaultFailureUrl" value="/Login_Create_Fail.do" />
+	</beans:bean>
+
+	<!-- BP 사용자 provider -->
+	<beans:bean id="bpUserAuthenticationProvider" class="com.pkms.common.security.provider.BpUserAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="bpUserDetailsService" />
+		<beans:property name="passwordEncoder" ref="shaPasswordEncoder"/>
+	</beans:bean>
+
+	<!-- SKT 사용자 provider -->
+	<beans:bean id="sktUserAuthenticationProvider" class="com.pkms.common.security.provider.SktUserAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="sktUserDetailsService" />
+		<!-- 
+		<beans:property name="passwordEncoder" ref="shaPasswordEncoder"/>
+		 -->
+	</beans:bean>
+	
+	<!-- SKT 사용자 provider(mobile) -->
+	<beans:bean id="sktUserMobileAuthenticationProvider" class="com.pkms.common.security.provider.SktUserMobileAuthenticationProvider">
+		<beans:property name="userDetailsService" ref="sktUserMobileDetailsService" />
+	</beans:bean>
+
+	<beans:bean id="shaPasswordEncoder" class="org.springframework.security.authentication.encoding.ShaPasswordEncoder">
+		<beans:constructor-arg value="256" />
+		<!-- 
+		<beans:property name="encodeHashAsBase64" value="true" />
+		 -->	
+	</beans:bean>
+
+	<!-- BP 사용자 인증 쿼리 -->
+	<beans:bean id="bpUserDetailsService" class="com.pkms.common.security.dao.BpUserAuthenticationDAO">
+		<beans:property name="dataSource" ref="dataSource" />
+		<beans:property name="usersByUsernameQuery" value="SELECT BP_USER_ID, BP_USER_PW, '1' FROM PKMS.BP_USER WHERE USE_YN = 'Y' AND APPROVAL_STATE='1' AND BP_USER_ID = ?" />
+		<beans:property name="authoritiesByUsernameQuery"
+			value="SELECT U.BP_USER_ID, UAR.AUTH_ROLE FROM PKMS.BP_USER U, PKMS.USER_AUTH_ROLE UAR WHERE U.BP_USER_ID = UAR.USER_ID AND UAR.USER_GUBUN = 'B' AND U.BP_USER_ID = ?" />
+	</beans:bean>
+
+	<!-- SKT 사용자 인증 쿼리 -->
+	<beans:bean id="sktUserDetailsService" class="com.pkms.common.security.dao.SktUserAuthenticationDAO">
+		<beans:property name="dataSource" ref="dataSource" />
+		<beans:property name="usersByUsernameQuery" value="SELECT EMPNO, EMPNO, '1' FROM PKMS.INF_PERSON_INFO_RCV WHERE EMPNO = ? " />
+		<beans:property name="authoritiesByUsernameQuery"
+			value="SELECT U.EMPNO, UAR.AUTH_ROLE FROM PKMS.INF_PERSON_INFO_RCV U, PKMS.USER_AUTH_ROLE UAR WHERE U.EMPNO = UAR.USER_ID AND UAR.USER_GUBUN = 'M' AND U.EMPNO = ?" />
+	</beans:bean>
+	
+	<!-- SKT 사용자 인증 쿼리(mobile) -->
+	<beans:bean id="sktUserMobileDetailsService" class="com.pkms.common.security.dao.SktUserAuthenticationDAO">
+		<beans:property name="dataSource" ref="dataSource" />
+		<beans:property name="usersByUsernameQuery" value="SELECT EMPNO, substr(REGNO, 1, 6), '1' FROM PKMS.INF_PERSON_INFO_RCV WHERE EMPNO = ? " />
+		<beans:property name="authoritiesByUsernameQuery"
+			value="SELECT U.EMPNO, UAR.AUTH_ROLE FROM PKMS.INF_PERSON_INFO_RCV U, PKMS.USER_AUTH_ROLE UAR WHERE U.EMPNO = UAR.USER_ID AND UAR.USER_GUBUN = 'M' AND U.EMPNO = ?" />
+	</beans:bean>
+
+	<!-- 인증 관리자에 각 사용자별 Provider 지정 -->
+	<authentication-manager alias="authenticationManager">
+		<authentication-provider ref="bpUserAuthenticationProvider" />
+		<authentication-provider ref="sktUserAuthenticationProvider" />
+		<authentication-provider ref="sktUserMobileAuthenticationProvider" />
+	</authentication-manager>
+
+</beans:beans>

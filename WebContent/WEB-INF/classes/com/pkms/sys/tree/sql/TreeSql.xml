@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Tree">
+
+	<typeAlias alias="TreeModel" type="com.pkms.sys.tree.model.TreeModel" />
+	
+	<resultMap class="TreeModel" id="TreeList">
+		<result property="id" column="id"/>
+		<result property="pId" column="pid"/>
+		<result property="name" column="name"/>
+		<result property="open" column="open"/>
+		<result property="open_state" column="open_state"/>
+		<result property="isParent" column="isparent"/>
+		
+		<result property="use_yn" column="use_yn"/>
+		
+	</resultMap>
+	
+	<select id="Tree.list" resultMap="TreeList">
+		SELECT
+			ID
+			,PID
+			,NAME
+			,OPEN
+			,OPEN AS open_state
+			,USE_YN
+			,ISPARENT
+		FROM ATTACH_FILE_TREE
+		WHERE ID != 0
+<![CDATA[	AND ID < 1000	]]>
+		<isNotNull property="id">
+      	 	<isNotEmpty property="id">
+				 AND ID != #id#
+			</isNotEmpty>
+		</isNotNull>
+		ORDER BY ORD, NAME
+	</select>
+	
+	<select id="Tree.select" resultMap="TreeList" parameterClass="TreeModel">
+		SELECT
+			ID
+			,PID
+			,NAME
+			,OPEN
+			,ISPARENT
+			,WEB
+			,USE_YN
+			,REG_USER
+			,REG_DATE
+			,UPDATE_USER
+			,UPDATE_DATE
+		FROM ATTACH_FILE_TREE
+		WHERE ID = #id#
+	</select>
+	
+	<insert id="Tree.insert" parameterClass="TreeModel">
+		INSERT INTO ATTACH_FILE_TREE
+		(
+			ID
+			,PID
+			,NAME
+			,OPEN
+			,ISPARENT
+			,USE_YN
+			,REG_USER
+			,REG_DATE
+			,TYPE
+		)
+		VALUES 
+		(
+			ATTACH_FILE_TREE_ID.NEXTVAL
+			,#pId#
+			,#name#
+			,#open#
+			,#isParent#
+			,#use_yn#
+			,#session_user_name#
+			,SYSDATE
+			,#type#
+		)
+	</insert>
+
+	<update id="Tree.update" parameterClass="TreeModel">
+		UPDATE
+			ATTACH_FILE_TREE
+		SET
+			PID = 1
+			,NAME = #name#
+			,OPEN = #open#
+			,ISPARENT = #isParent#
+			,USE_YN = #use_yn#
+			,UPDATE_USER = #session_user_name#
+			,UPDATE_DATE = SYSDATE
+		WHERE ID = #id#
+	</update>
+	
+	<delete id="Tree.delete" parameterClass="TreeModel">
+		DELETE FROM ATTACH_FILE_TREE
+		WHERE ID = #id# 
+	</delete>
+	
+</sqlMap>

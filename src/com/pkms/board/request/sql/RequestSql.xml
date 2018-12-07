@@ -1,0 +1,316 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Request">
+
+	<typeAlias alias="RequestModel" type="com.pkms.board.request.model.RequestModel" />
+	
+	<resultMap class="RequestModel" id="RequestModelRead">
+		<result property="request_seq" column="request_seq"/>
+		<result property="goal" column="goal"/>
+		<result property="ptn_name1" column="ptn_name1"/>
+		<result property="ptn_name2" column="ptn_name2"/>
+		<result property="system_seq" column="system_seq"/>
+		<result property="system_name" column="system_name"/>
+		<result property="system_user_id" column="system_user_id"/>
+		<result property="system_user_name" column="system_user_name"/>
+		<result property="request_date_start" column="request_date_start"/>
+		<result property="request_date_end" column="request_date_end"/>
+		<result property="reg_time_h" column="reg_time_h"/>
+		<result property="reg_time_m" column="reg_time_m"/>
+		<result property="request_class" column="request_class"/>
+		<result property="content" column="content"/>
+		<result property="request_issue" column="request_issue"/>
+		<result property="equip_spec" column="equip_spec"/>
+		<result property="equip_date_start" column="equip_date_start"/>
+		<result property="equip_date_end" column="equip_date_end"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="request_state" column="request_state"/>
+	</resultMap>
+	
+	<insert id="RequestDao.create" parameterClass="RequestModel">
+		<selectKey keyProperty="request_seq" resultClass="String">
+			select request_seq.nextval from dual
+		</selectKey>
+		INSERT INTO PKMS.REQUEST
+		(
+			  REQUEST_SEQ
+			, REQUEST_STATE
+			<isNotEmpty property="request_date_start">
+			, REQUEST_DATE_START
+			, REQUEST_DATE_END
+			</isNotEmpty>
+			, SYSTEM_SEQ
+			, PTN_NAME1
+			, PTN_NAME2
+			, GOAL
+			, CONTENT
+			, REQUEST_ISSUE
+			, REQUEST_CLASS
+			, REG_TIME_H
+			, REG_TIME_M
+			, SYSTEM_USER_ID
+			, EQUIP_SPEC
+			<isNotEmpty property="equip_date_start">
+			, EQUIP_DATE_START
+			, EQUIP_DATE_END
+			</isNotEmpty>
+			, REG_USER
+			, REG_USER_NAME
+			
+		)VALUES
+		(	
+			  #request_seq#
+			, '1'
+			<isNotEmpty property="request_date_start">
+			, TO_DATE(#request_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+			, TO_DATE(#request_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			, #system_seq#
+			, #ptn_name1#
+			, #ptn_name2#
+			, #goal#
+			, #content#
+			, #request_issue#
+			, #request_class#
+			, #reg_time_h#
+			, #reg_time_m#
+			, #system_user_id#
+			, #equip_spec#
+			<isNotEmpty property="equip_date_start">
+			, TO_DATE(#equip_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+			, TO_DATE(#equip_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			, #session_user_id#
+			, #session_user_name#
+		)
+		
+	</insert>
+	
+	<select id="RequestDao.readList" parameterClass="RequestModel" resultClass="RequestModel">
+		SELECT
+		    REQUEST_SEQ, GOAL, REQUEST_STATE, REQUEST_DATE_START, REQUEST_DATE_END,
+		    REQUEST_CLASS, REG_TIME_H, REQUEST_NAME, SYSTEM_USER_ID, PTN_NAME1, SYSTEM_SEQ, SYSTEM_NAME, REG_USER_NAME
+		FROM (
+		    SELECT A.*
+		    FROM 
+		        (SELECT 
+		        	  R.REQUEST_SEQ
+		        	, R.GOAL
+		        	, CASE
+	                      WHEN R.REQUEST_STATE = '1' THEN '요청'
+	                      WHEN R.REQUEST_STATE = '2' THEN '승인'
+	                      WHEN R.REQUEST_STATE = '3' THEN '반려'
+	                   END AS REQUEST_STATE
+	                , TO_CHAR (R.REQUEST_DATE_START, 'YYYY-MM-DD') REQUEST_DATE_START
+	                , TO_CHAR (R.REQUEST_DATE_END, 'YYYY-MM-DD') REQUEST_DATE_END 
+	                , R.REQUEST_CLASS
+	                , DECODE(R.REG_TIME_H,  NULL, '', R.REG_TIME_H || '시')  || DECODE(R.REG_TIME_M,  NULL, '', R.REG_TIME_M || '분') REG_TIME_H 
+	                , R.REG_USER REQUEST_NAME
+	                , P.HNAME SYSTEM_USER_ID
+	                , R.PTN_NAME1
+	                , R.SYSTEM_SEQ
+	                , DECODE(G.GROUP1_SEQ, '', '', G.GROUP1_NAME || '>' || G.GROUP2_NAME || '>' || G.GROUP3_NAME || '>' || G.SYSTEM_NAME) SYSTEM_NAME
+	                , ROW_NUMBER () OVER (ORDER BY R.REQUEST_SEQ DESC) AS RN
+	                , R.REG_USER_NAME
+                    FROM PKMS.REQUEST R
+                    JOIN PKMS.SYSTEM S ON R.SYSTEM_SEQ = S.SYSTEM_SEQ
+                    JOIN PKMS.INF_PERSON_INFO_RCV P ON R.SYSTEM_USER_ID = P.EMPNO
+                    JOIN 
+					(
+					    SELECT 
+					        G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+					        S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+					    FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+					    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+					    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+					    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+					    AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' 
+					) G ON R.SYSTEM_SEQ = G.SYSTEM_SEQ
+                   WHERE R.USE_YN = 'Y'
+                   <isEqual property="session_user_type" compareValue="B" open="AND">
+                   		PTN_NAME1 = #session_user_group_name#
+                   </isEqual>
+                   <isEqual property="session_user_type" compareValue="M" open="AND">
+                   	<isEqual property="searchAllManager" compareValue="true">
+                   		1 = 1
+                   	</isEqual>
+                   	<isEqual property="searchAllManager" compareValue="false">
+                   		R.SYSTEM_USER_ID = #session_user_id#
+                   	</isEqual>	 
+                   </isEqual>
+                   <isNotEmpty property="search_bp_name" open="AND">
+                   		PTN_NAME1 = #search_bp_name#
+                   </isNotEmpty>
+                   <isNotEmpty property="request_search_date_start" open="AND">
+			        	REQUEST_DATE_START BETWEEN TO_DATE(#request_search_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss') AND TO_DATE(#request_search_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+			        </isNotEmpty>
+                  	<isNotEmpty property="search_system_user_id" open="AND">
+                  		SYSTEM_USER_ID = #search_system_user_id#
+                  	</isNotEmpty>
+                  	<isNotEmpty property="search_system_seq" open="AND">
+                  		SYSTEM_SEQ = #search_system_seq#
+                  	</isNotEmpty>
+                  	<isNotEmpty property="search_request_state" open="AND">
+                  		<isEqual property="search_request_state" compareValue="0">
+                  			1 = 1
+                  		</isEqual>
+                  		<isNotEqual property="search_request_state" compareValue="0">
+                  			REQUEST_STATE = #search_request_state#
+                  		</isNotEqual>
+                  	</isNotEmpty>
+                  	<isNotEmpty property="searchKeyword" open="AND">
+                  		LOWER(GOAL) LIKE '%' || LOWER(#searchKeyword#) || '%'
+                  	</isNotEmpty>
+                ORDER BY REQUEST_SEQ DESC
+		        ) A  WHERE RN <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		WHERE RN  > #firstIndex#
+	</select>
+	
+	<select id="RequestDao.readTotalCount" parameterClass="RequestModel" resultClass="int">
+		SELECT
+		    COUNT(*) AS totcnt
+		FROM PKMS.REQUEST R
+        JOIN PKMS.INF_PERSON_INFO_RCV P ON R.SYSTEM_USER_ID = P.EMPNO
+        JOIN 
+		(
+		    SELECT 
+		        G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		        S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+		    FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		    AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' 
+		) G ON R.SYSTEM_SEQ = G.SYSTEM_SEQ
+        WHERE R.USE_YN = 'Y'
+		<isEqual property="session_user_type" compareValue="B" open="AND">
+        	PTN_NAME1 = #session_user_group_name#
+        </isEqual>
+        <isEqual property="session_user_type" compareValue="M" open="AND">
+        	<isEqual property="searchAllManager" compareValue="true">
+        		1 = 1
+        	</isEqual>
+        	<isEqual property="searchAllManager" compareValue="false">
+        		R.SYSTEM_USER_ID = #session_user_id#
+        	</isEqual>	 
+        </isEqual>
+        <isNotEmpty property="search_bp_name" open="AND">
+        	PTN_NAME1 = #search_bp_name#
+        </isNotEmpty>
+        <isNotEmpty property="request_search_date_start" open="AND">
+			REQUEST_DATE_START BETWEEN TO_DATE(#request_search_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss') AND TO_DATE(#request_search_date_end#||' '||'23:59:59','yyyy-mm-dd hh24:mi:ss')
+		</isNotEmpty>
+        <isNotEmpty property="search_system_user_id" open="AND">
+        	SYSTEM_USER_ID = #search_system_user_id#
+        </isNotEmpty>
+        <isNotEmpty property="search_system_seq" open="AND">
+        	SYSTEM_SEQ = #search_system_seq#
+        </isNotEmpty>
+        <isNotEmpty property="search_request_state" open="AND">
+        	<isEqual property="search_request_state" compareValue="0">
+        		1 = 1
+        	</isEqual>
+        	<isNotEqual property="search_request_state" compareValue="0">
+        		REQUEST_STATE = #search_request_state#
+        	</isNotEqual>
+        </isNotEmpty>
+        <isNotEmpty property="searchKeyword" open="AND">
+       		LOWER(GOAL) LIKE '%' || LOWER(#searchKeyword#) || '%'
+       	</isNotEmpty>
+	</select>
+	
+	<select id="RequestDao.read" parameterClass="RequestModel" resultMap="RequestModelRead">
+		SELECT
+		      R.REQUEST_SEQ
+		    , R.GOAL
+		    , R.PTN_NAME1
+		    , R.PTN_NAME2
+		    , R.SYSTEM_SEQ
+		    , DECODE(G.GROUP1_SEQ, '', '', G.GROUP1_NAME || '>' || G.GROUP2_NAME || '>' || G.GROUP3_NAME || '>' || G.SYSTEM_NAME) SYSTEM_NAME
+		    , R.SYSTEM_USER_ID
+		    , I.HNAME AS SYSTEM_USER_NAME
+		    , TO_CHAR(R.REQUEST_DATE_START, 'YYYY-MM-DD') REQUEST_DATE_START
+		    , TO_CHAR(R.REQUEST_DATE_END, 'YYYY-MM-DD') REQUEST_DATE_END
+		    , R.REG_TIME_H
+		    , R.REG_TIME_M
+		    , R.REQUEST_CLASS
+		    , R.CONTENT
+		    , R.REQUEST_ISSUE
+		    , R.EQUIP_SPEC
+		    , TO_CHAR(R.EQUIP_DATE_START, 'YYYY-MM-DD') EQUIP_DATE_START
+		    , TO_CHAR(R.EQUIP_DATE_END, 'YYYY-MM-DD') EQUIP_DATE_END
+		    , R.REG_USER
+		    , R.REQUEST_STATE
+		FROM PKMS.REQUEST R
+		JOIN PKMS.SYSTEM S ON R.SYSTEM_SEQ = S.SYSTEM_SEQ
+		JOIN PKMS.INF_PERSON_INFO_RCV I ON R.SYSTEM_USER_ID = I.EMPNO
+		JOIN 
+		(
+		    SELECT 
+		        G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+		        S.SYSTEM_SEQ, S.NAME SYSTEM_NAME
+		    FROM PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+		    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		    AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y' 
+		) G ON R.SYSTEM_SEQ = G.SYSTEM_SEQ
+		WHERE R.REQUEST_SEQ = #request_seq#
+	</select>
+	
+	<update id="RequestDao.update_Approve" parameterClass="RequestModel">
+		UPDATE PKMS.REQUEST
+		SET
+			  REQUEST_STATE = '2'
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+		WHERE REQUEST_SEQ = #request_seq#
+	</update>
+	
+	<update id="RequestDao.update_Reject" parameterClass="RequestModel">
+		UPDATE PKMS.REQUEST
+		SET
+			  REQUEST_STATE = '3'
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+		WHERE REQUEST_SEQ = #request_seq#
+	</update>
+	
+	<update id="RequestDao.update" parameterClass="RequestModel">
+		UPDATE PKMS.REQUEST
+		SET
+			  GOAL = #goal#
+			, PTN_NAME1 = #ptn_name1#
+			, SYSTEM_SEQ = #system_seq#
+			, SYSTEM_USER_ID = #system_user_id#
+			<isNotEmpty property="request_date_start">
+			, REQUEST_DATE_START = TO_DATE(#request_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+			, REQUEST_DATE_END   = TO_DATE(#request_date_end#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			, REG_TIME_H = #reg_time_h#
+			, REG_TIME_M = #reg_time_m#
+			, CONTENT = #content#
+			, PTN_NAME2 = #ptn_name2#
+			, REQUEST_CLASS = #request_class#
+			, REQUEST_ISSUE = #request_issue#
+			, EQUIP_SPEC = #equip_spec#
+			<isNotEmpty property="equip_date_start">
+			, EQUIP_DATE_START = TO_DATE(#equip_date_start#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+			, EQUIP_DATE_END   = TO_DATE(#equip_date_end#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+			</isNotEmpty>
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+		WHERE REQUEST_SEQ = #request_seq#
+	</update>
+	
+	<update id="RequestDao.delete" parameterClass="RequestModel">
+		UPDATE PKMS.REQUEST
+		SET
+			  USE_YN = 'N'
+			, UPDATE_DATE = sysdate
+			, UPDATE_USER = #session_user_id#
+		WHERE REQUEST_SEQ = #request_seq#
+	</update>
+
+</sqlMap>

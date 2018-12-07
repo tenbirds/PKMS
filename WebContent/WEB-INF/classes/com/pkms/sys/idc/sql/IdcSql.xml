@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="IDC">
+
+	<typeAlias alias="IdcModel" type="com.pkms.sys.idc.model.IdcModel" />
+
+	<select id="IdcDAO.read" parameterClass="IdcModel" resultClass="IdcModel">
+		<![CDATA[
+			SELECT
+				IDC_SEQ, TEAM_SEQ, CENTRAL_SEQ, LOCATION_CODE, IDC_NAME, TEAM_NAME, CENTRAL_NAME, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE
+			FROM PKMS.IDC 
+			WHERE IDC_SEQ=#idc_seq#
+		]]>
+	</select>
+
+	<select id="IdcDAO.readList" parameterClass="IdcModel" resultClass="IdcModel">
+		<![CDATA[
+			SELECT
+				IDC_SEQ, TEAM_SEQ, CENTRAL_SEQ, LOCATION_CODE, IDC_NAME, TEAM_NAME, CENTRAL_NAME, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE
+			FROM PKMS.IDC
+			WHERE USE_YN='Y'
+		]]>
+		<isNotEmpty property="searchKeyword">
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				IDC_NAME LIKE '%' || #searchKeyword# || '%'
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				LOCATION_CODE = #searchKeyword#
+			</isEqual>
+		</isNotEmpty>
+		<![CDATA[
+			ORDER BY IDC_SEQ ASC
+		]]>
+	</select>
+	
+	<select id="IdcDAO.eq_readList" parameterClass="IdcModel" resultClass="IdcModel">
+		<![CDATA[
+		SELECT
+			E.IDC_SEQ, I.IDC_NAME, I.TEAM_NAME
+		FROM
+			EQUIPMENT E, IDC I
+		WHERE
+		    E.IDC_SEQ = I.IDC_SEQ
+		  AND E.SYSTEM_SEQ = #system_seq#
+		GROUP BY
+			E.IDC_SEQ, I.IDC_NAME, I.TEAM_NAME
+		ORDER BY
+			I.IDC_NAME
+		]]>
+	</select>
+
+</sqlMap>

@@ -1,0 +1,257 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Documentmg">
+
+<!-- 	<typeAlias alias="SysModel" type="com.pkms.sys.common.model.SysModel" /> -->
+<!-- 	<typeAlias alias="SysRoadMapModel" type="com.pkms.sys.common.model.SysRoadMapModel" /> -->
+<!-- 	<typeAlias alias="SysRoadMapMappingModel" type="com.pkms.sys.common.model.SysRoadMapMappingModel" /> -->
+	<typeAlias alias="SystemFileModel" type="com.pkms.sys.system.model.SystemFileModel" />
+	<typeAlias alias="DocumentmgModel" type="com.pkms.tempmg.model.DocumentmgModel" />
+<!-- 	<resultMap class="SystemFileModel" id="SystemFileList"> -->
+<!-- 		<result property="id" column="id"/> -->
+<!-- 		<result property="pId" column="pid"/> -->
+<!-- 		<result property="name" column="name"/> -->
+<!-- 		<result property="open" column="open"/> -->
+<!-- 		<result property="isParent" column="isparent"/> -->
+<!-- 		<result property="drag" column="drag"/> -->
+<!-- 		<result property="drop" column="fdrop"/> -->
+<!-- 		<result property="attach_file_id" column="attach_file_id"/> -->
+<!-- 		<result property="file_path" column="file_path"/> -->
+<!-- 		<result property="file_name" column="file_name"/> -->
+<!-- 		<result property="file_size" column="file_size"/> -->
+<!-- 		<result property="reg_user" column="reg_user"/> -->
+<!-- 		<result property="reg_date" column="reg_date"/> -->
+	
+<!-- 	</resultMap> -->
+	
+	
+		<resultMap class="DocumentmgModel" id="DocumentmgList">
+		<result property="doc_seq" column="doc_seq"/>
+		<result property="doc_name" column="doc_name"/>
+		<result property="doc_version" column="doc_version"/>
+		<result property="file_extension" column="file_extension"/>
+		<result property="file_size" column="file_size" nullValue="0"/>
+		<result property="file_path" column="file_path"/>
+		<result property="file_org_name" column="file_org_name"/>
+		<result property="file_name" column="file_name"/>
+		
+		<result property="reg_user_id" column="reg_user_id"/>
+		<result property="reg_user_name" column="reg_user_name"/>
+		<result property="reg_date" column="reg_date"/>
+		
+		<result property="update_user_id" column="update_user_id"/>
+		<result property="update_user_name" column="update_user_name"/>
+		<result property="update_date" column="update_date"/>
+		
+	</resultMap>
+	
+	
+	<insert id="DocumentmgDao.insert" parameterClass="DocumentmgModel">
+		<![CDATA[
+			INSERT INTO  DOCUMENT_LIBRARY
+ 			( 
+	 			DOC_SEQ
+	 			, DOC_NAME
+	 			, DOC_VERSION
+	 			, REG_USER_ID   
+ 			) VALUES ( 
+	 			#doc_seq#
+	 			, #doc_name#
+	 			, #doc_version#
+	 			, #reg_user_id#
+ 			)			
+		]]>
+	</insert>
+
+	<insert id="DocumentmgDao.create" parameterClass="DocumentmgModel">
+		<![CDATA[
+			INSERT INTO  DOCUMENT_LIBRARY
+ 			( 
+	 			DOC_SEQ
+	 			,DOC_NAME
+				,FILE_EXTENSION
+				,FILE_SIZE
+				,FILE_PATH
+				,FILE_ORG_NAME
+				,FILE_NAME
+				,REG_USER_ID
+				,UPDATE_USER_ID
+				,UPDATE_DATE
+ 			) VALUES ( 
+	 			#doc_seq#
+	 			, #doc_name#
+				, #file_extension#
+				, #file_size#
+				, #file_path#
+				, #file_org_name#
+				, #file_name#
+	 			, #reg_user_id#
+				, #update_user_id#
+				, sysdate
+ 			)			
+		]]>
+	</insert>
+
+
+
+	<select id="DocumentmgDao.idx" resultClass="Integer">       
+	  	  SELECT
+		  	DOC_SEQ 	
+		  FROM
+		  	DOCUMENT_LIBRARY
+		  WHERE 1=1
+			AND ROWNUM = 1
+		 ORDER BY DOC_SEQ DESC          
+	</select>
+	
+	
+	<select id="DocumentmgDao.readlist" resultMap="DocumentmgList" parameterClass="DocumentmgModel">
+		SELECT
+			DOC_SEQ	,DOC_NAME, DOC_VERSION ,FILE_EXTENSION ,FILE_SIZE,FILE_PATH ,FILE_ORG_NAME ,FILE_NAME ,REG_USER_ID ,REG_USER_NAME ,REG_DATE ,UPDATE_USER_ID ,UPDATE_USER_NAME ,UPDATE_DATE
+		FROM ( SELECT 
+				A.*
+			FROM 
+				(
+					SELECT 
+						DOC_SEQ
+						,DOC_NAME
+						,DOC_VERSION
+						,FILE_EXTENSION
+						,FILE_SIZE
+						,FILE_PATH
+						,FILE_ORG_NAME
+						,FILE_NAME
+						,REG_USER_ID
+						,(SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = REG_USER_ID) AS REG_USER_NAME
+						,TO_CHAR (REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+						,UPDATE_USER_ID
+						,(SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = UPDATE_USER_ID) AS UPDATE_USER_NAME
+						,TO_CHAR (UPDATE_DATE, 'YYYY-MM-DD') AS UPDATE_DATE
+						,ROW_NUMBER () OVER (ORDER BY DOC_SEQ DESC) AS RN
+					FROM DOCUMENT_LIBRARY
+					WHERE 1 = 1
+					<isNotEmpty prepend="AND" property="doc_name">
+						LOWER(DOC_NAME) LIKE '%' || LOWER(#doc_name#) || '%'
+					</isNotEmpty>		
+					<isNotEmpty prepend="AND" property="file_org_name">
+						LOWER(FILE_ORG_NAME) LIKE '%' || LOWER(#file_org_name#) || '%'
+					</isNotEmpty>
+					
+					ORDER BY REG_DATE DESC
+				) A WHERE RN  <![CDATA[<=]]> #firstIndex# + #recordCountPerPage#)
+		 WHERE RN  > #firstIndex#			
+	</select>
+	
+	<select id="DocumentmgDao.readTotalCount" parameterClass="DocumentmgModel" resultClass="int">
+			SELECT 
+				  COUNT(*) AS CNT
+		    FROM DOCUMENT_LIBRARY
+			WHERE 1 = 1
+			<isNotEmpty prepend="AND" property="doc_name">
+				LOWER(DOC_NAME) LIKE '%' || LOWER(#doc_name#) || '%'
+			</isNotEmpty>		
+			<isNotEmpty prepend="AND" property="file_org_name">
+				LOWER(FILE_ORG_NAME) LIKE '%' || LOWER(#file_org_name#) || '%'
+			</isNotEmpty>
+	</select>
+
+
+
+
+	<select id="DocumentmgDao.readone" resultMap="DocumentmgList" parameterClass="DocumentmgModel">
+		SELECT 
+			DOC_SEQ
+			,DOC_NAME
+			,DOC_VERSION
+			,FILE_EXTENSION
+			,FILE_SIZE
+			,FILE_PATH
+			,FILE_ORG_NAME
+			,FILE_NAME
+			,REG_USER_ID
+			,(SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = REG_USER_ID) AS REG_USER_NAME
+			,TO_CHAR (REG_DATE, 'YYYY-MM-DD') AS REG_DATE
+			,UPDATE_USER_ID
+			,(SELECT S.HNAME FROM INF_PERSON_INFO_RCV S WHERE S.EMPNO = UPDATE_USER_ID) AS UPDATE_USER_NAME
+			,UPDATE_DATE
+			,TO_CHAR (UPDATE_DATE, 'YYYY-MM-DD') AS UPDATE_DATE
+		FROM DOCUMENT_LIBRARY
+		WHERE 1 = 1
+<!-- 		<isNotEmpty prepend="AND" property="doc_seq"> -->
+			AND DOC_SEQ = #doc_seq#
+<!-- 		</isNotEmpty>		 -->
+	</select>
+
+
+
+
+
+	<update id="DocumentmgDao.update" parameterClass="DocumentmgModel">
+		<![CDATA[
+			UPDATE DOCUMENT_LIBRARY 
+			SET 
+				DOC_NAME			=	#doc_name#
+				,DOC_VERSION		=	#doc_version#
+				,UPDATE_USER_ID		=	#update_user_id#
+				,UPDATE_DATE		=	SYSDATE
+		]]>
+			WHERE DOC_SEQ= #doc_seq#
+	</update>
+
+
+
+	<delete id="DocumentmgDao.delete" parameterClass="DocumentmgModel">
+		DELETE FROM PKMS.DOCUMENT_LIBRARY WHERE DOC_SEQ = #doc_seq#
+	</delete>
+
+
+	<update id="DocumentmgDao.filedelete" parameterClass="DocumentmgModel">
+			<![CDATA[
+			UPDATE DOCUMENT_LIBRARY 
+			SET 
+				FILE_EXTENSION 		=	#file_extension#
+				,FILE_SIZE 			=	#file_size#
+				,FILE_PATH 			=	#file_path#
+				,FILE_ORG_NAME 		=	#file_org_name#
+				,FILE_NAME  		=	#file_name#
+				,UPDATE_USER_ID		=	#update_user_id#
+				,UPDATE_DATE		=	sysdate
+			]]>
+		WHERE DOC_SEQ = #doc_seq#
+	</update>
+
+
+
+	<delete id="DocumentmgDao.deleteList" parameterClass="DocumentmgModel">
+		DELETE FROM PKMS.DOCUMENT_LIBRARY 
+		WHERE DOC_SEQ in		
+		<iterate  property="chk_doc_seq" open="(" close=")" conjunction="," >
+              #[]#
+         </iterate>
+	</delete>
+
+
+
+
+
+	
+	<select id="DocumentmgDao.docfileIdx" resultClass="Integer">
+		SELECT
+			CASE 
+				WHEN MAX(DOC_SEQ) IS NULL THEN 1
+				ELSE MAX(DOC_SEQ)+1 
+			END idx				
+		FROM
+			DOCUMENT_LIBRARY
+		WHERE 1=1
+			AND ROWNUM = 1
+		ORDER BY DOC_SEQ DESC          
+	</select>
+	
+	
+	
+	
+
+
+</sqlMap>

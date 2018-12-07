@@ -1,0 +1,197 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgStatusVerify">
+
+	<typeAlias alias="VerifyTemModel" type="com.pkms.verify_tem_mg.model.VerifyTemModel" />
+	<typeAlias alias="PkgStatusModel" type="com.pkms.pkgmg.pkg.model.PkgStatusModel" />
+	<typeAlias alias="PkgModel" type="com.pkms.pkgmg.pkg.model.PkgModel" />
+	
+	<select id="PkgStatusVerifyDAO.getList_verifyTem" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT * FROM (
+			SELECT 
+				TM.VERIFY_SEQ, 
+				TM.VERIFY_VER, 
+				MN.VERIFY_TITLE || ' (버전 '||TM.VERIFY_VER || ')' as VERIFY_TITLE , 
+				MN.REG_DATE, 
+				MN.VERIFY_TYPE,
+				MN.REG_USER,
+				TM.SYSTEM_SEQ,
+				(SELECT HNAME FROM INF_PERSON_INFO_RCV WHERE EMPNO = REG_USER) AS REG_NAME
+			FROM VERIFYTEM_MANAGE_TEM TM, VERIFYTEM_MANAGE MN
+			WHERE TM.VERIFY_SEQ = MN.VERIFY_SEQ AND MN.VERIFY_TYPE = #verify_type# AND TM.SYSTEM_SEQ = #system_seq#
+			GROUP BY TM.VERIFY_SEQ, TM.VERIFY_VER, MN.VERIFY_TITLE, MN.REG_DATE, MN.VERIFY_TYPE, MN.REG_USER,TM.SYSTEM_SEQ
+			ORDER BY TM.VERIFY_SEQ DESC , TM.VERIFY_VER ASC )
+	</select>
+
+	<select id="PkgStatusVerifyDAO.getList_verifyQuest" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT 
+			QE.QUEST_SEQ,
+			QE.QUEST_TITLE,
+			TM.QUEST_TYPE  
+		FROM 
+			(
+				SELECT 
+					VERIFY_SEQ, 
+					VERIFY_VER, 
+					QUEST_SEQ, 
+					SYSTEM_SEQ, 
+        			(SELECT QUEST_TYPE FROM VERIFYTEM_QUEST  WHERE QUEST_SEQ = VT.QUEST_SEQ) AS QUEST_TYPE
+         		FROM VERIFYTEM_MANAGE_TEM VT
+        		WHERE VERIFY_SEQ = #verify_seq#
+                	AND VERIFY_VER = #verify_ver# AND SYSTEM_SEQ = #system_seq#
+			) TM ,
+			VERIFYTEM_QUEST QE
+		WHERE TM.QUEST_SEQ = QE.QUEST_SEQ
+		ORDER BY QE.QUEST_SEQ DESC
+		
+	</select>
+	
+	<select id="PkgStatusVerifyDAO.getList_verifyItem" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT 
+			ITEM_SEQ, 
+			QUEST_SEQ, 
+			ITEM_CONTENT, 
+			ITEM_NUM 
+		FROM VERIFYTEM_ITEM 
+		WHERE QUEST_SEQ IN (
+			(SELECT QUEST_SEQ FROM  VERIFYTEM_MANAGE_TEM WHERE VERIFY_SEQ = #verify_seq# 
+				AND VERIFY_VER = #verify_ver# AND SYSTEM_SEQ = #system_seq# ) 
+		)
+		ORDER BY QUEST_SEQ DESC, ITEM_SEQ ASC
+	</select>
+	
+	<insert id="PkgStatusVerifyDAO.create_verifyResult" parameterClass="VerifyTemModel">
+		<selectKey keyProperty="result_seq" resultClass="String">
+			SELECT PKMS.RESULT_SEQ.nextval FROM dual
+		</selectKey>
+	/*PkgStatusVerifyDAO.create_verifyResult*/
+		INSERT INTO VERIFYTEM_RESULT
+		(
+			RESULT_SEQ, 
+			ITEM_SEQ, 
+			QUEST_SEQ, 
+			RESULT_MEMO, 
+			PKG_SEQ, 
+			VERIFY_SEQ, 
+			VERIFY_VER,
+			VERIFY_TYPE
+		)
+		VALUES
+		(
+			#result_seq#, 
+			#item_seq#, 
+			#quest_seq#, 
+			#result_memo#, 
+			#pkg_seq#, 
+			#verify_seq#, 
+			#verify_ver#,
+			#verify_type#
+		)
+	</insert>
+	
+	<update id="PkgStatusVerifyDAO.to_pkgmaster_verifyinfo" parameterClass="VerifyTemModel">
+		UPDATE PKG_MASTER 
+			SET 
+				<!-- VERIFY_SEQ = #verify_seq#,
+				VERIFY_VER = #verify_ver#,
+				VERIFY_CONTENT = #verify_content# -->
+				<isNotEmpty property="end">
+					<isEqual property="end" compareValue="complete">
+						<isNotEmpty property="verify_type">
+							<isEqual property="verify_type" compareValue="vol">
+								VOL_YN = 'S'
+							</isEqual>
+							<isEqual property="verify_type" compareValue="sec">
+								SEC_YN = 'S'
+							</isEqual>
+							<isEqual property="verify_type" compareValue="cha">
+								CHA_YN = 'S'
+							</isEqual>
+							<isEqual property="verify_type" compareValue="non">
+								NON_YN = 'S'
+							</isEqual>
+						</isNotEmpty>
+					</isEqual>
+				</isNotEmpty>
+		WHERE PKG_SEQ = #pkg_seq#
+	</update>
+	
+	<select id="PkgStatusVerifyDAO.getVerifyYN_frompkg" parameterClass="String" resultClass="VerifyTemModel">
+		SELECT 
+			<!-- NVL(VERIFY_SEQ,0) VERIFY_SEQ,
+			NVL(VERIFY_VER,0) VERIFY_VER,
+			VERIFY_CONTENT, -->
+			VOL_YN,
+			SEC_YN,
+			CHA_YN,
+			NON_YN
+		FROM PKG_MASTER WHERE PKG_SEQ = #pkg_seq#
+	</select>
+	
+	<select id="PkgStatusVerifyDAO.readVerify_result" parameterClass="VerifyTemModel" resultClass="VerifyTemModel">
+		SELECT 
+			RESULT_SEQ, 
+			ITEM_SEQ, 
+			QUEST_SEQ, 
+			RESULT_MEMO, 
+			PKG_SEQ, 
+			VERIFY_SEQ, 
+			VERIFY_VER  
+		FROM VERIFYTEM_RESULT
+		WHERE VERIFY_SEQ = #verify_seq# AND VERIFY_VER = #verify_ver# AND PKG_SEQ = #pkg_seq#
+		ORDER BY QUEST_SEQ DESC
+	</select>
+	
+	<delete id="PkgStatusVerifyDAO.delVerify_result" parameterClass="VerifyTemModel">
+	/*PkgStatusVerifyDAO.delVerify_result*/
+		DELETE FROM VERIFYTEM_RESULT 
+		WHERE PKG_SEQ = #pkg_seq# AND 
+		<!-- VERIFY_SEQ = #verify_seq# AND VERIFY_VER = #verify_ver# -->
+			VERIFY_TYPE = #verify_type#
+	</delete>
+	
+	<select id="PkgStatusVerifyDAO.readPKGVerify_info" parameterClass="PkgModel" resultClass="PkgModel">
+		SELECT 
+            NVL(PKG_SEQ,0) PKG_SEQ, 
+            VERIFY_TYPE, 
+            NVL(VERIFY_SEQ,0) VERIFY_SEQ, 
+            NVL(VERIFY_VER,0) VERIFY_VER, 
+            NVL2(VERIFY_CONTENT, VERIFY_CONTENT, '내용을 입력하지 않았습니다.') VERIFY_CONTENT
+        FROM PKG_VERIFY_GUBUN
+		WHERE PKG_SEQ = #pkg_seq# AND VERIFY_TYPE = #verify_type#
+	</select>
+	
+	<insert id="PkgStatusVerifyDAO.createPKGVerify_Info" parameterClass="PkgModel">
+		INSERT INTO PKG_VERIFY_GUBUN
+		(
+			PKG_SEQ, 
+			VERIFY_TYPE, 
+			VERIFY_SEQ, 
+			VERIFY_VER, 
+			VERIFY_CONTENT 
+		)
+		VALUES
+		(
+			#pkg_seq#, 
+			#verify_type#, 
+			#verify_seq#, 
+			#verify_ver#, 
+			#verify_content# 
+		)
+	</insert>
+	
+	<update id="PkgStatusVerifyDAO.updatePKGVerify_Info" parameterClass="PkgModel">
+		UPDATE PKG_VERIFY_GUBUN
+		SET 
+			VERIFY_SEQ = #verify_seq#, 
+			VERIFY_VER = #verify_ver#, 
+			VERIFY_CONTENT = #verify_content#
+		WHERE PKG_SEQ = #pkg_seq# AND  VERIFY_TYPE = #verify_type#
+	</update>
+	
+	<select id="PkgStatusVerifyDAO.getPKG_verify_gubun" parameterClass="PkgModel" resultClass="int">
+		SELECT NVL(MAX(VERIFY_SEQ),0) as veri_gubun  FROM PKG_VERIFY_GUBUN WHERE PKG_SEQ = #pkg_seq# AND VERIFY_TYPE = #verify_type# 
+	</select>
+</sqlMap>
+	

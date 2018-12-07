@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xmlns:jsp="http://java.sun.com/xml/ns/javaee/jsp" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
+  <display-name>Welcome to Wings PKMS</display-name>
+  <description>Welcome to Wings PKMS</description>
+<!-- 
+ 	<context-param>
+		<param-name>spring.profiles.active</param-name>
+		<param-value>local</param-value>
+	</context-param> -->
+
+  <context-param>
+    <param-name>log4jConfigLocation</param-name>
+    <!-- <param-value>/WEB-INF/config/log/log4j-local.xml</param-value> -->
+    <param-value>/WEB-INF/config/log/log4j-${spring.profiles.active}.xml</param-value>
+    <!-- <param-value>/WEB-INF/config/log/log4j-${spring.profiles.active}.properties</param-value> -->
+  </context-param>
+  <listener>
+    <listener-class>org.springframework.web.util.Log4jConfigListener</listener-class>
+  </listener>
+  <listener>
+    <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>
+  </listener> 
+  <listener>
+    <listener-class>org.springframework.security.web.session.HttpSessionEventPublisher</listener-class>
+  </listener>
+  <context-param>
+    <param-name>webAppRootKey</param-name>
+    <param-value>pkms.root</param-value>
+  </context-param>
+  <filter>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>springSecurityFilterChain</filter-name>
+    <url-pattern>*.do</url-pattern>
+  </filter-mapping>
+  <filter>
+    <filter-name>encodingFilter</filter-name>
+    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
+    <init-param>
+      <param-name>encoding</param-name>
+      <param-value>utf-8</param-value>
+    </init-param>
+  </filter>
+  <filter-mapping>
+    <filter-name>encodingFilter</filter-name>
+    <url-pattern>*.do</url-pattern>
+  </filter-mapping>
+  <filter>
+    <filter-name>sitemesh</filter-name>
+    <filter-class>com.opensymphony.module.sitemesh.filter.PageFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>sitemesh</filter-name>
+    <url-pattern>*.do</url-pattern>
+  </filter-mapping>
+  <filter>
+    <filter-name>AnyChartResources</filter-name>
+    <filter-class>com.anychart.servlet.ResourceFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>AnyChartResources</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+  <session-config>
+    <session-timeout>60</session-timeout>
+  </session-config>
+  <context-param>
+    <param-name>contextConfigLocation</param-name>
+    <param-value>
+			/WEB-INF/config/spring/spring-*.xml
+		</param-value>
+  </context-param>
+  <servlet>
+    <servlet-name>PKMS</servlet-name>
+    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
+    <init-param>
+      <param-name>contextConfigLocation</param-name>
+      <param-value>/WEB-INF/config/spring/pkms-servlet.xml</param-value>
+    </init-param>
+    <load-on-startup>1</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>PKMS</servlet-name>
+    <url-pattern>*.do</url-pattern>
+  </servlet-mapping>
+  <jsp-config>
+    <taglib>
+      <taglib-uri>http://com.wings/ctl/ui</taglib-uri>
+      <taglib-location>/WEB-INF/tlds/ui.tld</taglib-location>
+    </taglib>
+  </jsp-config>
+  <error-page>
+    <error-code>401</error-code>
+    <location>/errorPage.do</location>
+  </error-page>
+  <error-page>
+    <error-code>404</error-code>
+    <location>/errorPage.do</location>
+  </error-page>
+  <error-page>
+    <error-code>403</error-code>
+    <location>/errorPage.do</location>
+  </error-page>
+  <security-constraint>
+    <display-name>openCoss http Auth</display-name>
+    <web-resource-collection>
+      <web-resource-name>SecureFile</web-resource-name>
+      <url-pattern>/*</url-pattern>
+      <http-method>PUT</http-method>
+      <http-method>DELETE</http-method>
+      <http-method>TRACE</http-method>
+    </web-resource-collection>
+    <auth-constraint>
+      <role-name>openCmsAuth</role-name>
+    </auth-constraint>
+  </security-constraint>
+  <servlet>
+    <display-name>Apache-Axis Servlet</display-name>
+    <servlet-name>AxisServlet</servlet-name>
+    <servlet-class>org.apache.axis.transport.http.AxisServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AxisServlet</servlet-name>
+    <url-pattern>/servlet/AxisServlet</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AxisServlet</servlet-name>
+    <url-pattern>*.jws</url-pattern>
+  </servlet-mapping>
+  <servlet-mapping>
+    <servlet-name>AxisServlet</servlet-name>
+    <url-pattern>/services/*</url-pattern>
+  </servlet-mapping>
+  <servlet>
+    <display-name>Axis Admin Servlet</display-name>
+    <servlet-name>AdminServlet</servlet-name>
+    <servlet-class>org.apache.axis.transport.http.AdminServlet</servlet-class>
+    <load-on-startup>100</load-on-startup>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>AdminServlet</servlet-name>
+    <url-pattern>/servlet/AdminServlet</url-pattern>
+  </servlet-mapping>
+  <mime-mapping>
+    <extension>mht</extension>                                              
+    <mime-type>message/rfc822</mime-type>
+  </mime-mapping>
+  
+
+  
+  
+</web-app>

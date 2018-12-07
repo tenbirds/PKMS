@@ -1,0 +1,1088 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Bp">
+
+	<typeAlias alias="BpModel" type="com.pkms.usermg.bp.model.BpModel" />
+
+	<insert id="BpDAO.create" parameterClass="BpModel">
+		<![CDATA[
+  			INSERT INTO PKMS.BP_MASTER
+				( 
+				    BP_NUM     
+				  , BP_GUBUN            
+				  , BP_NAME             
+				  , BP_TEL1              
+				  , BP_TEL2              
+				  , BP_TEL3              
+				  , BP_ADDR             
+				  , BP_ESTABLISHED_DAY  
+				  , BP_ASSETS           
+				  , BP_FORMS_LTD       
+				  , BP_FORMS_CORP      
+				  , BP_EXPERTISE_AREAS1
+				  , BP_EXPERTISE_AREAS2
+				  , BP_URL             
+				  , APPROVAL_STATE     
+				  , APPROVAL_USER_ID     
+				  , USE_YN             
+				  , REG_USER           
+				  , REG_DATE           
+				)
+			VALUES ( 
+				    #bp_num#              
+				  , #bp_gubun#            
+				  , #bp_name#             
+				  , #bp_tel1#              
+				  , #bp_tel2#              
+				  , #bp_tel3#              
+				  , #bp_addr#             
+				  , #bp_established_day#  
+				  , #bp_assets#           
+				  , #bp_forms_ltd#        
+				  , #bp_forms_corp#       
+				  , #bp_expertise_areas1# 
+				  , #bp_expertise_areas2# 
+				  , #bp_url#              
+				  , #approval_state#      
+				  , #approval_user_id#      
+				  , #use_yn#  
+		]]>
+				  <isNotEmpty property="session_user_name">                 
+				  , #session_user_name#
+				  </isNotEmpty>
+				  <isEmpty property="session_user_name">
+				  , 'BP'
+				  </isEmpty>  
+		<![CDATA[
+				  , SYSDATE   
+				)
+		]]>
+	</insert>
+
+	<update id="BpDAO.update" parameterClass="BpModel">
+		<![CDATA[
+			UPDATE PKMS.BP_MASTER
+			SET 
+		]]>
+			<isNotEmpty property="approval_state">    
+			  APPROVAL_STATE      = #approval_state#
+			</isNotEmpty>
+			<isEmpty property="approval_state">    
+			  BP_GUBUN            = #bp_gubun#            
+			, BP_NAME             = #bp_name#             
+			, BP_TEL1             = #bp_tel1#              
+			, BP_TEL2             = #bp_tel2#              
+			, BP_TEL3             = #bp_tel3#              
+			, BP_ADDR             = #bp_addr#             
+			, BP_ESTABLISHED_DAY  = #bp_established_day#  
+			, BP_ASSETS           = #bp_assets#           
+			, BP_FORMS_LTD        = #bp_forms_ltd#        
+			, BP_FORMS_CORP       = #bp_forms_corp#       
+			, BP_EXPERTISE_AREAS1 = #bp_expertise_areas1# 
+			, BP_EXPERTISE_AREAS2 = #bp_expertise_areas2# 
+			, BP_URL              = #bp_url# 
+			, APPROVAL_USER_ID    = #approval_user_id#
+			, USE_YN              = #use_yn#
+			<isNotEmpty property="session_user_name">
+			, UPDATE_USER         = #session_user_name#
+			</isNotEmpty>
+			<isEmpty property="session_user_name">
+			, UPDATE_USER         = 'BP'
+			</isEmpty>  
+			, UPDATE_DATE         = SYSDATE
+			</isEmpty>
+		<![CDATA[
+			WHERE BP_NUM = #bp_num#
+		]]>
+	</update>
+
+	<select id="BpDAO.read" parameterClass="BpModel" resultClass="BpModel">
+		<![CDATA[
+			SELECT
+				M.BP_GUBUN, M.BP_NAME, M.BP_NUM, M.BP_TEL1, M.BP_TEL2, M.BP_TEL3, M.BP_ADDR, 
+				TO_CHAR(M.BP_ESTABLISHED_DAY, 'YYYY-MM-DD') BP_ESTABLISHED_DAY, 
+				M.BP_ASSETS, M.BP_FORMS_LTD, M.BP_FORMS_CORP, M.BP_EXPERTISE_AREAS1, M.BP_EXPERTISE_AREAS2, M.BP_URL, 
+				M.APPROVAL_STATE, M.APPROVAL_USER_ID,
+				(SELECT I.HNAME FROM PKMS.INF_PERSON_INFO_RCV I WHERE I.EMPNO=M.APPROVAL_USER_ID) APPROVAL_USER_NAME, 
+				M.USE_YN, M.REG_USER, M.REG_DATE, M.UPDATE_USER, M.UPDATE_DATE,
+				((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE U.BP_NUM = #bp_num# AND U.APPROVAL_STATE = '0' AND U.USE_YN = 'Y') + DECODE(M.APPROVAL_STATE, '0', 1, 0)) APPROVAL_COUNT,
+				(select count(*) from PKMS.BP_USER where BP_NUM = #bp_num# ) as cnt_bp_user_id
+			FROM PKMS.BP_MASTER M
+			WHERE BP_NUM = #bp_num# 
+		]]>
+	</select>
+
+	<select id="BpDAO.readCount" parameterClass="BpModel" resultClass="int">
+		<![CDATA[
+		SELECT COUNT(*) cnt
+		FROM PKMS.BP_MASTER M
+		WHERE BP_NUM = #bp_num# 
+		]]>
+	</select>
+
+	<select id="BpDAO.readList" parameterClass="BpModel" resultClass="BpModel">
+		<![CDATA[
+		SELECT 
+            APPROVAL_COUNT, APPROVAL_COUNT, APPROVAL_STATE, USE_YN, BP_NAME, BP_GUBUN, BP_NUM, BP_ADDR, BP_TEL1, BP_TEL2, BP_TEL3 
+        FROM (
+             SELECT ROWNUM AS RNUM, A.* FROM (
+                SELECT
+				((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE = '0' AND U.USE_YN='Y') + DECODE(M.APPROVAL_STATE, '0', 1, 0))  APPROVAL_COUNT,
+                M.APPROVAL_STATE, M.USE_YN, M.BP_NAME, M.BP_GUBUN, M.BP_NUM, M.BP_ADDR, M.BP_TEL1, M.BP_TEL2, M.BP_TEL3
+                FROM PKMS.BP_MASTER M
+                WHERE 1=1 
+		]]>
+				<isEqual prepend="AND" property="searchFilter" compareValue="0">
+					((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE = '0' AND U.USE_YN = 'Y') 
+						+ DECODE(M.APPROVAL_STATE, '0', 1, 0)) > 0
+				</isEqual>
+				<isEqual prepend="AND" property="searchFilter" compareValue="1">
+					((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE IN('0', '3') AND U.USE_YN = 'Y') 
+						+ DECODE(M.APPROVAL_STATE, '1', 0, 1)) = 0
+				</isEqual>
+				<isEqual prepend="AND" property="searchFilter" compareValue="3">
+					((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE = '3' AND U.USE_YN = 'Y') 
+						+ DECODE(M.APPROVAL_STATE, '3', 1, 0)) > 0
+				</isEqual>
+				<isNotEmpty property="searchKeyword">
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						LOWER(M.BP_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						EXISTS(SELECT 1 FROM BP_USER U WHERE M.BP_NUM = U.BP_NUM AND LOWER(U.BP_USER_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%' )
+					</isEqual>
+				</isNotEmpty>
+		<![CDATA[
+                ORDER BY M.BP_NAME ASC
+            ) A WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+        ) WHERE RNUM > #firstIndex#
+		]]>
+	</select>
+
+	<select id="BpDAO.readListAll" parameterClass="BpModel" resultClass="BpModel">
+		<![CDATA[
+                SELECT
+                M.APPROVAL_STATE, M.USE_YN, M.BP_NAME, M.BP_GUBUN, M.BP_NUM, M.BP_ADDR, M.BP_TEL1, M.BP_TEL2, M.BP_TEL3
+                FROM PKMS.BP_MASTER M
+                WHERE 1=1 
+		]]>
+				<isNotEmpty property="searchKeyword">
+					<isEqual prepend="AND" property="searchCondition" compareValue="0">
+						LOWER(M.BP_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+					</isEqual>
+					<isEqual prepend="AND" property="searchCondition" compareValue="1">
+						EXISTS(SELECT 1 FROM BP_USER U WHERE M.BP_NUM = U.BP_NUM AND LOWER(U.BP_USER_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%' )
+					</isEqual>
+				</isNotEmpty>
+		<![CDATA[
+				AND M.USE_YN='Y' AND M.APPROVAL_STATE='1'
+                ORDER BY M.BP_NAME ASC
+		]]>
+	</select>
+
+
+	<select id="BpDAO.readTotalCount" parameterClass="BpModel" resultClass="int">
+		<![CDATA[
+		SELECT COUNT(*) totcnt
+		FROM PKMS.BP_MASTER M
+		WHERE 1=1 
+		]]>
+		<isEqual prepend="AND" property="searchFilter" compareValue="0">
+			((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE = '0' AND U.USE_YN = 'Y') 
+				+ DECODE(M.APPROVAL_STATE, '0', 1, 0)) > 0
+		</isEqual>
+		<isEqual prepend="AND" property="searchFilter" compareValue="1">
+			((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE IN('0', '3') AND U.USE_YN = 'Y') 
+				+ DECODE(M.APPROVAL_STATE, '1', 0, 1)) = 0
+		</isEqual>
+		<isEqual prepend="AND" property="searchFilter" compareValue="3">
+			((SELECT COUNT(*) FROM PKMS.BP_USER U WHERE M.BP_NUM = U.BP_NUM AND U.APPROVAL_STATE = '3' AND U.USE_YN = 'Y') 
+				+ DECODE(M.APPROVAL_STATE, '3', 1, 0)) > 0
+		</isEqual>
+		<isNotEmpty property="searchKeyword">
+			<isEqual prepend="AND" property="searchCondition" compareValue="0">
+				LOWER(M.BP_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+			</isEqual>
+			<isEqual prepend="AND" property="searchCondition" compareValue="1">
+				EXISTS(SELECT 1 FROM BP_USER U WHERE M.BP_NUM = U.BP_NUM AND LOWER(U.BP_USER_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%' )
+			</isEqual>
+		</isNotEmpty>
+	</select>
+
+	<select id="BpDAO.NextSeq" resultClass="java.lang.String">
+		<![CDATA[
+			SELECT BP_MASTER_SEQ.NEXTVAL FROM DUAL
+		]]>
+	</select>
+	
+	
+	<select id="BpDAO.readListSystem" parameterClass="BpModel" resultClass="BpModel">
+		<![CDATA[
+		  SELECT SYSTEM_SEQ,
+			  	 GROUP1_SEQ,
+				 GROUP2_SEQ,
+				 GROUP3_SEQ,
+		         BP_NAME,
+		         BP_USER_NAME,
+		         BP_USER_ID,
+		         MAX (GROUP_DEPTH) AS GROUP_DEPTH
+		    FROM (SELECT ROWNUM AS RNUM, A.*
+		            FROM (SELECT SU.SYSTEM_SEQ,
+		            			 SYS.GROUP1_SEQ,
+				 				 SYS.GROUP2_SEQ,
+				 				 SYS.GROUP3_SEQ,
+		                         BM.BP_NAME,
+		                         BU.BP_USER_NAME,
+		                         BU.BP_USER_ID,
+		                         DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) GROUP_DEPTH
+		                    FROM SYSTEM_USER SU,
+		                         BP_MASTER BM,
+		                         BP_USER BU,
+		                         (SELECT G1.GROUP1_SEQ,
+		                                 G1.NAME GROUP1_NAME,
+		                                 G2.GROUP2_SEQ,
+		                                 G2.NAME GROUP2_NAME,
+		                                 G3.GROUP3_SEQ,
+		                                 G3.NAME GROUP3_NAME,
+		                                 S.SYSTEM_SEQ,
+		                                 S.NAME SYSTEM_NAME,
+		                                 S.BP_NUM
+		                            FROM PKMS.GROUP1 G1,
+		                                 PKMS.GROUP2 G2,
+		                                 PKMS.GROUP3 G3,
+		                                 PKMS.SYSTEM S
+		                           WHERE     1 = 1
+		                                 AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+		                                 AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+		                                 AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+		                                 AND G1.USE_YN = 'Y'
+		                                 AND G2.USE_YN = 'Y'
+		                                 AND G3.USE_YN = 'Y') SYS
+		                   WHERE SU.SYSTEM_SEQ = SYS.SYSTEM_SEQ(+)
+		                         AND BM.BP_NUM = BU.BP_NUM
+		                         AND SU.USER_ID = BU.BP_USER_ID
+		]]>
+				          <isNotEmpty property="searchKeyword">
+		                    <isEqual prepend="AND" property="searchCondition" compareValue="0">
+                                 LOWER(BM.BP_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+		                     </isEqual>
+		                     <isEqual prepend="AND" property="searchCondition" compareValue="1">
+								 LOWER(BU.BP_USER_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+		                     </isEqual>
+		                 </isNotEmpty>
+		<![CDATA[
+		  ORDER BY BM.BP_NAME, BU.BP_USER_NAME                       ) A
+		           WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#)
+		   WHERE RNUM > #firstIndex#
+		GROUP BY SYSTEM_SEQ,
+				 GROUP1_SEQ,
+				 GROUP2_SEQ,
+				 GROUP3_SEQ,
+		         BP_NAME,
+		         BP_USER_NAME,
+		         BP_USER_ID
+		ORDER BY BP_NAME, BP_USER_NAME
+		]]>
+	</select>
+	
+	<select id="BpDAO.readListSystem_skt" parameterClass="BpModel" resultClass="BpModel">
+	<![CDATA[
+			SELECT 
+				SYSTEM_SEQ,
+				GROUP1_SEQ,
+				GROUP2_SEQ,
+				GROUP3_SEQ,
+				EMPNO,
+				HNAME,
+				SOSOK,
+				GROUP_DEPTH
+			FROM 
+			(
+			     SELECT
+			     	ROWNUM AS RNUM,
+			     	SYSTEM_SEQ,
+			     	GROUP1_SEQ,
+				    GROUP2_SEQ,
+				    GROUP3_SEQ,
+					EMPNO,
+					HNAME,
+			     	SOSOK,
+			     	GROUP_DEPTH
+			     FROM 
+			     (
+			             SELECT A.SYSTEM_SEQ,
+								A.EMPNO,
+								A.HNAME,
+                                A.SOSOK,
+                                A.GROUP1_SEQ,
+						        A.GROUP2_SEQ,
+						    	A.GROUP3_SEQ,
+                                A.GROUP_DEPTH
+			             FROM 
+			             (
+			                            SELECT SYS.SYSTEM_SEQ,
+			                                 IP.EMPNO,
+			                                 IP.HNAME,
+			                                 IP.SOSOK,
+			                                 DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+			                                 SYS.GROUP1_SEQ,
+								             SYS.GROUP2_SEQ,
+								             SYS.GROUP3_SEQ
+			                            FROM INF_PERSON_INFO_RCV IP,
+			                                 (SELECT G1.GROUP1_SEQ,
+			                                         G1.NAME GROUP1_NAME,
+			                                         G2.GROUP2_SEQ,
+			                                         G2.NAME GROUP2_NAME,
+			                                         G3.GROUP3_SEQ,
+			                                         G3.NAME GROUP3_NAME,
+			                                         S.SYSTEM_SEQ,
+			                                         S.NAME SYSTEM_NAME
+			                                    FROM PKMS.GROUP1 G1,
+			                                         PKMS.GROUP2 G2,
+			                                         PKMS.GROUP3 G3,
+			                                         PKMS.SYSTEM S
+			                                   WHERE     1 = 1
+			                                         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+			                                         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+			                                         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+			                                         AND G1.USE_YN = 'Y'
+			                                         AND G2.USE_YN = 'Y'
+			                                         AND G3.USE_YN = 'Y'
+			                                ) SYS, 
+			                                (
+			                                    SELECT SYSTEM_SEQ ,USER_ID 
+			                                    FROM PKMS.SYSTEM_USER
+			                                    WHERE USER_GUBUN = 'M'
+			                                    GROUP BY SYSTEM_SEQ, USER_ID
+			                                ) SU, 
+			                                (
+			                                    SELECT PE.SYSTEM_SEQ, EU.USER_ID
+			                                           FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			                                    WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+			                                        AND PE.USE_YN = 'Y'
+			                                    GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+			                                ) PEU
+			                                WHERE
+			                                    	( SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ  AND SU.USER_ID = IP.EMPNO )
+			                                  	AND
+			                                  		IP.HNAME LIKE '%' || #searchKeyword# || '%'
+			                                    OR
+			                                    	( SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ AND PEU.USER_ID = IP.EMPNO )
+		                                  		AND
+		                                  			IP.HNAME LIKE '%' || #searchKeyword# || '%'
+			             ) A
+			             GROUP BY 
+			              A.SYSTEM_SEQ,
+			              A.GROUP1_SEQ,
+					      A.GROUP2_SEQ,
+					      A.GROUP3_SEQ,
+					      A.GROUP_DEPTH,
+						  A.EMPNO,
+						  A.HNAME,
+			              A.SOSOK
+			             ORDER BY
+							EMPNO,
+							HNAME,
+			             	SOSOK
+			    ) 
+			    WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+			)
+			WHERE RNUM > #firstIndex#
+		]]>
+	</select>
+	
+	<select id="BpDAO.readListSystem_skt_sosok" parameterClass="BpModel" resultClass="BpModel">
+	<![CDATA[
+			SELECT 
+				SYSTEM_SEQ,
+				GROUP1_SEQ,
+				GROUP2_SEQ,
+				GROUP3_SEQ,
+				SOSOK,
+				GROUP_DEPTH
+			FROM 
+			(
+			     SELECT
+			     	ROWNUM AS RNUM,
+			     	SYSTEM_SEQ,
+			     	GROUP1_SEQ,
+				    GROUP2_SEQ,
+				    GROUP3_SEQ,
+			     	SOSOK,
+			     	GROUP_DEPTH
+			     FROM 
+			     (
+			             SELECT A.SYSTEM_SEQ,
+                                A.SOSOK,
+                                A.GROUP1_SEQ,
+						     	A.GROUP2_SEQ,
+						     	A.GROUP3_SEQ,
+                                A.GROUP_DEPTH
+			             FROM 
+			             (
+	                         SELECT SYS.SYSTEM_SEQ,
+	                              IP.SOSOK,
+	                              DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+	                              SYS.GROUP1_SEQ,
+					              SYS.GROUP2_SEQ,
+					              SYS.GROUP3_SEQ
+	                         FROM INF_PERSON_INFO_RCV IP,
+	                              (SELECT G1.GROUP1_SEQ,
+	                                      G1.NAME GROUP1_NAME,
+	                                      G2.GROUP2_SEQ,
+	                                      G2.NAME GROUP2_NAME,
+	                                      G3.GROUP3_SEQ,
+	                                      G3.NAME GROUP3_NAME,
+	                                      S.SYSTEM_SEQ,
+	                                      S.NAME SYSTEM_NAME
+	                                 FROM PKMS.GROUP1 G1,
+	                                      PKMS.GROUP2 G2,
+	                                      PKMS.GROUP3 G3,
+	                                      PKMS.SYSTEM S
+	                                WHERE     1 = 1
+	                                      AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+	                                      AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+	                                      AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+	                                      AND G1.USE_YN = 'Y'
+	                                      AND G2.USE_YN = 'Y'
+	                                      AND G3.USE_YN = 'Y'
+	                             ) SYS, 
+	                             (
+	                                 SELECT SYSTEM_SEQ ,USER_ID 
+	                                 FROM PKMS.SYSTEM_USER
+	                                 WHERE USER_GUBUN = 'M'
+	                                 GROUP BY SYSTEM_SEQ, USER_ID
+	                             ) SU, 
+	                             (
+	                                 SELECT PE.SYSTEM_SEQ, EU.USER_ID
+	                                        FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+	                                 WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+	                                     AND PE.USE_YN = 'Y'
+	                                 GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+	                             ) PEU
+	                             WHERE
+	                                	(SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ  AND SU.USER_ID = IP.EMPNO)
+								 	AND
+								 		LOWER(IP.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+                                 	OR
+	                                	(SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ AND PEU.USER_ID = IP.EMPNO)
+                                 	AND
+                          				LOWER(IP.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+			             ) A
+			             GROUP BY 
+			              A.SYSTEM_SEQ,
+			              A.GROUP1_SEQ,
+					      A.GROUP2_SEQ,
+					      A.GROUP3_SEQ,
+					      A.GROUP_DEPTH,
+			              A.SOSOK
+			             ORDER BY
+			              A.SOSOK
+			    ) 
+			    WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+			)
+			WHERE RNUM > #firstIndex#
+		]]>
+	</select>
+	
+	
+	<select id="BpDAO.readListSystemCount" parameterClass="BpModel" resultClass="int">
+		<![CDATA[
+		SELECT
+                COUNT(*) AS totcnt
+            FROM 
+                  SYSTEM_USER SU,BP_MASTER BM, BP_USER BU,
+                     (SELECT 
+                           G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                           G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                           G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                           S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                           S.BP_NUM
+                      FROM PKMS.GROUP1 G1,
+                           PKMS.GROUP2 G2,
+                           PKMS.GROUP3 G3,
+                           PKMS.SYSTEM S
+                      WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                        AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                        AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                        AND G1.USE_YN = 'Y'
+                        AND G2.USE_YN = 'Y'
+                        AND G3.USE_YN = 'Y'
+                     ) SYS
+            WHERE 1=1
+              AND SU.SYSTEM_SEQ = SYS.SYSTEM_SEQ(+)
+              AND BM.BP_NUM = BU.BP_NUM
+              AND SU.USER_ID = BU.BP_USER_ID
+    	]]>
+  				<isNotEmpty property="searchKeyword">
+				<isEqual prepend="AND" property="searchCondition" compareValue="0">
+	              LOWER(BM.BP_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+              	</isEqual>
+              	<isEqual prepend="AND" property="searchCondition" compareValue="1">
+	              LOWER(BU.BP_USER_NAME) LIKE '%' || LOWER(#searchKeyword#) || '%'
+              	</isEqual>
+             	</isNotEmpty>
+       	</select>
+       	
+       	<select id="BpDAO.readListSystemCount_skt" parameterClass="BpModel" resultClass="int">
+       	<![CDATA[
+		     SELECT COUNT(*) AS totcnt
+		     FROM 
+		     (
+				SELECT
+					A.SYSTEM_SEQ,
+					A.EMPNO,
+					A.HNAME,
+					A.SOSOK,
+					A.GROUP1_SEQ,
+					A.GROUP2_SEQ,
+					A.GROUP3_SEQ,
+					A.GROUP_DEPTH
+            FROM 
+            (
+                           SELECT 
+                           		SYS.SYSTEM_SEQ,
+                                IP.EMPNO,
+                                IP.HNAME,
+                                IP.SOSOK,
+                                DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+                                SYS.GROUP1_SEQ,
+				             SYS.GROUP2_SEQ,
+				             SYS.GROUP3_SEQ
+                           FROM INF_PERSON_INFO_RCV IP,
+                                (SELECT G1.GROUP1_SEQ,
+                                        G1.NAME GROUP1_NAME,
+                                        G2.GROUP2_SEQ,
+                                        G2.NAME GROUP2_NAME,
+                                        G3.GROUP3_SEQ,
+                                        G3.NAME GROUP3_NAME,
+                                        S.SYSTEM_SEQ,
+                                        S.NAME SYSTEM_NAME
+                                   FROM PKMS.GROUP1 G1,
+                                        PKMS.GROUP2 G2,
+                                        PKMS.GROUP3 G3,
+                                        PKMS.SYSTEM S
+                                  WHERE     1 = 1
+                                        AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                                        AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                                        AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                                        AND G1.USE_YN = 'Y'
+                                        AND G2.USE_YN = 'Y'
+                                        AND G3.USE_YN = 'Y'
+                               ) SYS, 
+                               (
+                                   SELECT SYSTEM_SEQ ,USER_ID 
+                                   FROM PKMS.SYSTEM_USER
+                                   WHERE USER_GUBUN = 'M'
+                                   GROUP BY SYSTEM_SEQ, USER_ID
+                               ) SU, 
+                               (
+                                   SELECT PE.SYSTEM_SEQ, EU.USER_ID
+                                          FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+                                   WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+                                       AND PE.USE_YN = 'Y'
+                                       GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+                               ) PEU
+                               WHERE
+                                   		(SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ  AND SU.USER_ID = IP.EMPNO)
+								   AND
+                                 		IP.HNAME LIKE '%' || #searchKeyword# || '%'
+                                   OR
+                                   		(SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ AND PEU.USER_ID = IP.EMPNO)
+                                   AND
+										IP.HNAME LIKE '%' || #searchKeyword# || '%'
+		             ) A
+		             GROUP BY 
+		             	  SYSTEM_SEQ,
+			              GROUP1_SEQ,
+					      GROUP2_SEQ,
+					      GROUP3_SEQ,
+					      GROUP_DEPTH,
+						  EMPNO,
+						  HNAME,
+			              SOSOK
+			             ORDER BY
+							EMPNO,
+							HNAME,
+			             	SOSOK
+		    ) 
+		]]>   
+	</select>
+	<select id="BpDAO.readListSystemCount_skt_sosok" parameterClass="BpModel" resultClass="int">
+       	<![CDATA[
+		     SELECT COUNT(*) AS totcnt
+		     FROM 
+		     (
+		             SELECT A.SYSTEM_SEQ,
+                             A.SOSOK,
+                             A.GROUP1_SEQ,
+						     A.GROUP2_SEQ,
+						     A.GROUP3_SEQ,
+                             A.GROUP_DEPTH
+            FROM 
+            (
+                           SELECT SYS.SYSTEM_SEQ,
+                                IP.SOSOK,
+                                DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+                                SYS.GROUP1_SEQ,
+				             SYS.GROUP2_SEQ,
+				             SYS.GROUP3_SEQ
+                           FROM INF_PERSON_INFO_RCV IP,
+                                (SELECT G1.GROUP1_SEQ,
+                                        G1.NAME GROUP1_NAME,
+                                        G2.GROUP2_SEQ,
+                                        G2.NAME GROUP2_NAME,
+                                        G3.GROUP3_SEQ,
+                                        G3.NAME GROUP3_NAME,
+                                        S.SYSTEM_SEQ,
+                                        S.NAME SYSTEM_NAME
+                                   FROM PKMS.GROUP1 G1,
+                                        PKMS.GROUP2 G2,
+                                        PKMS.GROUP3 G3,
+                                        PKMS.SYSTEM S
+                                  WHERE     1 = 1
+                                        AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                                        AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                                        AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                                        AND G1.USE_YN = 'Y'
+                                        AND G2.USE_YN = 'Y'
+                                        AND G3.USE_YN = 'Y'
+                               ) SYS, 
+                               (
+                                   SELECT SYSTEM_SEQ ,USER_ID 
+                                   FROM PKMS.SYSTEM_USER
+                                   WHERE USER_GUBUN = 'M'
+                                   GROUP BY SYSTEM_SEQ, USER_ID
+                               ) SU, 
+                               (
+                                   SELECT PE.SYSTEM_SEQ, EU.USER_ID
+                                          FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+                                   WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+                                       AND PE.USE_YN = 'Y'
+                                       GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+                               ) PEU
+                               WHERE
+                                   		(SYS.SYSTEM_SEQ = SU.SYSTEM_SEQ  AND SU.USER_ID = IP.EMPNO)
+                                    AND
+										LOWER(IP.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+                                    OR
+                                   		(SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ AND PEU.USER_ID = IP.EMPNO)
+                                    AND
+										LOWER(IP.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+		             ) A
+		             GROUP BY
+		             	  SYSTEM_SEQ,
+			              GROUP1_SEQ,
+					      GROUP2_SEQ,
+					      GROUP3_SEQ,
+					      GROUP_DEPTH,
+		                  SOSOK
+		             ORDER BY
+			              SOSOK
+		    ) 
+		]]>   
+	</select>
+	
+	<select id="BpDAO.readListSystem_operator" parameterClass="BpModel" resultClass="BpModel">
+	<![CDATA[
+			SELECT 
+				SYSTEM_SEQ,
+				GROUP1_SEQ,
+				GROUP2_SEQ,
+				GROUP3_SEQ,
+				EMPNO,
+				HNAME,
+				SOSOK,
+				GROUP_DEPTH
+			FROM 
+			(
+			     SELECT
+			     	ROWNUM AS RNUM,
+			     	SYSTEM_SEQ,
+			     	GROUP1_SEQ,
+				    GROUP2_SEQ,
+				    GROUP3_SEQ,
+					EMPNO,
+					HNAME,
+			     	SOSOK,
+			     	GROUP_DEPTH
+			     FROM 
+			     (
+			             SELECT A.SYSTEM_SEQ,
+								A.EMPNO,
+								A.HNAME,
+                                A.SOSOK,
+                                A.GROUP1_SEQ,
+						        A.GROUP2_SEQ,
+						    	A.GROUP3_SEQ,
+                                A.GROUP_DEPTH
+			             FROM 
+			             (
+			                            SELECT SYS.SYSTEM_SEQ,
+			                                 IP.EMPNO,
+			                                 IP.HNAME,
+			                                 IP.SOSOK,
+			                                 DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+			                                 SYS.GROUP1_SEQ,
+								             SYS.GROUP2_SEQ,
+								             SYS.GROUP3_SEQ
+			                            FROM INF_PERSON_INFO_RCV IP,
+			                                 (SELECT G1.GROUP1_SEQ,
+			                                         G1.NAME GROUP1_NAME,
+			                                         G2.GROUP2_SEQ,
+			                                         G2.NAME GROUP2_NAME,
+			                                         G3.GROUP3_SEQ,
+			                                         G3.NAME GROUP3_NAME,
+			                                         S.SYSTEM_SEQ,
+			                                         S.NAME SYSTEM_NAME
+			                                    FROM PKMS.GROUP1 G1,
+			                                         PKMS.GROUP2 G2,
+			                                         PKMS.GROUP3 G3,
+			                                         PKMS.SYSTEM S
+			                                   WHERE     1 = 1
+			                                         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+			                                         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+			                                         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+			                                         AND G1.USE_YN = 'Y'
+			                                         AND G2.USE_YN = 'Y'
+			                                         AND G3.USE_YN = 'Y'
+			                                ) SYS, 
+			                                (
+			                                    SELECT PE.SYSTEM_SEQ, EU.USER_ID
+			                                           FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			                                    WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+			                                        AND PE.USE_YN = 'Y'
+			                                    GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+			                                ) PEU
+			                                WHERE
+		                                    	SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ
+	                                    	AND
+	                                    		PEU.USER_ID = IP.EMPNO
+	]]>			
+												<isNotEmpty property="searchKeyword">
+		                                  		AND
+		                                  			IP.HNAME LIKE '%' || #searchKeyword# || '%'
+												</isNotEmpty>
+	<![CDATA[
+			             ) A
+			             GROUP BY 
+			              A.SYSTEM_SEQ,
+			              A.GROUP1_SEQ,
+					      A.GROUP2_SEQ,
+					      A.GROUP3_SEQ,
+					      A.GROUP_DEPTH,
+						  A.EMPNO,
+						  A.HNAME,
+			              A.SOSOK
+			             ORDER BY
+							EMPNO,
+							HNAME,
+			             	SOSOK
+			    ) 
+			    WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+			)
+			WHERE RNUM > #firstIndex#
+	]]>
+	</select>
+	<select id="BpDAO.readListSystemCount_operator" parameterClass="BpModel" resultClass="int">
+	<![CDATA[
+			SELECT COUNT(*) AS totcnt
+	    	FROM 
+		     (
+			             SELECT A.SYSTEM_SEQ,
+								A.EMPNO,
+								A.HNAME,
+                                A.SOSOK,
+                                A.GROUP1_SEQ,
+						        A.GROUP2_SEQ,
+						    	A.GROUP3_SEQ,
+                                A.GROUP_DEPTH
+			             FROM 
+			             (
+			                            SELECT SYS.SYSTEM_SEQ,
+			                                 IP.EMPNO,
+			                                 IP.HNAME,
+			                                 IP.SOSOK,
+			                                 DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+			                                 SYS.GROUP1_SEQ,
+								             SYS.GROUP2_SEQ,
+								             SYS.GROUP3_SEQ
+			                            FROM INF_PERSON_INFO_RCV IP,
+			                                 (SELECT G1.GROUP1_SEQ,
+			                                         G1.NAME GROUP1_NAME,
+			                                         G2.GROUP2_SEQ,
+			                                         G2.NAME GROUP2_NAME,
+			                                         G3.GROUP3_SEQ,
+			                                         G3.NAME GROUP3_NAME,
+			                                         S.SYSTEM_SEQ,
+			                                         S.NAME SYSTEM_NAME
+			                                    FROM PKMS.GROUP1 G1,
+			                                         PKMS.GROUP2 G2,
+			                                         PKMS.GROUP3 G3,
+			                                         PKMS.SYSTEM S
+			                                   WHERE     1 = 1
+			                                         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+			                                         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+			                                         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+			                                         AND G1.USE_YN = 'Y'
+			                                         AND G2.USE_YN = 'Y'
+			                                         AND G3.USE_YN = 'Y'
+			                                ) SYS, 
+			                                (
+			                                    SELECT PE.SYSTEM_SEQ, EU.USER_ID
+			                                           FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			                                    WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+			                                        AND PE.USE_YN = 'Y'
+			                                    GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+			                                ) PEU
+			                                WHERE
+		                                    	SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ
+		                                    	AND
+		                                    		PEU.USER_ID = IP.EMPNO
+	]]>			
+												<isNotEmpty property="searchKeyword">
+		                                  		AND
+		                                  			IP.HNAME LIKE '%' || #searchKeyword# || '%'
+												</isNotEmpty>
+	<![CDATA[
+			             ) A
+			             GROUP BY 
+			              A.SYSTEM_SEQ,
+			              A.GROUP1_SEQ,
+					      A.GROUP2_SEQ,
+					      A.GROUP3_SEQ,
+					      A.GROUP_DEPTH,
+						  A.EMPNO,
+						  A.HNAME,
+			              A.SOSOK
+			             ORDER BY
+							EMPNO,
+							HNAME,
+			             	SOSOK
+   		)
+	]]>
+	</select>
+	
+	<select id="BpDAO.readListSystem_operator_sosok" parameterClass="BpModel" resultClass="BpModel">
+	<![CDATA[
+			SELECT 
+				SYSTEM_SEQ,
+				GROUP1_SEQ,
+				GROUP2_SEQ,
+				GROUP3_SEQ,
+				GROUP_DEPTH,
+				SOSOK
+			FROM 
+			(
+			     SELECT
+			     	ROWNUM AS RNUM,
+			     	SYSTEM_SEQ,
+			     	GROUP1_SEQ,
+				    GROUP2_SEQ,
+				    GROUP3_SEQ,
+			     	GROUP_DEPTH,
+			     	SOSOK
+			     FROM 
+			     (
+			             SELECT A.SYSTEM_SEQ,
+                                A.GROUP1_SEQ,
+						        A.GROUP2_SEQ,
+						    	A.GROUP3_SEQ,
+                                A.GROUP_DEPTH,
+                                A.SOSOK
+			             FROM 
+			             (
+			                            SELECT
+		                            		 SYS.SYSTEM_SEQ,
+			                                 SYS.GROUP1_SEQ,
+								             SYS.GROUP2_SEQ,
+								             SYS.GROUP3_SEQ,
+			                                 DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+			                                 IP.SOSOK
+			                            FROM INF_PERSON_INFO_RCV IP,
+			                                 (SELECT G1.GROUP1_SEQ,
+			                                         G1.NAME GROUP1_NAME,
+			                                         G2.GROUP2_SEQ,
+			                                         G2.NAME GROUP2_NAME,
+			                                         G3.GROUP3_SEQ,
+			                                         G3.NAME GROUP3_NAME,
+			                                         S.SYSTEM_SEQ,
+			                                         S.NAME SYSTEM_NAME
+			                                    FROM PKMS.GROUP1 G1,
+			                                         PKMS.GROUP2 G2,
+			                                         PKMS.GROUP3 G3,
+			                                         PKMS.SYSTEM S
+			                                   WHERE     1 = 1
+			                                         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+			                                         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+			                                         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+			                                         AND G1.USE_YN = 'Y'
+			                                         AND G2.USE_YN = 'Y'
+			                                         AND G3.USE_YN = 'Y'
+			                                ) SYS, 
+			                                (
+			                                    SELECT PE.SYSTEM_SEQ, EU.USER_ID
+	                                            FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			                                    WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+			                                        AND PE.USE_YN = 'Y'
+			                                    GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+			                                ) PEU
+			                                WHERE
+		                                    	SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ
+		                                    	AND
+		                                    		PEU.USER_ID = IP.EMPNO
+	]]>			
+												<isNotEmpty property="searchKeyword">
+												AND
+													LOWER(IP.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+												</isNotEmpty>
+	<![CDATA[
+			             ) A
+			             GROUP BY 
+			              A.SYSTEM_SEQ,
+			              A.GROUP1_SEQ,
+					      A.GROUP2_SEQ,
+					      A.GROUP3_SEQ,
+					      A.GROUP_DEPTH,
+			              A.SOSOK
+			             ORDER BY
+			             	SOSOK, GROUP_DEPTH
+			             	
+			    ) 
+			    WHERE ROWNUM <= #firstIndex# + #recordCountPerPage#
+			)
+			WHERE RNUM > #firstIndex#
+	]]>
+	</select>
+	
+	<select id="BpDAO.readListSystemCount_operator_sosok" parameterClass="BpModel" resultClass="int">
+	<![CDATA[
+			SELECT COUNT(*) AS totcnt
+	    	FROM 
+		     (
+			             SELECT A.SYSTEM_SEQ,
+                                A.SOSOK,
+                                A.GROUP1_SEQ,
+						        A.GROUP2_SEQ,
+						    	A.GROUP3_SEQ,
+                                A.GROUP_DEPTH
+			             FROM 
+			             (
+			                            SELECT SYS.SYSTEM_SEQ,
+			                                 IP.SOSOK,
+			                                 DECODE (SYS.GROUP1_SEQ, '', '', SYS.GROUP1_NAME || '>' || SYS.GROUP2_NAME || '>' || SYS.GROUP3_NAME || '>' || SYS.SYSTEM_NAME) AS GROUP_DEPTH,
+			                                 SYS.GROUP1_SEQ,
+								             SYS.GROUP2_SEQ,
+								             SYS.GROUP3_SEQ
+			                            FROM INF_PERSON_INFO_RCV IP,
+			                                 (SELECT G1.GROUP1_SEQ,
+			                                         G1.NAME GROUP1_NAME,
+			                                         G2.GROUP2_SEQ,
+			                                         G2.NAME GROUP2_NAME,
+			                                         G3.GROUP3_SEQ,
+			                                         G3.NAME GROUP3_NAME,
+			                                         S.SYSTEM_SEQ,
+			                                         S.NAME SYSTEM_NAME
+			                                    FROM PKMS.GROUP1 G1,
+			                                         PKMS.GROUP2 G2,
+			                                         PKMS.GROUP3 G3,
+			                                         PKMS.SYSTEM S
+			                                   WHERE     1 = 1
+			                                         AND G1.GROUP1_SEQ = G2.GROUP1_SEQ
+			                                         AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+			                                         AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+			                                         AND G1.USE_YN = 'Y'
+			                                         AND G2.USE_YN = 'Y'
+			                                         AND G3.USE_YN = 'Y'
+			                                ) SYS, 
+			                                (
+			                                    SELECT PE.SYSTEM_SEQ, EU.USER_ID
+			                                           FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+			                                    WHERE PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ
+			                                        AND PE.USE_YN = 'Y'
+			                                    GROUP BY PE.SYSTEM_SEQ, EU.USER_ID
+			                                ) PEU
+			                                WHERE
+		                                    	SYS.SYSTEM_SEQ = PEU.SYSTEM_SEQ
+		                                    	AND
+		                                    		PEU.USER_ID = IP.EMPNO
+	]]>			
+												<isNotEmpty property="searchKeyword">
+												AND
+													LOWER(IP.SOSOK) LIKE '%' || LOWER(#searchKeyword#) || '%'
+												</isNotEmpty>
+	<![CDATA[
+			             ) A
+			             GROUP BY 
+			              A.SYSTEM_SEQ,
+			              A.GROUP1_SEQ,
+					      A.GROUP2_SEQ,
+					      A.GROUP3_SEQ,
+					      A.GROUP_DEPTH,
+			              A.SOSOK
+			             ORDER BY
+			             	SOSOK, GROUP_DEPTH
+   		)
+	]]>
+	</select>
+	<select id="BpDAO.readList_equipment" parameterClass="BpModel" resultClass="BpModel">
+		SELECT 
+		    E.SYSTEM_SEQ, E.EQUIPMENT_SEQ, E.NAME AS EQUIPMENT_NAME
+		FROM
+		    PKMS.EQUIPMENT E, PKMS.EQUIPMENT_USER EU, INF_PERSON_INFO_RCV IPIR
+		WHERE
+		    E.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+		AND
+		    EU.USER_ID = IPIR.EMPNO(+)
+		<isEqual prepend="AND" property="searchCondition" compareValue="0">
+		    IPIR.SOSOK = #sosok#
+		</isEqual>
+		<isEqual prepend="AND" property="searchCondition" compareValue="1">
+		    IPIR.HNAME = #hname#
+		</isEqual>
+		AND
+		    E.SYSTEM_SEQ = #system_seq#
+		GROUP BY
+		    E.SYSTEM_SEQ, E.EQUIPMENT_SEQ, E.NAME
+		ORDER BY
+		    E.NAME
+	</select>
+	
+	<select id="BpDAO.findIdList" parameterClass="BpModel" resultClass="BpModel">
+		SELECT
+		    BP_USER_ID
+		FROM
+		    PKMS.BP_USER
+		WHERE
+		        BP_USER_NAME = #bp_user_name#
+		    AND
+		        BP_USER_PHONE1 = #bp_user_phone1#
+		    AND
+		        BP_USER_PHONE2 = #bp_user_phone2#
+		    AND
+		        BP_USER_PHONE3 = #bp_user_phone3#
+		    AND
+		        BP_USER_EMAIL = #bp_user_email#
+	</select>
+	
+	<update id="BpDAO.pass_update" parameterClass="BpModel">
+		UPDATE
+			PKMS.BP_USER
+		SET
+			BP_USER_PW = #bp_user_pw#,
+			USE_YN = 'Y'
+		WHERE
+				BP_USER_ID = #bp_user_id#
+			AND
+		        BP_USER_NAME = #bp_user_name#
+		    AND
+		        BP_USER_PHONE1 = #bp_user_phone1#
+		    AND
+		        BP_USER_PHONE2 = #bp_user_phone2#
+		    AND
+		        BP_USER_PHONE3 = #bp_user_phone3#
+		    AND
+		        BP_USER_EMAIL = #bp_user_email#
+	</update>
+</sqlMap>

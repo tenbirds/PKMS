@@ -1,0 +1,827 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="System">
+
+	<typeAlias alias="SysModel" type="com.pkms.sys.common.model.SysModel" />
+	<typeAlias alias="SysRoadMapModel" type="com.pkms.sys.common.model.SysRoadMapModel" />
+	<typeAlias alias="SysRoadMapMappingModel" type="com.pkms.sys.common.model.SysRoadMapMappingModel" />
+	<typeAlias alias="SystemFileModel" type="com.pkms.sys.system.model.SystemFileModel" />
+
+	<resultMap class="SystemFileModel" id="SystemFileList">
+		<result property="id" column="id"/>
+		<result property="pId" column="pid"/>
+		<result property="name" column="name"/>
+		<result property="open" column="open"/>
+		<result property="isParent" column="isparent"/>
+		<result property="drag" column="drag"/>
+		<result property="drop" column="fdrop"/>
+		<result property="attach_file_id" column="attach_file_id"/>
+		<result property="file_path" column="file_path"/>
+		<result property="file_name" column="file_name"/>
+		<result property="file_size" column="file_size"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_date" column="reg_date"/>
+	
+	</resultMap>
+	
+	
+		<resultMap class="SystemFileModel" id="SystemFileList2">
+		<result property="id" column="id"/>
+		<result property="pId" column="pid"/>
+		<result property="name" column="name"/>
+		<result property="open" column="open"/>
+		<result property="isParent" column="isparent"/>
+		<result property="drag" column="drag"/>
+		<result property="drop" column="fdrop"/>
+		<result property="attach_file_id" column="attach_file_id"/>
+		<result property="file_path" column="file_path"/>
+		<result property="file_name" column="file_name"/>
+		<result property="file_size" column="file_size"/>
+		<result property="reg_user" column="reg_user"/>
+		<result property="reg_date" column="reg_date"/>	
+		<result property="type" column="type"/>
+		<result property="use_yn" column="use_yn"/>
+		<result property="update_user" column="update_user"/>
+		<result property="maxlistsize" column="maxlistsize"/>
+		<result property="status" column="status"/>		
+		<result property="required" column="required"/>		
+		<result property="eng_name" column="eng_name"/>
+		
+	</resultMap>
+	
+	
+	
+		
+	<typeAlias alias="PkgEquipmentModel" type="com.pkms.pkgmg.pkg.model.PkgEquipmentModel" />
+		
+		<resultMap class="SysRoadMapModel" id="SysRoadMapReadList">
+			<result property="mapping_list" select="SystemDAO.pncrTitle" column="${road_map_seq=road_map_seq}"/>
+			<result property="road_map_seq" column="road_map_seq"/>
+			<result property="system_seq" column="system_seq"/>
+			<result property="content" column="content"/>
+			<result property="code" column="code"/>
+			<result property="start_date" column="start_date"/>
+			<result property="end_date" column="end_date"/>
+			<result property="reg_user" column="reg_user"/>
+			<result property="reg_date" column="reg_date"/>
+			<result property="update_user" column="update_user"/>
+			<result property="update_date" column="update_date"/>
+			<result property="code_desc" column="code_desc"/>
+		</resultMap>
+		
+	<insert id="SystemDAO.create" parameterClass="SysModel">
+		<![CDATA[
+			INSERT INTO PKMS.SYSTEM 
+				  ( 
+				  	SYSTEM_SEQ
+				  ,	GROUP3_SEQ
+				  ,	NAME
+				  ,	BP_NUM
+				  ,	BP_NUM1
+				  ,	BP_NUM2
+				  ,	BP_NUM3
+				  ,	BP_NUM4
+				  , MASTER_FILE_ID
+				  , DOWNTIME
+				  , IMPACT_SYSTEMS
+				  , SYSTEM_USER_ID
+				  , DEV_SYSTEM_USER_ID
+				  ,	USE_YN
+				  , REG_USER
+				  , REG_DATE
+				  , SUPPLY
+				  , FULL_NAME
+				  , ONELINE_EXPLAIN
+				  , JOB_HISTORY
+				  , THISYEAR_JOB_PLAN
+				  , NEXTYEAR_PKG_PLAN
+				  , NOTE
+				  , EDU_DATA
+				  , STANDARD
+				  , PER_CAPA
+				  , RM_PLAN
+				  , BP_SYSTEM_USER_ID
+				  , SALES_USER_INFO
+				  , PE_TYPE
+				  )
+			VALUES 
+				  (
+				    #system_seq#
+				  , #group3_seq#
+				  , #name#
+				  , #bp_num#
+		]]>
+				  <isNotEmpty property="bp_num1">                 
+				  , #bp_num1#
+				  </isNotEmpty>
+				  <isEmpty    property="bp_num1">
+				  , NULL
+				  </isEmpty>  
+				  <isNotEmpty property="bp_num2">                 
+				  , #bp_num2#
+				  </isNotEmpty>
+				  <isEmpty    property="bp_num2">
+				  , NULL
+				  </isEmpty>  
+				  <isNotEmpty property="bp_num3">                 
+				  , #bp_num3#
+				  </isNotEmpty>
+				  <isEmpty    property="bp_num3">
+				  , NULL
+				  </isEmpty>  
+				  <isNotEmpty property="bp_num4">                 
+				  , #bp_num4#
+				  </isNotEmpty>
+				  <isEmpty    property="bp_num4">
+				  , NULL
+				  </isEmpty>  
+		<![CDATA[
+				  , #master_file_id#
+				  , #downtime#
+				  , #impact_systems#
+				  , #system_user_id#
+				  , #dev_system_user_id#
+				  , 'Y'
+				  , #session_user_name#
+				  , SYSDATE
+				  , #supply#
+				  , #full_name#
+				  , #oneLine_explain#
+				  , #job_history#
+				  , #thisYear_job_plan#
+				  , #nextYear_pkg_plan#
+				  , #note#
+				  , #edu_data#
+				  , #standard#
+				  , #per_capa#
+				  , #rm_plan#
+				  , #bp_system_user_id#
+				  , #sales_user_info#
+				  , #pe_type#
+				  )
+		]]>
+	</insert>
+
+	<select id="SystemDAO.NextSeq" resultClass="java.lang.String">
+		<![CDATA[
+			SELECT PKMS.SYSTEM_SEQ.NEXTVAL FROM DUAL
+		]]>
+	</select>
+
+	<select id="SystemDAO.read" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				S.SYSTEM_SEQ,
+				S.GROUP3_SEQ,
+				S.NAME,
+				S.BP_NUM,
+				(SELECT B.BP_NAME FROM PKMS.BP_MASTER B WHERE B.BP_NUM=S.BP_NUM) AS BP_NAME,
+				S.BP_NUM1,
+				(SELECT B.BP_NAME FROM PKMS.BP_MASTER B WHERE B.BP_NUM=S.BP_NUM1) AS BP_NAME1,
+				S.BP_NUM2,
+				(SELECT B.BP_NAME FROM PKMS.BP_MASTER B WHERE B.BP_NUM=S.BP_NUM2) AS BP_NAME2,
+				S.BP_NUM3,
+				(SELECT B.BP_NAME FROM PKMS.BP_MASTER B WHERE B.BP_NUM=S.BP_NUM3) AS BP_NAME3,
+				S.BP_NUM4,
+				(SELECT B.BP_NAME FROM PKMS.BP_MASTER B WHERE B.BP_NUM=S.BP_NUM4) AS BP_NAME4,
+				S.MASTER_FILE_ID,
+				S.DOWNTIME,
+				S.IMPACT_SYSTEMS,
+				S.SYSTEM_USER_ID,
+				S.DEV_SYSTEM_USER_ID,
+				S.USE_YN, 
+				S.REG_USER, 
+	            TO_CHAR(S.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+				S.UPDATE_USER,
+	            TO_CHAR(S.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE,
+	            SUPPLY,
+	            FULL_NAME,
+	            ONELINE_EXPLAIN,
+	            JOB_HISTORY,
+	            THISYEAR_JOB_PLAN,
+	            NEXTYEAR_PKG_PLAN,
+	            NOTE,
+	            EDU_DATA,
+				STANDARD,
+				PER_CAPA,
+				RM_PLAN,
+				S.BP_SYSTEM_USER_ID,
+				S.SALES_USER_INFO,
+				S.PE_TYPE
+			FROM PKMS.SYSTEM S
+			WHERE S.SYSTEM_SEQ=#system_seq#
+		]]>
+	</select>
+
+
+	<select id="SystemDAO.readList" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				SYSTEM_SEQ, GROUP3_SEQ, NAME, USE_YN, REG_USER, REG_DATE, UPDATE_USER, UPDATE_DATE
+			FROM PKMS.SYSTEM 
+			WHERE GROUP3_SEQ=#group3_seq#
+		]]>
+			<isEqual prepend="AND" property="session_user_type" compareValue="B">
+				SYSTEM_SEQ IN
+					(
+					SELECT SYSTEM_SEQ 
+					FROM SYSTEM_USER
+					WHERE USER_ID = #session_user_id#
+					GROUP BY SYSTEM_SEQ
+					)
+			</isEqual>
+			ORDER BY USE_YN DESC, NAME
+	</select>
+
+	<select id="SystemDAO.readList4User" parameterClass="SysModel" resultClass="SysModel">
+      SELECT * FROM (
+			SELECT
+				S.SYSTEM_SEQ,
+                S.GROUP3_SEQ,
+                S.NAME,
+                S.USE_YN,
+                S.REG_USER,
+                S.REG_DATE,
+                S.UPDATE_USER,
+                S.UPDATE_DATE
+			FROM PKMS.SYSTEM S,
+                 (SELECT E.SYSTEM_SEQ, E.EQUIPMENT_SEQ, EU.USER_ID, EU.USER_GUBUN
+                  FROM PKMS.EQUIPMENT E,
+                       PKMS.EQUIPMENT_USER EU
+                 WHERE E.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+                 ) EU
+			WHERE S.SYSTEM_SEQ = EU.SYSTEM_SEQ(+)
+              AND S.USE_YN = 'Y'
+              AND EU.USER_ID = #session_user_id#
+        <isEqual prepend="AND" property="check_auth" compareValue="N">
+              EU.USER_ID = #session_user_id#
+        </isEqual>      
+        <isEqual property="check_auth" compareValue="Y">
+        	<isEqual prepend="AND" property="equipment_user_auth" compareValue="Y">
+              EU.USER_ID = #session_user_id#
+        	</isEqual>
+        	<isEqual prepend="AND" property="equipment_user_auth" compareValue="N">
+        	  EU.USER_GUBUN='NO'
+        	</isEqual>
+        </isEqual>      
+		<isNotEmpty prepend="AND" property="group3_seq">
+                  S.GROUP3_SEQ = #group3_seq#
+		</isNotEmpty>
+            UNION
+			SELECT
+				S.SYSTEM_SEQ,
+                S.GROUP3_SEQ,
+                S.NAME,
+                S.USE_YN,
+                S.REG_USER,
+                S.REG_DATE,
+                S.UPDATE_USER,
+                S.UPDATE_DATE
+			FROM PKMS.SYSTEM S, 
+                 (SELECT SYSTEM_SEQ, USER_ID, CHARGE_GUBUN
+                  FROM PKMS.SYSTEM_USER 
+                  WHERE USE_YN = 'Y'
+                  GROUP BY SYSTEM_SEQ, USER_ID, CHARGE_GUBUN) SU
+			WHERE S.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+              AND S.USE_YN = 'Y'
+              AND SU.USER_ID = #session_user_id#
+		<isNotEmpty prepend="AND" property="group3_seq">
+                  S.GROUP3_SEQ = #group3_seq#
+		</isNotEmpty>
+		<isEqual prepend="AND" property="check_auth" compareValue="Y">
+			SU.CHARGE_GUBUN IN
+           	<iterate property="system_user_charge_gubun" open="(" conjunction="," close=")">
+                 #system_user_charge_gubun[]#
+            </iterate>
+		</isEqual>
+         )
+         ORDER BY NAME ASC
+	</select>
+
+
+	<update id="SystemDAO.update" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE PKMS.SYSTEM 
+			SET 
+			  NAME=#name#
+			, BP_NUM=#bp_num#
+		]]>
+		  <isNotEmpty property="bp_num1">                 
+		  	, BP_NUM1=#bp_num1#
+		  </isNotEmpty>
+		  <isNotEmpty property="bp_num2">                 
+		  	, BP_NUM2=#bp_num2#
+		  </isNotEmpty>
+		  <isNotEmpty property="bp_num3">                 
+		  	, BP_NUM3=#bp_num3#
+		  </isNotEmpty>
+		  <isNotEmpty property="bp_num4">                 
+		  	, BP_NUM4=#bp_num4#
+		  </isNotEmpty>
+		<![CDATA[
+			, DOWNTIME=#downtime#
+			, IMPACT_SYSTEMS=#impact_systems#
+			, SYSTEM_USER_ID=#system_user_id#
+			, DEV_SYSTEM_USER_ID=#dev_system_user_id#
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE  
+			, SUPPLY=#supply#
+			, FULL_NAME=#full_name#
+			, ONELINE_EXPLAIN=#oneLine_explain#
+			, JOB_HISTORY=#job_history#
+			, THISYEAR_JOB_PLAN=#thisYear_job_plan#
+			, NEXTYEAR_PKG_PLAN=#nextYear_pkg_plan#
+			, NOTE=#note#
+			, EDU_DATA = #edu_data# 
+			, STANDARD = #standard#
+			, PER_CAPA = #per_capa#
+			, RM_PLAN = #rm_plan#
+			, BP_SYSTEM_USER_ID=#bp_system_user_id#
+			, SALES_USER_INFO=#sales_user_info#
+			, PE_TYPE = #pe_type#
+			WHERE SYSTEM_SEQ=#system_seq#
+		]]>
+	</update>
+
+	<delete id="SystemDAO.delete" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE PKMS.SYSTEM  
+			SET 
+			  USE_YN='N'
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE
+			WHERE SYSTEM_SEQ=#system_seq#
+		]]>
+	</delete>
+
+<select id="SystemDAO.readSystemSeq" resultClass="SysModel">
+SELECT SYSTEM_SEQ FROM SYSTEM WHERE USE_YN ='Y' ORDER BY SYSTEM_SEQ 
+
+</select>
+
+<insert id="SystemDAO.createRoadMap" parameterClass="SysRoadMapModel">
+	INSERT INTO ROAD_MAP
+				(
+					ROAD_MAP_SEQ, 
+					SYSTEM_SEQ, 
+					CONTENT, 
+					CODE, 
+					START_DATE,
+					END_DATE, 
+					REG_USER, 
+					REG_DATE
+				)VALUES(
+					ROAD_MAP_SEQ.NEXTVAL, 
+					#system_seq#, 
+					#content#, 
+					#code#, 
+					#start_date#, 
+					#end_date#, 
+					#reg_user#, 
+					SYSDATE
+				)
+</insert>
+<select id="SystemDAO.roadMapList" resultMap="SysRoadMapReadList" parameterClass="SysModel" >
+	SELECT LM.ROAD_MAP_SEQ,
+	       LM.SYSTEM_SEQ,
+	       LM.CONTENT,
+	       LM.CODE,
+	       TO_CHAR(LM.START_DATE,'YYYY-MM-DD')START_DATE,
+	       TO_CHAR(LM.END_DATE,'YYYY-MM-DD')END_DATE,
+	       LM.REG_USER,
+	       LM.REG_DATE,
+	       LM.UPDATE_USER,
+	       LM.UPDATE_DATE,
+	       LMC.CODE_DESC
+   FROM ROAD_MAP LM LEFT JOIN ROAD_MAP_CODE LMC ON LM.CODE = LMC.CODE
+   WHERE LM.SYSTEM_SEQ = #system_seq#
+   order by LM.code, LM.start_date
+</select>
+
+<select id="SystemDAO.roadMapDetail" resultClass="SysRoadMapModel" parameterClass="SysRoadMapModel" >
+	SELECT LM.ROAD_MAP_SEQ,
+	       LM.SYSTEM_SEQ,
+	       LM.CONTENT,
+	       LM.CODE,
+	       TO_CHAR(LM.START_DATE,'YYYY-MM-DD')START_DATE,
+	       TO_CHAR(LM.END_DATE,'YYYY-MM-DD')END_DATE,
+	       LM.REG_USER,
+	       LM.REG_DATE,
+	       LM.UPDATE_USER,
+	       LM.UPDATE_DATE,
+	       LMC.CODE_DESC
+    FROM  ROAD_MAP LM LEFT JOIN ROAD_MAP_CODE LMC ON LM.CODE = LMC.CODE
+	WHERE LM.ROAD_MAP_SEQ = #road_map_seq#
+</select>
+<select id="SystemDAO.roadMapMappingList" resultClass="SysRoadMapMappingModel" parameterClass="SysRoadMapModel" >
+	SELECT LMM.ROAD_MAP_MAPPING_SEQ,
+           LMM.ROAD_MAP_SEQ,
+	       LMM.NEW_PN_CR_SEQ,
+	       LMM.MAPPING,
+	       LMM.TITLE,
+	       TO_CHAR(NPC.REG_DATE,'YYYY-MM-DD')REG_DATE,
+	       IPIR.HNAME
+	FROM ROAD_MAP_MAPPING LMM
+		 LEFT JOIN NEW_PN_CR NPC ON LMM.NEW_PN_CR_SEQ = NPC.NEW_PN_CR_SEQ
+         LEFT JOIN INF_PERSON_INFO_RCV IPIR ON NPC.REG_USER = IPIR.EMPNO
+	WHERE ROAD_MAP_SEQ = #road_map_seq#
+	AND LMM.TITLE IS NOT NULL
+</select>
+<update id="SystemDAO.updateRoadMap" parameterClass="SysRoadMapModel">
+	UPDATE ROAD_MAP
+	SET    CONTENT = #content#
+		  ,START_DATE = TO_DATE(#start_date#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+		  ,END_DATE   = TO_DATE(#end_date#||' '||'00:00:01','yyyy-mm-dd hh24:mi:ss')
+		  ,UPDATE_USER = #session_user_id#
+		  ,UPDATE_DATE = SYSDATE
+	WHERE ROAD_MAP_SEQ = #road_map_seq#
+</update>
+<update id="SystemDAO.updatePkgRoadMap" parameterClass="SysRoadMapModel">
+	UPDATE PKG_ROAD_MAP
+	SET    TITLE = #title#
+	WHERE PKG_ROAD_MAP_SEQ = #pkg_road_map_seq#
+</update>
+<select id="SystemDAO.pncrTitle" parameterClass="SysRoadMapModel" resultClass="SysRoadMapMappingModel" remapResults="true">
+	  SELECT title, road_map_mapping_seq
+	  FROM ROAD_MAP_MAPPING 
+	  WHERE ROAD_MAP_SEQ = #road_map_seq#
+	  AND TITLE IS NOT NULL
+</select>
+<update id="SystemDAO.roadMapMappingDelete" parameterClass="SysRoadMapMappingModel">
+	UPDATE ROAD_MAP_MAPPING
+	SET MAPPING = 'N'
+		  ,TITLE = ''
+	WHERE ROAD_MAP_MAPPING_SEQ = #road_map_mapping_seq#
+</update>
+<select id="SystemDAO.roadMapSeqNext" resultClass="java.lang.String">
+	<![CDATA[
+	SELECT
+		ROAD_MAP_SEQ.NEXTVAL AS ROAD_MAP_SEQ
+	FROM DUAL
+	]]>
+</select>
+<select id="SystemDAO.pkgRoadMapSeqNext" resultClass="java.lang.String">
+	<![CDATA[
+	SELECT
+		ROAD_MAP_SEQ.NEXTVAL AS ROAD_MAP_SEQ
+	FROM DUAL
+	]]>
+</select>
+<insert id="SystemDAO.createRoadMapPkg" parameterClass="SysRoadMapModel">
+	INSERT INTO ROAD_MAP
+				(
+					ROAD_MAP_SEQ, 
+					SYSTEM_SEQ, 
+					CONTENT, 
+					CODE, 
+					START_DATE,
+					END_DATE, 
+					REG_USER, 
+					REG_DATE
+				)VALUES(
+					#road_map_seq#, 
+					#system_seq#, 
+					#content#, 
+					#code#, 
+					#start_date#, 
+					#end_date#, 
+					#reg_user#, 
+					SYSDATE
+				)
+</insert>
+<insert id="SystemDAO.pkgCreateRoadMap" parameterClass="SysRoadMapModel">
+	INSERT INTO PKG_ROAD_MAP
+				(
+					PKG_ROAD_MAP_SEQ,
+					ROAD_MAP_SEQ, 
+					PKG_SEQ,
+					MAPPING,
+					TITLE 
+				)VALUES(
+					#pkg_road_map_seq#, 
+					#road_map_seq#,
+					#pkg_seq#, 
+					'Y',
+					#title#
+				)
+</insert>
+<select id="SystemDAO.readPkgEquipmentDate" parameterClass="SysRoadMapModel" resultClass="SysRoadMapModel">
+	SELECT
+        MIN(TO_CHAR(WORK_DATE, 'YYYY-MM-DD')) AS START_DATE,
+        MAX(TO_CHAR(WORK_DATE, 'YYYY-MM-DD')) AS END_DATE
+    FROM
+        PKG_EQUIPMENT
+    WHERE
+        PKG_SEQ = #pkg_seq#
+</select>
+<select id="SystemDAO.readPkgRoadMapSeqList" parameterClass="SysRoadMapModel" resultClass="SysRoadMapModel">
+	SELECT
+	    RM.ROAD_MAP_SEQ,
+	    PRM.PKG_ROAD_MAP_SEQ
+	FROM
+	    ROAD_MAP RM,
+	    PKG_ROAD_MAP PRM
+	WHERE
+	    RM.SYSTEM_SEQ = #system_seq#
+	<isNotEmpty property="code">
+		 AND
+		 	RM.CODE = #code#
+	</isNotEmpty>
+	 AND
+	    RM.ROAD_MAP_SEQ = PRM.ROAD_MAP_SEQ
+	 AND
+	    PRM.PKG_SEQ = #pkg_seq#
+</select>
+<delete id="SystemDAO.deleteRoadMap" parameterClass="SysRoadMapModel">
+	DELETE
+	FROM
+	    ROAD_MAP
+	WHERE
+	    ROAD_MAP_SEQ = #road_map_seq#
+</delete>
+<delete id="SystemDAO.pkgDeleteRoadMap" parameterClass="SysRoadMapModel">
+	DELETE
+	FROM
+	    PKG_ROAD_MAP
+	WHERE
+	    PKG_ROAD_MAP_SEQ = #pkg_road_map_seq#
+</delete>
+<select id="SystemDAO.pkgRoadMapList" resultClass="SysRoadMapModel" parameterClass="SysRoadMapModel" >
+    SELECT PRM.PKG_ROAD_MAP_SEQ,
+           PRM.ROAD_MAP_SEQ,
+           PRM.PKG_SEQ,
+           PRM.MAPPING,
+           PRM.TITLE,
+           TO_CHAR(PM.REG_DATE,'YYYY-MM-DD')REG_DATE,
+           IPIR.HNAME
+    FROM PKG_ROAD_MAP PRM
+         LEFT JOIN PKG_MASTER PM ON PRM.PKG_SEQ = PM.PKG_SEQ
+         LEFT JOIN INF_PERSON_INFO_RCV IPIR ON PM.REG_USER = IPIR.EMPNO
+    WHERE PRM.ROAD_MAP_SEQ = #road_map_seq#
+</select>
+<select id="SystemDAO.pkgRoadMaps" resultClass="SysRoadMapModel" parameterClass="SysRoadMapModel" >
+	SELECT
+	    PRM.PKG_ROAD_MAP_SEQ, TO_CHAR(RM.START_DATE,'YYYY-MM-DD') AS START_DATE, TO_CHAR(RM.END_DATE,'YYYY-MM-DD') AS END_DATE, RM.CONTENT, PRM.TITLE, RM.CODE, RM.ROAD_MAP_SEQ
+	FROM
+	    ROAD_MAP RM, PKG_ROAD_MAP PRM
+	WHERE
+	    RM.ROAD_MAP_SEQ = PRM.ROAD_MAP_SEQ
+	     AND
+	    PRM.PKG_SEQ = #pkg_seq#
+	    <isNotEmpty property="code">
+		 AND
+		 	RM.CODE = #code#
+		</isNotEmpty>
+</select>
+
+<select id="SystemDAO.systemFileReadList" resultMap="SystemFileList" parameterClass="SystemFileModel">
+	SELECT
+		ID
+		,PID
+		,NAME
+		,OPEN
+		,ISPARENT
+		,DRAG
+		,FDROP
+		,ATTACH_FILE_ID
+		,FILE_PATH
+		,FILE_NAME
+		,FILE_SIZE
+		,REG_DATE
+		,REG_USER
+	FROM(
+		SELECT
+			F.ID
+			,F.PID
+			,F.NAME
+			,F.OPEN
+			,F.ISPARENT
+			,'false' DRAG
+			,'true' FDROP
+			,'' ATTACH_FILE_ID
+			,'' FILE_PATH
+			,'' FILE_NAME
+			,0 FILE_SIZE
+			,'' REG_DATE
+			,'' REG_USER
+		FROM ATTACH_FILE_TREE F
+		WHERE F.USE_YN = 'Y'
+		AND PID != 0
+		<![CDATA[	AND ID < 1000	]]>
+		ORDER BY F.NAME
+  	)F
+	UNION ALL
+	SELECT 
+		TO_NUMBER(MASTER_FILE_ID) AS ID
+		,PARENT_TREE_ID AS PID
+		,FILE_ORG_NAME AS NAME
+		,'false' AS OPEN
+		,'false' AS ISPARENT
+		,'true' DRAG
+		,'false' FDROP
+		,ATTACH_FILE_ID
+		,FILE_PATH
+		,FILE_NAME
+		,FILE_SIZE
+		,CASE WHEN REG_DATE IS NULL THEN ' '
+		ELSE TO_CHAR(REG_DATE,'YYYY-MM-DD') END REG_DATE
+		,CASE WHEN REG_USER IS NULL THEN ' '
+		ELSE REG_USER END REG_USER
+	FROM
+	ATTACH_FILE_INFO
+	WHERE MASTER_FILE_ID = #master_file_id#
+</select>
+
+
+
+
+
+
+<select id="SystemDAO.systemeListReadList" resultMap="SystemFileList2" parameterClass="SystemFileModel">
+	SELECT
+		ID
+		,pid
+		,NAME
+		,OPEN
+		,ISPARENT
+		,DRAG
+		,FDROP
+		,ATTACH_FILE_ID
+		,FILE_PATH
+		,FILE_NAME
+		,FILE_SIZE
+		,REG_DATE
+		,REG_USER
+		,TYPE
+		,USE_YN
+		,UPDATE_USER
+		,MAXLISTSIZE
+		,STATUS
+		,REQUIRED
+		,ENG_NAME
+	FROM(
+		SELECT
+			F.ID
+			,F.pid
+			,F.NAME
+			,F.OPEN
+			,F.ISPARENT
+			,'false' DRAG
+			,'true' FDROP
+			,'' ATTACH_FILE_ID
+			,'' FILE_PATH
+			,'' FILE_NAME
+			,0 FILE_SIZE
+			,CASE WHEN F.REG_DATE IS NULL THEN ' ' ELSE TO_CHAR(F.REG_DATE,'YYYY-MM-DD') END REG_DATE
+			,CASE WHEN F.REG_USER IS NULL THEN ' ' ELSE F.REG_USER END REG_USER
+			,F.TYPE
+			,F.USE_YN
+			,F.UPDATE_USER
+			,F.MAXLISTSIZE
+			,F.STATUS
+			,F.REQUIRED
+			,F.ENG_NAME
+		FROM ATTACH_FILE_TREE F
+		WHERE 1=1
+		<isNotEmpty prepend="AND" property="use_yn">
+           F.USE_YN = #use_yn#
+		</isNotEmpty>	
+		AND ID != 0
+		AND ID > 999  
+		ORDER BY F.ORD ASC,  F.NAME
+  	)F
+  	<isNotEmpty property="type">
+		WHERE TYPE =   (select type FROM ATTACH_FILE_TREE where name = #type#)
+	</isNotEmpty>
+	UNION ALL
+	SELECT 
+		TO_NUMBER(MASTER_FILE_ID) AS ID
+		,PARENT_TREE_ID AS pid
+		,FILE_ORG_NAME AS NAME
+		,'false' AS OPEN
+		,'false' AS ISPARENT
+		,'true' DRAG
+		,'false' FDROP
+		,ATTACH_FILE_ID
+		,FILE_PATH
+		,FILE_NAME
+		,FILE_SIZE
+		,CASE WHEN REG_DATE IS NULL THEN ' '	ELSE TO_CHAR(REG_DATE,'YYYY-MM-DD') END REG_DATE
+		,CASE WHEN REG_USER IS NULL THEN ' '	ELSE REG_USER END REG_USER
+		,'' AS TYPE
+		,'' AS USE_YN
+		,'' AS UPDATE_USER
+		,0 MAXLISTSIZE
+		,'' AS STATUS
+		,'' AS REQUIRED
+		,'' AS ENG_NAME
+	FROM ATTACH_FILE_INFO
+	WHERE MASTER_FILE_ID = #master_file_id#
+</select>
+
+
+
+<insert id="SystemDAO.pkg_tree_list_add" parameterClass="systemFileModel">
+		INSERT INTO ATTACH_FILE_TREE
+		(
+			ID
+			,PID
+			,NAME
+			,OPEN
+			,ISPARENT
+			,USE_YN
+			,REG_USER
+			,REG_DATE
+			,TYPE
+			,MAXLISTSIZE
+			,STATUS
+			,REQUIRED
+			,ENG_NAME
+		)
+		VALUES 
+		(
+			#id#
+			,#pId#
+			,#name#
+			,#open#
+			,#isParent#
+			,#use_yn#
+			,#session_user_name#
+			,SYSDATE
+			,#type#
+			,#maxlistsize#
+			,#status#
+			,#required#
+			,#eng_name#
+		)
+</insert>
+
+
+
+
+<update id="SystemDAO.pkg_tree_list_update" parameterClass="systemFileModel">
+	<![CDATA[
+		UPDATE ATTACH_FILE_TREE 
+		SET 
+			NAME				=	#name#
+			,UPDATE_USER		=	#session_user_name#
+			,UPDATE_DATE		=	SYSDATE
+			,MAXLISTSIZE		=	#maxlistsize#
+			,STATUS				=	#status#
+			,REQUIRED			=	#required#
+	]]>
+		WHERE id= #id#
+</update>
+
+
+<select id="SystemDAO.pkg_tree_list_idx" resultClass="Integer">
+	  SELECT
+	  	ID
+	  FROM
+	  	ATTACH_FILE_TREE
+	  WHERE 1=1
+<![CDATA[	AND ID > 1000	]]>
+		AND ROWNUM = 1
+	 ORDER BY ID DESC
+</select>
+
+<delete id="SystemDAO.pkg_tree_list_delete" parameterClass="systemFileModel">
+	DELETE FROM PKMS.ATTACH_FILE_TREE WHERE ID = #id#
+</delete>
+
+
+
+
+
+
+
+<select id="SystemDAO.engNameCheck" parameterClass="systemFileModel" resultClass="Integer">
+	SELECT COUNT(ID) AS TOTALCNT FROM ATTACH_FILE_TREE
+	WHERE LOWER(ENG_NAME) = LOWER(#eng_name#) 
+<!-- 	WHERE LOWER(ENG_NAME) LIKE '%' || LOWER(#eng_name#) || '%' -->
+</select>
+
+
+
+
+
+
+<!-- 
+<select id="AttachFileDAO.tree_file_list" parameterClass="AttachFileModel" resultClass="AttachFileModel"> 
+		SELECT 
+			MASTER_FILE_ID, 
+			ATTACH_FILE_ID, 
+			FILE_EXTENSION, 
+			FILE_SIZE, 
+			FILE_PATH, 
+			FILE_ORG_NAME, 
+			FILE_NAME 
+		FROM 
+			ATTACH_FILE_INFO  
+		WHERE 
+			MASTER_FILE_ID = #master_file_id# 
+			AND PARENT_TREE_ID = #parent_tree_id#
+	</select>
+	 -->
+</sqlMap>

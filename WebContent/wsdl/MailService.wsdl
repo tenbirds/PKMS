@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<s0:definitions name="MailSenderServiceDefinitions" targetNamespace="http://skt/soa/notification/webservice" xmlns:s0="http://schemas.xmlsoap.org/wsdl/" xmlns:s1="http://skt/soa/notification/webservice" xmlns:s2="http://schemas.xmlsoap.org/wsdl/soap/">
+  <s0:types>
+    <xs:schema attributeFormDefault="unqualified" elementFormDefault="qualified" targetNamespace="http://skt/soa/notification/webservice" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+      <xs:element name="send">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="senderEmail" type="xs:string"/>
+            <xs:element name="receiverEmail" type="xs:string"/>
+            <xs:element name="subject" type="xs:string"/>
+            <xs:element name="content" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="sendResponse">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="return" type="xs:string"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:schema>
+  </s0:types>
+  <s0:message name="send">
+    <s0:part element="s1:send" name="parameters"/>
+  </s0:message>
+  <s0:message name="sendResponse">
+    <s0:part element="s1:sendResponse" name="parameters"/>
+  </s0:message>
+  <s0:portType name="MailSender">
+    <s0:operation name="send" parameterOrder="parameters">
+      <s0:input message="s1:send"/>
+      <s0:output message="s1:sendResponse"/>
+    </s0:operation>
+  </s0:portType>
+  <s0:binding name="MailSenderServiceSoapBinding" type="s1:MailSender">
+    <s2:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+    <s0:operation name="send">
+      <s2:operation style="document"/>
+      <s0:input>
+        <s2:body parts="parameters" use="literal"/>
+      </s0:input>
+      <s0:output>
+        <s2:body parts="parameters" use="literal"/>
+      </s0:output>
+    </s0:operation>
+  </s0:binding>
+  <s0:service name="MailSenderService">
+    <s0:port binding="s1:MailSenderServiceSoapBinding" name="MailSenderSoapPort">
+      <s2:address location="http://testesb.sktelecom.com:8080/MailService"/>
+    </s0:port>
+  </s0:service>
+</s0:definitions>

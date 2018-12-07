@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Equipment">
+
+	<typeAlias alias="SysModel" type="com.pkms.sys.common.model.SysModel" />
+
+	<insert id="EquipmentDAO.create" parameterClass="SysModel">
+		<![CDATA[
+			INSERT INTO PKMS.EQUIPMENT 
+				  ( 
+				  	EQUIPMENT_SEQ
+				  ,	SYSTEM_SEQ
+				  , IDC_SEQ
+				  ,	NAME
+				  , WAREHOUSING_DAY
+				  , SERVICE_AREA
+				  ,	USE_YN
+				  , REG_USER
+				  , REG_DATE
+				  , CHA_YN
+				  )
+			VALUES 
+				  (
+				    #equipment_seq#
+				  , #system_seq#
+				  , #idc_seq#
+				  , #name#
+				  , #warehousing_day#
+				  , #service_area#
+				  , 'Y'
+				  , #session_user_name#
+				  , SYSDATE
+				  , #cha_yn#
+				  )
+		]]>
+	</insert>
+
+	<select id="EquipmentDAO.NextSeq" resultClass="java.lang.String">
+		<![CDATA[
+			SELECT PKMS.EQUIPMENT_SEQ.NEXTVAL FROM DUAL
+		]]>
+	</select>
+
+	<select id="EquipmentDAO.read" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				E.EQUIPMENT_SEQ, E.SYSTEM_SEQ, E.IDC_SEQ,
+				(SELECT I.IDC_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS IDC_NAME,
+				(SELECT I.TEAM_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS TEAM_NAME,
+				(SELECT I.CENTRAL_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS CENTRAL_NAME,
+				TO_CHAR(E.WAREHOUSING_DAY, 'YYYY-MM-DD') WAREHOUSING_DAY, SERVICE_AREA,
+				E.NAME, E.USE_YN, E.REG_USER, 
+	            TO_CHAR(E.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+				E.UPDATE_USER, 
+	            TO_CHAR(E.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE,
+				E.CHA_YN
+			FROM PKMS.EQUIPMENT E
+			WHERE E.EQUIPMENT_SEQ=#equipment_seq#
+		]]>
+	</select>
+
+
+	<select id="EquipmentDAO.readList" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				E.EQUIPMENT_SEQ, E.SYSTEM_SEQ, E.IDC_SEQ,
+				(SELECT I.IDC_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS IDC_NAME,
+				(SELECT I.TEAM_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS TEAM_NAME,
+				(SELECT I.CENTRAL_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS CENTRAL_NAME,
+				(SELECT I.TEAM_CODE FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS TEAM_CODE,
+				TO_CHAR(E.WAREHOUSING_DAY, 'YYYY-MM-DD') WAREHOUSING_DAY, SERVICE_AREA,
+				E.NAME, E.USE_YN, E.REG_USER, TO_CHAR(E.REG_DATE, 'YYYY-MM-DD') REG_DATE, E.UPDATE_USER, TO_CHAR(E.UPDATE_DATE, 'YYYY-MM-DD') UPDATE_DATE,
+				E.CHA_YN
+			FROM PKMS.EQUIPMENT E 
+			WHERE E.SYSTEM_SEQ=#system_seq#
+		]]>
+			<isNull prepend="AND" property="eq_history_yn">
+	        E.USE_YN = 'Y'
+	        </isNull>
+			ORDER BY USE_YN DESC, E.NAME
+	</select>
+
+
+	<update id="EquipmentDAO.update" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE PKMS.EQUIPMENT 
+			SET 
+			  NAME=#name#
+			, WAREHOUSING_DAY=#warehousing_day#
+			, SERVICE_AREA=#service_area#
+			, IDC_SEQ=#idc_seq#
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE
+			, CHA_YN=#cha_yn#
+			WHERE EQUIPMENT_SEQ=#equipment_seq#
+		]]>
+	</update>
+
+	<delete id="EquipmentDAO.delete" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE PKMS.EQUIPMENT  
+			SET 
+			  USE_YN='N'
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE
+			WHERE EQUIPMENT_SEQ=#equipment_seq#
+		]]>
+	</delete>
+	
+	<delete id="EquipmentDAO.delete_real" parameterClass="SysModel">
+		<![CDATA[
+			DELETE FROM PKMS.EQUIPMENT
+			WHERE EQUIPMENT_SEQ=#equipment_seq#
+		]]>
+	</delete>
+	
+	<select id="EquipmentDAO.idc_readList" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+                E.SYSTEM_SEQ, E.IDC_SEQ, WM_CONCAT(E.NAME) AS EQ_NAMES,
+                (SELECT I.IDC_NAME FROM PKMS.IDC I WHERE I.IDC_SEQ=E.IDC_SEQ) AS IDC_NAME
+            FROM PKMS.EQUIPMENT E 
+            WHERE E.SYSTEM_SEQ = #system_seq#
+            AND E.USE_YN = 'Y'
+            GROUP BY E.SYSTEM_SEQ, E.IDC_SEQ
+            ORDER BY E.SYSTEM_SEQ, E.IDC_SEQ
+		]]>
+	</select>
+	
+	<select id="EquipmentDAO.eq_readList" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+                E.EQUIPMENT_SEQ
+            FROM PKMS.EQUIPMENT E 
+            WHERE E.SYSTEM_SEQ = #system_seq#
+            AND E.IDC_SEQ = #idc_seq#
+            AND E.USE_YN = 'Y'
+            GROUP BY E.EQUIPMENT_SEQ
+            ORDER BY E.EQUIPMENT_SEQ
+		]]>
+	</select>
+
+</sqlMap>

@@ -1,0 +1,794 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Stats">
+
+	<typeAlias alias="StatsModel" type="com.pkms.statsmg.stats.model.StatsModel" />
+
+	<select id="StatsDAO.readList" parameterClass="StatsModel" resultClass="StatsModel">
+       SELECT ROWNUM,
+	       A.*,
+	       (A.EQUIPMENTPKGSTARTCOUNT || '/' || A.COUNT_TOTAL) AS CHODO,
+	       (A.EQUIPMENTPKGENDCOUNT || '/' || A.COUNT_TOTAL) AS HWAKDAE
+       FROM(
+        SELECT
+          	A.PKG_SEQ, A.TITLE PKG_NAME,
+            B.SYSTEM_SEQ, B.SYSTEM_NAME,
+            
+            ((SELECT TO_CHAR(MIN(WORK_DATE), 'YYYY-MM-DD')
+               FROM PKMS.PKG_EQUIPMENT
+              WHERE PKG_SEQ = A.PKG_SEQ AND WORK_GUBUN = 'S')
+            || '~' ||
+            (SELECT TO_CHAR(MAX(WORK_DATE), 'YYYY-MM-DD')
+               FROM PKMS.PKG_EQUIPMENT
+              WHERE PKG_SEQ = A.PKG_SEQ AND WORK_GUBUN = 'S'))
+           AS CHODO_WORKDATE,
+            CASE
+               WHEN A.STATUS = 99 THEN 0
+               ELSE (SELECT COUNT (EQUIPMENT_SEQ)
+                       FROM PKMS.PKG_EQUIPMENT
+                      WHERE PKG_SEQ = A.PKG_SEQ
+                      	AND WORK_DATE <![CDATA[ >= ]]> TO_DATE(#start_date#, 'YYYY-MM-DD')
+					  	AND WORK_DATE <![CDATA[ <= ]]> TO_DATE(#end_date#, 'YYYY-MM-DD')
+                      	AND WORK_GUBUN = 'S')
+            END
+               AS EQUIPMENTPKGSTARTCOUNT,
+          
+          (SELECT TO_CHAR(MIN(WORK_DATE), 'YYYY-MM-DD')
+             FROM PKMS.PKG_EQUIPMENT
+             WHERE PKG_SEQ = A.PKG_SEQ AND WORK_GUBUN = 'E')
+            || '~' ||
+            (SELECT TO_CHAR(MAX(WORK_DATE), 'YYYY-MM-DD')
+               FROM PKMS.PKG_EQUIPMENT
+              WHERE PKG_SEQ = A.PKG_SEQ AND WORK_GUBUN = 'E')
+            AS HWAKDAE_WORKDATE,
+            CASE
+               WHEN A.STATUS = 99 THEN 0
+               ELSE (SELECT COUNT (EQUIPMENT_SEQ)
+                       FROM PKMS.PKG_EQUIPMENT
+                      WHERE PKG_SEQ = A.PKG_SEQ
+                      	AND WORK_DATE <![CDATA[ >= ]]> TO_DATE(#start_date#, 'YYYY-MM-DD')
+					  	AND WORK_DATE <![CDATA[ <= ]]> TO_DATE(#end_date#, 'YYYY-MM-DD')
+                      	AND WORK_GUBUN = 'E')
+            END AS EQUIPMENTPKGENDCOUNT,
+            
+            (SELECT COUNT(EQUIPMENT_SEQ)
+               FROM PKMS.EQUIPMENT
+              WHERE SYSTEM_SEQ = B.SYSTEM_SEQ AND USE_YN = 'Y')
+               AS COUNT_TOTAL,
+            
+            CASE
+               WHEN A.STATUS = 9
+               THEN 'O'
+               ELSE 'X'
+            END AS PKG_END_OX,
+           (SELECT COUNT (*) AS NEW_CNT
+               FROM PKG_DETAIL
+              WHERE PKG_SEQ = A.PKG_SEQ AND NEW_PN_CR_GUBUN = '신규')
+               AS NEWCOUNT,
+            (SELECT COUNT (*) AS NEW_CNT
+               FROM PKG_DETAIL
+              WHERE PKG_SEQ = A.PKG_SEQ AND NEW_PN_CR_GUBUN = '보완')
+               AS PNCOUNT,
+            (SELECT COUNT (*) AS NEW_CNT
+               FROM PKG_DETAIL
+              WHERE PKG_SEQ = A.PKG_SEQ AND NEW_PN_CR_GUBUN = '개선')
+               AS CRCOUNT,
+            
+            A.CONTENT,
+
+            B.GROUP1_SEQ, B.GROUP1_NAME,
+            B.GROUP2_SEQ, B.GROUP2_NAME,
+            B.GROUP3_SEQ, B.GROUP3_NAME,
+            B.SYSTEM_USER_ID, B.SYSTEM_USER_NAME,
+            A.VER,
+            CASE WHEN A.VER_GUBUN = 'F' THEN 'Full' ELSE 'Partial' END
+            AS VER_GUBUN,
+            (CASE
+               WHEN A.SER_DOWNTIME IS NULL THEN 0
+               ELSE A.SER_DOWNTIME
+            END || '분')
+               AS SBT,
+            CASE
+                   WHEN  A.ROAMING_LINK = 'N'
+                   OR A.ROAMING_LINK IS NULL
+                    OR A.ROAMING_LINK = ''
+               THEN
+                  '없음'
+               ELSE
+                  A.ROAMING_LINK
+            END AS ROAMING_LINK,
+            CASE WHEN A.PE_YN = 'Y' THEN '있음' ELSE '없음' END AS PE_YN,
+            VS.COL1 AS VERIFY_START,
+            VS.COL2 AS VERIFY_END,
+            NVL(TO_NUMBER(TO_DATE(VS.COL2,'YYYY-MM-DD') - TO_DATE(VS.COL1,'YYYY-MM-DD')), 0) AS VERIFY_DAY,
+            CASE
+               WHEN A.DEV_YN = 'N' THEN '상용 검증'
+               ELSE '개발/상용 검증'
+            END AS DEV_YN,
+            
+            CASE WHEN A.STATUS > 2 AND A.STATUS <![CDATA[<]]> 10 THEN 'O' ELSE 'X' END
+               AS ON_YN,
+            CASE
+               WHEN A.NON_YN = 'N' OR A.NON_YN = 'X' THEN 'X'
+               ELSE 'O'
+            END
+               AS NON_YN,
+            CASE
+               WHEN A.VOL_YN = 'N' OR A.VOL_YN = 'X' THEN 'X'
+               ELSE 'O'
+            END
+               AS VOL_YN,
+            CASE
+               WHEN A.CHA_YN = 'N' OR A.CHA_YN = 'X' THEN 'X'
+               ELSE 'O'
+            END
+               AS CHA_YN,
+            CASE
+               WHEN A.SEC_YN = 'N' OR A.SEC_YN = 'X' THEN 'X'
+               ELSE 'O'
+            END
+               AS SEC_YN,
+            SC.ON_COMMENT,
+            SC.NON_COMMENT,
+            SC.VOL_COMMENT,
+            SC.CHA_COMMENT,
+            SC.SEC_COMMENT,
+
+            VS.COL4,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file37')
+               AS COL4_FILE,
+            VS.COL6,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file5')
+               AS COL6_FILE,
+            VS.COL8,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file6')
+               AS COL8_FILE,
+            VS.COL29,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file40')
+               AS COL29_FILE,
+            VS.COL10,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file7')
+               AS COL10_FILE,
+            VS.COL30,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file49')
+               AS COL30_FILE,
+            VS.COL31,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file54')
+               AS COL31_FILE,
+            VS.COL32,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file59')
+               AS COL32_FILE,
+            VS.COL12,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file8')
+               AS COL12_FILE,
+            VS.COL41,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file69')
+               AS COL41_FILE,
+            VS.COL14,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file3')
+               AS COL14_FILE,
+            VS.COL16,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file38')
+               AS COL16_FILE,
+            VS.COL18,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file12')
+               AS COL18_FILE,
+            VS.COL20,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file39')
+               AS COL20_FILE,
+            VS.COL22,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file1')
+               AS COL22_FILE,
+            VS.COL24,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file14')
+               AS COL24_FILE,
+            VS.COL26,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file15')
+               AS COL26_FILE,
+            VS.COL39,
+            (SELECT FILE_ORG_NAME
+               FROM ATTACH_FILE_INFO
+              WHERE MASTER_FILE_ID = A.MASTER_FILE_ID
+                    AND ATTACH_FILE_ID = 'file68')
+               AS COL39_FILE
+        FROM 
+        	PKMS.PKG_EQUIPMENT PE,
+            PKMS.PKG_MASTER A,
+            (SELECT G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                    G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                    G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                    S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                    S.SYSTEM_USER_ID,
+                    S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4,
+                    ( SELECT HNAME
+                      FROM PKMS.INF_PERSON_INFO_RCV
+                      WHERE EMPNO = S.SYSTEM_USER_ID) AS SYSTEM_USER_NAME
+               FROM
+               	PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+               WHERE	G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                    AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                    AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                    AND G1.USE_YN = 'Y'
+                    AND G2.USE_YN = 'Y'
+                    AND G3.USE_YN = 'Y'
+                    AND S.USE_YN = 'Y') B,
+            PKMS.COMMON_CODE C,
+            PKMS.BP_USER D,
+            PKMS.INF_PERSON_INFO_RCV E,
+            (	SELECT *
+             	FROM PKG_STATUS
+              	WHERE STATUS = '3') VS,
+            (	SELECT PKG_SEQ,
+	                COL21 AS ON_COMMENT,
+	                COL4 AS NON_COMMENT,
+	                COL1 AS VOL_COMMENT,
+	                COL3 AS CHA_COMMENT,
+	                COL2 AS SEC_COMMENT
+	            FROM PKG_STATUS
+	            WHERE STATUS = '25') SC
+        WHERE 	A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+	        AND A.PKG_SEQ = PE.PKG_SEQ(+)
+	        AND A.PKG_SEQ = VS.PKG_SEQ(+)
+	        AND A.STATUS = C.COMMON_CODE(+)
+	        AND A.PKG_SEQ = SC.PKG_SEQ(+)
+	        AND A.REG_USER = D.BP_USER_ID(+)
+	        AND A.REG_USER = E.EMPNO(+)
+	        AND C.GUBUN = 'PKS'
+			<isEqual property="termCondition" compareValue="APPLY">
+				AND PE.WORK_DATE <![CDATA[ >= ]]> TO_DATE(#start_date#, 'YYYY-MM-DD')
+	            AND PE.WORK_DATE <![CDATA[ <= ]]> TO_DATE(#end_date#, 'YYYY-MM-DD')
+            </isEqual>
+            <isEqual property="termCondition" compareValue="VERIFY">
+	            AND VS.COL2 <![CDATA[ >= ]]> TO_DATE(#start_date#, 'YYYY-MM-DD')
+	            AND VS.COL1 <![CDATA[ <= ]]> TO_DATE(#end_date#, 'YYYY-MM-DD')
+            </isEqual>
+            <isNotEmpty prepend="AND" property="search_system_seq">
+            	A.SYSTEM_SEQ=#search_system_seq#
+			</isNotEmpty>
+			<isEqual property="session_user_type" compareValue="M">
+		        <isEqual prepend="AND" property="userCondition" compareValue="0">
+				  ((SELECT count(1) 
+				      FROM PKMS.SYSTEM_USER SU
+				      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				      AND SU.USER_GUBUN = 'M' 
+				      AND SU.USER_ID = #session_user_id#)
+				      + 
+				    (SELECT count(1) 
+				      FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+				      WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+				      AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+				      AND EU.USER_ID = #session_user_id#)) 
+				      > 0
+		        </isEqual>
+			</isEqual>
+			<isEqual property="session_user_type" compareValue="B">
+		        <isEqual prepend="AND" property="userCondition" compareValue="0">
+				   (SELECT count(1) 
+				      FROM PKMS.SYSTEM_USER SU
+				      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				      AND SU.USER_GUBUN = 'B' 
+				      AND SU.USER_ID = #session_user_id#)
+				      > 0
+		        </isEqual>
+		        <isEqual prepend="AND" property="userCondition" compareValue="1">
+					((SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM1 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM2 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM3 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM4 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                     ) > 0
+		        </isEqual>
+			</isEqual>
+		<![CDATA[
+            GROUP BY
+				A.PKG_SEQ, B.GROUP1_SEQ, B.GROUP2_SEQ, B.GROUP3_SEQ, B.SYSTEM_SEQ,
+                B.GROUP1_NAME, B.GROUP2_NAME, B.GROUP3_NAME, B.SYSTEM_NAME, B.SYSTEM_USER_NAME,
+                B.SYSTEM_USER_ID, A.VER, A.VER_GUBUN, A.ROAMING_LINK, A.PE_YN,
+                A.STATUS, A.TITLE, A.CONTENT, A.SER_DOWNTIME, VS.COL1, VS.COL2,
+                A.DEV_YN,  A.NON_YN, A.VOL_YN, A.SEC_YN, A.CHA_YN,
+                SC.ON_COMMENT, SC.NON_COMMENT, SC.VOL_COMMENT, SC.CHA_COMMENT, SC.SEC_COMMENT,
+                VS.COL4, VS.COL6, VS.COL8, VS.COL29, VS.COL10,
+                VS.COL30, VS.COL31, VS.COL32, VS.COL12, VS.COL41,
+                VS.COL14, VS.COL16, VS.COL18, VS.COL20, VS.COL22,
+                VS.COL24, VS.COL26, VS.COL39,
+                A.MASTER_FILE_ID 
+            ORDER BY B.SYSTEM_NAME, A.TITLE ASC
+	        ) A
+        ]]>
+        
+	</select>
+
+	<select id="StatsDAO.readListPncr" parameterClass="StatsModel" resultClass="StatsModel">
+			<!-- 20130306 NEWPNCR 테이블에서 엑셀(패키지 디테일) 로 내용변경 	    
+			SELECT
+			NPC.NEW_PNCR_GUBUN, COUNT(DISTINCT(NPC.NEW_PN_CR_SEQ)) COUNT
+        FROM 
+			PKMS.NEW_PN_CR NPC, PKMS.PKG_MASTER PM, PKMS.PKG_DETAIL PD
+        WHERE 
+        	NPC.NEW_PN_CR_SEQ=PD.NEW_PN_CR_SEQ
+			AND PM.PKG_SEQ = PD.PKG_SEQ
+			AND PM.PKG_SEQ IN
+           	<iterate property="pkg_seq_list" open="(" conjunction="," close=")">
+                 #pkg_seq_list[]#
+            </iterate>
+            GROUP BY NPC.NEW_PNCR_GUBUN -->
+            
+           	SELECT
+            NEW_COL1 AS NEWCOUNT, PN_COL1 AS PNCOUNT, CR_COL1 AS CRCOUNT
+
+        FROM
+            (select count(*) as new_col1 from pkg_detail where pkg_seq IN
+             <iterate property="pkg_seq_list" open="(" conjunction="," close=")">
+                 #pkg_seq_list[]#
+            </iterate>
+             and new_pn_cr_gubun = '신규'),
+            (select count(*) as pn_col1 from pkg_detail where pkg_seq IN
+            <iterate property="pkg_seq_list" open="(" conjunction="," close=")">
+                 #pkg_seq_list[]#
+            </iterate>
+            and new_pn_cr_gubun = '보완'),
+            (select count(*) as cr_col1 from pkg_detail where pkg_seq IN 
+            <iterate property="pkg_seq_list" open="(" conjunction="," close=")">
+                 #pkg_seq_list[]#
+            </iterate>
+            and new_pn_cr_gubun = '개선')
+            
+	</select>
+	
+	<select id="StatsDAO.readListPkgVerify" parameterClass="StatsModel" resultClass="StatsModel">
+			<!--
+			SELECT
+			PDV.CONTENT PKG_VERIFY_COUNT
+        FROM 
+			PKMS.PKG_MASTER PM,
+			PKMS.PKG_DETAIL PD,
+			PKMS.PKG_DETAIL_VARIABLE PDV
+        WHERE 
+			PM.PKG_SEQ = PD.PKG_SEQ
+			AND PD.PKG_DETAIL_SEQ = PDV.PKG_DETAIL_SEQ
+			AND PDV.ORD='13' 
+			-->
+			SELECT
+			    COUNT(*) PKG_VERIFY_COUNT,
+			    PDV.CONTENT
+			FROM
+			    PKMS.PKG_MASTER PM, PKMS.PKG_DETAIL PD, PKMS.PKG_DETAIL_VARIABLE PDV
+			WHERE
+			    PM.PKG_SEQ = PD.PKG_SEQ
+			    AND PD.PKG_DETAIL_SEQ = PDV.PKG_DETAIL_SEQ
+			    AND PDV.ORD = '13'
+				AND PM.PKG_SEQ IN
+           	<iterate property="pkg_seq_list" open="(" conjunction="," close=")">
+                 #pkg_seq_list[]#
+            </iterate>
+            GROUP BY PDV.CONTENT
+	</select>
+	
+	<!-- <select id="StatsDAO.equipment_readList" parameterClass="StatsModel" resultClass="StatsModel">
+		SELECT 
+            A.GROUP1_SEQ
+            , B.GROUP2_SEQ
+            , C.GROUP3_SEQ
+            , D.SYSTEM_SEQ
+            , A.NAME AS GROUP1_NAME
+            , B.NAME AS GROUP2_NAME
+            , C.NAME AS GROUP3_NAME
+            , D.NAME AS SYSTEM_NAME
+            , D.SYSTEM_USER_ID
+            , E.HNAME AS SYSTEM_USER_NAME
+            , D.SUPPLY
+            , D.JOB_HISTORY
+            , D.THISYEAR_JOB_PLAN
+            , D.NEXTYEAR_PKG_PLAN
+            , D.NOTE
+        FROM PKMS.GROUP1 A
+        JOIN PKMS.GROUP2 B ON A.GROUP1_SEQ = B.GROUP1_SEQ
+        JOIN PKMS.GROUP3 C ON B.GROUP2_SEQ = C.GROUP2_SEQ
+        JOIN PKMS.SYSTEM D ON C.GROUP3_SEQ = D.GROUP3_SEQ
+        JOIN PKMS.INF_PERSON_INFO_RCV E ON D.SYSTEM_USER_ID = E.EMPNO
+        WHERE A.USE_YN = 'Y'
+        ORDER BY A.GROUP1_SEQ, B.GROUP2_SEQ, C.GROUP3_SEQ, D.SYSTEM_SEQ     
+	</select> -->
+	
+	<select id="StatsDAO.equipment_readList" parameterClass="StatsModel" resultClass="StatsModel">
+		SELECT S.GROUP1_NAME, S.GROUP2_NAME, S.GROUP3_NAME, S.SYSTEM_NAME, S.SYSTEM_SEQ
+            , S.GROUP1_SEQ, S.GROUP2_SEQ, S.GROUP3_SEQ
+            , S.BORAMAE_CNT, S.SUNGSU_CNT, S.BUNDANG_CNT, S.SUYU_CNT, S.INCHUN_CNT, S.SENTERM_CNT, S.BUAM_CNT, S.TAEPYONG_CNT, S.BONRI_CNT, S.SEOBU_CNT, S.DUNSAN_CNT, S.BUSA_CNT, S.PKMS_CNT
+            , S.SUPPLY, S.FULL_NAME, S.ONELINE_EXPLAIN, S.IMPACT_SYSTEMS
+            , DV_USER, DA_USER, VU_USER, AU_USER, PU_USER, VO_USER, SE_USER, CH_USER, NO_USER
+            , EQ_USER, BPU0, BPU1
+            , FILE1, FILE2, FILE3, FILE4, FILE5, FILE6, FILE7, FILE8
+            , S.SYSTEM_USER_NAME, S.DEV_SYSTEM_USER_NAME, S.ROAD_MAP_OX
+            , S.NON_OX, S.VOL_OX, S.CHA_OX
+            , S.NON_TITLE, S.VOL_TITLE, S.CHA_TITLE
+            , S.BP_USER_NAME, S.SALES_USER_INFO
+        FROM 
+            (
+              SELECT G1.NAME AS GROUP1_NAME, G1.GROUP1_SEQ, G2.NAME AS GROUP2_NAME, G2.GROUP2_SEQ, G3.NAME AS GROUP3_NAME, G3.GROUP3_SEQ, S.NAME AS SYSTEM_NAME,
+                        S.SYSTEM_SEQ, S.MASTER_FILE_ID, BU.BP_USER_NAME, S.SALES_USER_INFO,
+                        IPIR.HNAME AS SYSTEM_USER_NAME, II.HNAME AS DEV_SYSTEM_USER_NAME,
+                        CASE WHEN  RM.ROAD_MAP_OX = 'O' THEN 'O' ELSE 'X' END AS ROAD_MAP_OX,
+                        NON.TITLE AS NON_TITLE, 
+                        VOL.TITLE AS VOL_TITLE, 
+                        CHA.TITLE AS CHA_TITLE, 
+                        CASE WHEN  NON.OX = 'O' THEN 'O' ELSE 'X' END AS NON_OX,
+                        CASE WHEN  VOL.OX = 'O' THEN 'O' ELSE 'X' END AS VOL_OX,
+                        CASE WHEN  CHA.OX = 'O' THEN 'O' ELSE 'X' END AS CHA_OX,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '1' AND E.USE_YN = 'Y' then 1 end) AS BORAMAE_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '2' AND E.USE_YN = 'Y' then 1 end) AS SUNGSU_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '3' AND E.USE_YN = 'Y' then 1 end) AS BUNDANG_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '4' AND E.USE_YN = 'Y' then 1 end) AS SUYU_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '5' AND E.USE_YN = 'Y' then 1 end) AS INCHUN_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '6' AND E.USE_YN = 'Y' then 1 end) AS SENTERM_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '7' AND E.USE_YN = 'Y' then 1 end) AS BUAM_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '8' AND E.USE_YN = 'Y' then 1 end) AS TAEPYONG_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '9' AND E.USE_YN = 'Y' then 1 end) AS BONRI_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '10' AND E.USE_YN = 'Y' then 1 end) AS SEOBU_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '11' AND E.USE_YN = 'Y' then 1 end) AS DUNSAN_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '12' AND E.USE_YN = 'Y' then 1 end) AS BUSA_CNT,
+                         COUNT(CASE WHEN I.LOCATION_CODE = '13' AND E.USE_YN = 'Y' then 1 end) AS PKMS_CNT,
+                         S.SUPPLY, S.FULL_NAME, S.ONELINE_EXPLAIN, S.IMPACT_SYSTEMS
+                FROM 
+                        GROUP1 G1, GROUP2 G2, GROUP3 G3, SYSTEM S, INF_PERSON_INFO_RCV IPIR, INF_PERSON_INFO_RCV II, BP_USER BU,
+                        EQUIPMENT E, IDC I,
+                        (SELECT SYSTEM_SEQ, 'O' AS ROAD_MAP_OX
+                        FROM ROAD_MAP 
+                        WHERE
+                                TO_CHAR(START_DATE,'YYYY') = '2016'
+                            OR
+                                TO_CHAR(END_DATE,'YYYY') = '2016'
+                        GROUP BY SYSTEM_SEQ) RM,
+                        (SELECT
+                            SYSTEM_SEQ, TO_CHAR(WM_CONCAT(VERIFY_TITLE)) AS TITLE, VERIFY_TYPE AS TYPE, 'O' AS OX
+                        FROM
+                            (
+                            SELECT VM.VERIFY_SEQ, VM.VERIFY_TITLE, VMT.SYSTEM_SEQ, VM.VERIFY_TYPE
+                            FROM VERIFYTEM_MANAGE VM, VERIFYTEM_MANAGE_TEM VMT
+                            WHERE VM.VERIFY_SEQ = VMT.VERIFY_SEQ
+                            GROUP BY VM.VERIFY_SEQ, VM.VERIFY_TITLE, VMT.SYSTEM_SEQ, VM.VERIFY_TYPE
+                            )
+                        WHERE VERIFY_TYPE = 'non'
+                        GROUP BY SYSTEM_SEQ, VERIFY_TYPE) NON,
+                        (SELECT
+                            SYSTEM_SEQ, TO_CHAR(WM_CONCAT(VERIFY_TITLE)) AS TITLE, VERIFY_TYPE AS TYPE, 'O' AS OX
+                        FROM
+                            (
+                            SELECT VM.VERIFY_SEQ, VM.VERIFY_TITLE, VMT.SYSTEM_SEQ, VM.VERIFY_TYPE
+                            FROM VERIFYTEM_MANAGE VM, VERIFYTEM_MANAGE_TEM VMT
+                            WHERE VM.VERIFY_SEQ = VMT.VERIFY_SEQ
+                            GROUP BY VM.VERIFY_SEQ, VM.VERIFY_TITLE, VMT.SYSTEM_SEQ, VM.VERIFY_TYPE
+                            )
+                        WHERE VERIFY_TYPE = 'vol'
+                        GROUP BY SYSTEM_SEQ, VERIFY_TYPE) VOL,
+                        (SELECT
+                            SYSTEM_SEQ, TO_CHAR(WM_CONCAT(VERIFY_TITLE)) AS TITLE, VERIFY_TYPE AS TYPE, 'O' AS OX
+                        FROM
+                            (
+                            SELECT VM.VERIFY_SEQ, VM.VERIFY_TITLE, VMT.SYSTEM_SEQ, VM.VERIFY_TYPE
+                            FROM VERIFYTEM_MANAGE VM, VERIFYTEM_MANAGE_TEM VMT
+                            WHERE VM.VERIFY_SEQ = VMT.VERIFY_SEQ
+                            GROUP BY VM.VERIFY_SEQ, VM.VERIFY_TITLE, VMT.SYSTEM_SEQ, VM.VERIFY_TYPE
+                            )
+                        WHERE VERIFY_TYPE = 'cha'
+                        GROUP BY SYSTEM_SEQ, VERIFY_TYPE) CHA
+                    WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                        AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                        AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                        AND S.SYSTEM_SEQ = E.SYSTEM_SEQ(+)
+                        AND S.SYSTEM_USER_ID = IPIR.EMPNO(+)
+                        AND S.DEV_SYSTEM_USER_ID = II.EMPNO(+)
+                        AND S.BP_SYSTEM_USER_ID = BU.BP_USER_ID(+)
+                        AND E.IDC_SEQ = I.IDC_SEQ(+)
+                        AND S.SYSTEM_SEQ = RM.SYSTEM_SEQ(+)
+                        AND S.SYSTEM_SEQ = NON.SYSTEM_SEQ(+)
+                        AND S.SYSTEM_SEQ = VOL.SYSTEM_SEQ(+)
+                        AND S.SYSTEM_SEQ = CHA.SYSTEM_SEQ(+)
+                        AND G1.USE_YN = 'Y'
+                        AND G2.USE_YN = 'Y'
+                        AND G3.USE_YN = 'Y'
+                        AND S.USE_YN = 'Y'
+                    GROUP BY G1.NAME, G2.NAME, G3.NAME, S.NAME, S.SYSTEM_SEQ, S.SUPPLY, IPIR.HNAME, S.FULL_NAME, S.ONELINE_EXPLAIN, S.IMPACT_SYSTEMS, S.MASTER_FILE_ID, II.HNAME, RM.ROAD_MAP_OX, NON.TITLE, VOL.TITLE, CHA.TITLE, NON.OX, VOL.OX, CHA.OX
+                             ,G1.GROUP1_SEQ, G2.GROUP2_SEQ, G3.GROUP3_SEQ, BU.BP_USER_NAME, S.SALES_USER_INFO
+            ) S, 
+            (
+              SELECT 
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS DV_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'DV'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) DV,
+            (
+              SELECT 
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS DA_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y' AND CHARGE_GUBUN = 'DA'  
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) DA,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS VU_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y' AND CHARGE_GUBUN = 'VU'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) VU,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS AU_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'AU'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) AU,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS PU_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'PU'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) PU,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS VO_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'VO'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) VO,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS SE_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'SE'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) SE,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS CH_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'CH'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) CH,
+            (
+              SELECT
+              SU.SYSTEM_SEQ, SU.CHARGE_GUBUN, WM_CONCAT(II.HNAME) AS NO_USER
+             from INF_PERSON_INFO_RCV II, SYSTEM_USER SU 
+                    WHERE II.EMPNO = SU.USER_ID 
+                    AND SU.USER_GUBUN = 'M' 
+                    AND SU.USE_YN = 'Y'  AND CHARGE_GUBUN = 'NO'
+                    group by SU.SYSTEM_SEQ, SU.CHARGE_GUBUN
+            ) NO,
+            (
+            SELECT A.SYSTEM_SEQ,WM_CONCAT(A.HNAME) AS EQ_USER 
+            FROM (SELECT II.HNAME, E.SYSTEM_SEQ FROM INF_PERSON_INFO_RCV II,EQUIPMENT_USER EU, EQUIPMENT E WHERE II.EMPNO = EU.USER_ID AND EU.USE_YN = 'Y' AND  EU.EQUIPMENT_SEQ = E.EQUIPMENT_SEQ GROUP BY II.HNAME, E.SYSTEM_SEQ ) A
+            GROUP BY A.SYSTEM_SEQ
+            ) EQ_USER,
+            (
+            SELECT SU.SYSTEM_SEQ, WM_CONCAT(BU.BP_USER_NAME) AS BPU0
+              FROM BP_USER BU, SYSTEM_USER SU
+              WHERE BU.BP_USER_ID = SU.USER_ID AND SU.USER_GUBUN = 'B' AND SU.USE_YN = 'Y' AND SU.CHARGE_GUBUN = 'BU' AND SU.BU_IDX = '0' 
+              GROUP BY SU.SYSTEM_SEQ
+            ) BPU0,
+            (
+            SELECT SU.SYSTEM_SEQ,WM_CONCAT(BU.BP_USER_NAME) AS BPU1 
+              FROM BP_USER BU, SYSTEM_USER SU
+                         WHERE BU.BP_USER_ID = SU.USER_ID AND SU.USER_GUBUN = 'B' AND SU.USE_YN = 'Y' AND SU.CHARGE_GUBUN = 'BU' AND SU.BU_IDX = '1' 
+            GROUP BY SU.SYSTEM_SEQ
+            ) BPU1,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE1 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile1') FILE1,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE2 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile3') FILE2,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE3 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile16') FILE3,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE4 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile2') FILE4,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE5 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile21') FILE5,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE6 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile24') FILE6,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE7 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile27') FILE7,
+            (SELECT MASTER_FILE_ID, FILE_ORG_NAME AS FILE8 FROM ATTACH_FILE_INFO WHERE ATTACH_FILE_ID = 'attachFile6') FILE8
+        WHERE S.SYSTEM_SEQ = DV.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = DA.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = VU.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = AU.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = PU.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = VO.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = SE.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = CH.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = NO.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = EQ_USER.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = BPU0.SYSTEM_SEQ (+)
+            AND S.SYSTEM_SEQ = BPU1.SYSTEM_SEQ (+)
+            AND S.MASTER_FILE_ID = FILE1.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE2.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE3.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE4.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE5.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE6.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE7.MASTER_FILE_ID (+)
+            AND S.MASTER_FILE_ID = FILE8.MASTER_FILE_ID (+)
+        ORDER BY S.GROUP1_NAME, S.GROUP2_NAME, S.GROUP3_NAME, S.SYSTEM_NAME, S.SYSTEM_SEQ
+	</select>
+	
+	<select id="StatsDAO.equipment_idc_readList" parameterClass="StatsModel" resultClass="StatsModel">
+		SELECT CENTRAL_NAME, TEAM_NAME, IDC_NAME FROM PKMS.IDC WHERE IDC_SEQ NOT IN(15) AND USE_YN = 'Y'
+	</select>
+
+	<select id="StatsDAO.equipment_cnt_readList" parameterClass="StatsModel" resultClass="StatsModel">
+		SELECT
+			SYSTEM_SEQ, IDC_SEQ, COUNT(IDC_SEQ) AS EQUIPMENT_CNT
+		FROM EQUIPMENT
+		GROUP BY SYSTEM_SEQ, IDC_SEQ
+		ORDER BY SYSTEM_SEQ, IDC_SEQ	
+	</select>
+	
+	<select id="StatsDAO.equipment_group3_sum_readList" parameterClass="StatsModel" resultClass="StatsModel">
+		SELECT
+			GROUP3_SEQ, IDC_SEQ, SUM(EQUIPMENT_CNT) AS EQUIPMENT_GROUP3_SUM
+		FROM
+		(
+			SELECT
+				A.SYSTEM_SEQ, A.IDC_SEQ, COUNT(A.IDC_SEQ) AS EQUIPMENT_CNT, B.GROUP3_SEQ
+			FROM EQUIPMENT A
+			JOIN SYSTEM B ON A.SYSTEM_SEQ = B.SYSTEM_SEQ
+			GROUP BY A.SYSTEM_SEQ, A.IDC_SEQ, B.GROUP3_SEQ
+			ORDER BY A.SYSTEM_SEQ, A.IDC_SEQ, B.GROUP3_SEQ
+		)
+		GROUP BY GROUP3_SEQ, IDC_SEQ
+		ORDER BY GROUP3_SEQ, IDC_SEQ
+	</select>
+	
+	<select id="StatsDAO.equipment_group1_sum_readList" parameterClass="StatsModel" resultClass="StatsModel">
+		SELECT
+			GROUP1_SEQ, IDC_SEQ, SUM(EQUIPMENT_CNT) AS EQUIPMENT_GROUP1_SUM
+		FROM
+		(
+			SELECT
+				A.SYSTEM_SEQ, A.IDC_SEQ, COUNT(A.IDC_SEQ) AS EQUIPMENT_CNT, E.GROUP1_SEQ
+			FROM EQUIPMENT A
+			JOIN SYSTEM B ON A.SYSTEM_SEQ = B.SYSTEM_SEQ
+			JOIN GROUP3 C ON B.GROUP3_SEQ = C.GROUP3_SEQ
+			JOIN GROUP2 D ON C.GROUP2_SEQ = D.GROUP2_SEQ
+			JOIN GROUP1 E ON D.GROUP1_SEQ = E.GROUP1_SEQ
+			GROUP BY A.SYSTEM_SEQ, A.IDC_SEQ, E.GROUP1_SEQ
+			ORDER BY A.SYSTEM_SEQ, A.IDC_SEQ, E.GROUP1_SEQ
+		)
+		GROUP BY GROUP1_SEQ, IDC_SEQ
+		ORDER BY GROUP1_SEQ, IDC_SEQ
+	</select>
+	
+	<select id="StatsDAO.pkgEquipmentApply_total_count" parameterClass="StatsModel" resultClass="StatsModel">
+<!-- 		SELECT
+	        COUNT(*) COUNT_TOTAL, PE.EQUIPMENT_SEQ EQUIPMENT_SEQ_B, B.EQUIPMENT_NAME EQUIPMENT_NAME_B,
+	        PE.WORK_GUBUN WORK_GUBUN_B,  A.STATUS STATUS_B, S.STATUS2 STATUS2_B
+	    FROM
+	        PKMS.PKG_EQUIPMENT PE,  
+	        PKMS.PKG_MASTER A,
+	        (
+	            SELECT G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ,
+	            G3.NAME GROUP3_NAME, S.SYSTEM_SEQ, S.NAME SYSTEM_NAME, E.EQUIPMENT_SEQ,  E.NAME EQUIPMENT_NAME,
+	            S.SYSTEM_USER_ID, S.BP_NUM,
+	            (
+	                SELECT HNAME
+	                FROM PKMS.INF_PERSON_INFO_RCV 
+	                WHERE EMPNO = S.SYSTEM_USER_ID
+	                ) SYSTEM_USER_NAME,
+	                I.IDC_SEQ, I.CENTRAL_NAME, I.TEAM_NAME, I.IDC_NAME 
+	            FROM
+	                PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S, PKMS.EQUIPMENT E, PKMS.IDC I
+	            WHERE     G1.GROUP1_SEQ = G2.GROUP1_SEQ
+	            AND
+	                G2.GROUP2_SEQ = G3.GROUP2_SEQ AND G3.GROUP3_SEQ = S.GROUP3_SEQ AND S.SYSTEM_SEQ = E.SYSTEM_SEQ 
+	            AND E.IDC_SEQ = I.IDC_SEQ AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'  AND S.USE_YN = 'Y' AND E.USE_YN = 'Y' AND I.USE_YN = 'Y'
+	            ) B,
+	        (SELECT PKG_SEQ, MAX (STATUS) STATUS2 FROM PKG_STATUS GROUP BY PKG_SEQ ) S
+	        WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+	        AND PE.EQUIPMENT_SEQ = B.EQUIPMENT_SEQ
+	        AND A.PKG_SEQ = S.PKG_SEQ 
+	    GROUP BY PE.EQUIPMENT_SEQ, B.EQUIPMENT_NAME, PE.WORK_GUBUN,  A.STATUS, S.STATUS2 -->
+	    
+	    SELECT
+             B.SYSTEM_SEQ, (SELECT COUNT(NAME) FROM PKMS.EQUIPMENT WHERE SYSTEM_SEQ = B.SYSTEM_SEQ AND USE_YN = 'Y') AS COUNT_TOTAL
+        FROM  
+            PKMS.PKG_MASTER A,
+            (
+                SELECT G1.GROUP1_SEQ, G1.NAME GROUP1_NAME, G2.GROUP2_SEQ, G2.NAME GROUP2_NAME, G3.GROUP3_SEQ,
+                G3.NAME GROUP3_NAME, S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                S.SYSTEM_USER_ID, S.BP_NUM,
+                (
+                    SELECT HNAME
+                    FROM PKMS.INF_PERSON_INFO_RCV 
+                    WHERE EMPNO = S.SYSTEM_USER_ID
+                    ) SYSTEM_USER_NAME 
+                FROM
+                    PKMS.GROUP1 G1, PKMS.GROUP2 G2, PKMS.GROUP3 G3, PKMS.SYSTEM S
+                WHERE     G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                AND
+                    G2.GROUP2_SEQ = G3.GROUP2_SEQ AND G3.GROUP3_SEQ = S.GROUP3_SEQ 
+                AND G1.USE_YN = 'Y' AND G2.USE_YN = 'Y' AND G3.USE_YN = 'Y'  AND S.USE_YN = 'Y' 
+                ) B
+            WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+            
+        GROUP BY B.SYSTEM_SEQ 
+	</select>
+</sqlMap>

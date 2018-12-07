@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+        http://www.springframework.org/schema/context 
+        http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+	<bean name="PropertyService" class="com.wings.properties.service.PropertyService" destroy-method="destroy">
+		<property name="properties">
+			<map>
+<!-- 
+				<entry key="ServerName" value="MOBILE" />
+				<entry key="ServerName" value="BP" />
+				<entry key="ServerName" value="SKT" />
+ -->
+				<entry key="ServerName" value="ALL" />
+				<entry key="recordCountPerPage" value="15" />
+				<entry key="pageSize" value="10" />
+
+				<!-- 이클립스 개발용
+				-->
+				<entry key="Globals.fileStorePath" value="D:\\pkms_file\" />
+
+				<!-- 개발서버 배포용
+				<entry key="Globals.fileStorePath" value="/home/usr/file/pkms_file/" />
+				-->
+ 				
+ 				<!-- 상용 서버 배포용 WEB1, WEB2 다를시 추가
+				<entry key="Globals.fileStorePath" value="/pkms_file/" />
+				 -->
+							
+				 <!-- **************** soa 연동 정보 시작 **************** -->
+				 <!-- 연동_개발 ID/PW -->
+<!-- 				 <entry key="SOA.Username" value="soatest" /> -->
+<!-- 				 <entry key="SOA.Password" value="soatest1" /> -->
+				 
+				 <!-- 연동_상용 ID/PW -->
+				 <entry key="SOA.Username" value="new_pkms" />
+				 <entry key="SOA.Password" value="new_pkmspwd1" />
+				 
+				 <!-- mail_상용 -->
+<!-- 				 <entry key="SOA.Mail.ip" value="http://esb.sktelecom.com:80/MailService" /> -->
+				 <entry key="SOA.Mail.ip" value="http://cspcbh.sktelecom.com/ws/cbh/MailService" />
+				 
+				 <!-- mail_개발 -->
+<!-- 				 <entry key="SOA.Mail.ip" value="http://220.103.249.69:8080/MailService" /> -->
+				 
+				 <!-- sms_상용 -->
+<!-- 				 <entry key="SOA.Sms.ip" value="http://esb.sktelecom.com:80/SMSService" /> -->
+				 <entry key="SOA.Sms.ip" value="http://cspcbh.sktelecom.com/ws/cbh/SMSService" />
+				 
+				 <!-- sms_개발 -->
+				 <!-- <entry key="SOA.Sms.ip" value="http://220.103.249.69:8080/SMSService" /> -->
+				 
+				 <!-- sms 보내는사람 전화번호 -->
+				 <entry key="SOA.Sms.sendNum" value="00000000" />
+				 <!-- **************** soa 연동 정보 끝 **************** -->
+			</map>
+		</property>
+	</bean>
+  	
+</beans>

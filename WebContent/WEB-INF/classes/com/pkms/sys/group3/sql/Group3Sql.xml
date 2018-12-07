@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Group3">
+
+	<typeAlias alias="SysModel" type="com.pkms.sys.common.model.SysModel" />
+
+	<insert id="Group3DAO.create" parameterClass="SysModel">
+		<![CDATA[
+			INSERT INTO PKMS.GROUP3 
+				  ( 
+				  	GROUP3_SEQ
+				  ,	GROUP2_SEQ
+				  ,	NAME
+				  ,	USE_YN
+				  , REG_USER
+				  , REG_DATE
+				  )
+			VALUES 
+				  (
+				    #group3_seq#
+				  , #group2_seq#
+				  , #name#
+				  , 'Y'
+				  , #session_user_name#
+				  , SYSDATE
+				  )
+		]]>
+	</insert>
+
+	<select id="Group3DAO.NextSeq" resultClass="java.lang.String">
+		<![CDATA[
+			SELECT PKMS.GROUP3_SEQ.NEXTVAL FROM DUAL
+		]]>
+	</select>
+
+	<select id="Group3DAO.read" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				GROUP3_SEQ, GROUP2_SEQ, NAME, USE_YN, 
+				REG_USER, 
+	            TO_CHAR(REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+				UPDATE_USER, 
+	            TO_CHAR(UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE
+			FROM PKMS.GROUP3 
+			WHERE USE_YN='Y' AND GROUP3_SEQ=#group3_seq#
+		]]>
+	</select>
+
+
+	<select id="Group3DAO.readList" parameterClass="SysModel" resultClass="SysModel">
+		<![CDATA[
+			SELECT
+				G3.GROUP3_SEQ, G3.GROUP2_SEQ, G3.NAME, G3.USE_YN, G3.REG_USER, G3.REG_DATE, G3.UPDATE_USER, G3.UPDATE_DATE
+			FROM PKMS.GROUP3 G3
+		]]>
+			<isEqual property="session_user_type" compareValue="B">
+			, SYSTEM S
+			</isEqual>
+			WHERE G3.USE_YN='Y' AND G3.GROUP2_SEQ=#group2_seq#
+			<isEqual prepend="AND" property="session_user_type" compareValue="B">
+				G3.GROUP3_SEQ = S.GROUP3_SEQ
+				AND S.SYSTEM_SEQ IN
+				 (
+	                 SELECT SYSTEM_SEQ 
+	                 FROM SYSTEM_USER
+	                 WHERE USER_ID = #session_user_id#
+	                 GROUP BY SYSTEM_SEQ
+                 )
+			GROUP BY G3.GROUP3_SEQ, G3.GROUP2_SEQ, G3.NAME, G3.USE_YN, G3.REG_USER, G3.REG_DATE, G3.UPDATE_USER, G3.UPDATE_DATE
+			</isEqual>
+			ORDER BY G3.NAME ASC
+	</select>
+
+	<select id="Group3DAO.readList4User" parameterClass="SysModel" resultClass="SysModel">
+    SELECT G3.GROUP2_SEQ, G3.GROUP3_SEQ, G3.NAME FROM (
+      SELECT GROUP3_SEQ FROM (
+			SELECT
+				S.SYSTEM_SEQ,
+                S.GROUP3_SEQ,
+                S.NAME,
+                S.USE_YN
+			FROM PKMS.SYSTEM S,
+                 (SELECT E.SYSTEM_SEQ, E.EQUIPMENT_SEQ, EU.USER_ID, EU.USER_GUBUN
+                  FROM PKMS.EQUIPMENT E,
+                       PKMS.EQUIPMENT_USER EU
+                 WHERE E.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+                 ) EU
+			WHERE S.SYSTEM_SEQ = EU.SYSTEM_SEQ(+)
+              AND S.USE_YN = 'Y'
+	        <isEqual prepend="AND" property="check_auth" compareValue="N">
+	              EU.USER_ID = #session_user_id#
+	        </isEqual>      
+	        <isEqual property="check_auth" compareValue="Y">
+	        	<isEqual prepend="AND" property="equipment_user_auth" compareValue="Y">
+	              EU.USER_ID = #session_user_id#
+	        	</isEqual>
+	        	<isEqual prepend="AND" property="equipment_user_auth" compareValue="N">
+	        	  EU.USER_GUBUN='NO'
+	        	</isEqual>
+	        </isEqual>      
+            UNION
+			SELECT
+				S.SYSTEM_SEQ,
+                S.GROUP3_SEQ,
+                S.NAME,
+                S.USE_YN
+			FROM PKMS.SYSTEM S, 
+                 (SELECT SYSTEM_SEQ, USER_ID, CHARGE_GUBUN 
+                  FROM PKMS.SYSTEM_USER 
+                  WHERE USE_YN = 'Y'
+                  GROUP BY SYSTEM_SEQ, USER_ID, CHARGE_GUBUN) SU
+			WHERE S.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+              AND S.USE_YN = 'Y'
+              AND SU.USER_ID = #session_user_id#
+			<isEqual prepend="AND" property="check_auth" compareValue="Y">
+				SU.CHARGE_GUBUN IN
+	           	<iterate property="system_user_charge_gubun" open="(" conjunction="," close=")">
+	                 #system_user_charge_gubun[]#
+	            </iterate>
+			</isEqual>
+         )
+         GROUP BY GROUP3_SEQ
+         ) UG3, PKMS.GROUP3 G3
+         WHERE G3.GROUP3_SEQ(+) = UG3.GROUP3_SEQ
+		<isNotEmpty prepend="AND" property="group2_seq">
+            G3.GROUP2_SEQ = #group2_seq#
+		</isNotEmpty>
+         ORDER BY G3.NAME ASC
+	</select>
+
+
+	<update id="Group3DAO.update" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE PKMS.GROUP3
+			SET 
+			  NAME=#name#
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE  
+			WHERE GROUP3_SEQ=#group3_seq#
+		]]>
+	</update>
+
+	<delete id="Group3DAO.delete" parameterClass="SysModel">
+		<![CDATA[
+			UPDATE PKMS.GROUP3 
+			SET 
+			  USE_YN='N'
+			, UPDATE_USER=#session_user_name#  
+			, UPDATE_DATE=SYSDATE
+			WHERE GROUP3_SEQ=#group3_seq#
+		]]>
+	</delete>
+
+</sqlMap>

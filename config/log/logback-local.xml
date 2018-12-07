@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration scan="true" scanPeriod="30 seconds">
+	
+	<!-- base LOG directory -->
+	<property name="LOG_HOME" value="D:/" />
+	
+	<!-- Console Appender -->
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <!-- 한글처리 -->
+            <charset>UTF-8</charset>
+        	<pattern>%d %highlight(%.-1level) %cyan([%logger{30}]) - %msg%n</pattern>
+        </encoder>
+    </appender>
+ 
+    <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_HOME}/accsms.log</file>
+        <encoder>
+            <!-- 한글처리 -->
+            <charset>UTF-8</charset>
+            <pattern>%d %highlight(%.-1level) %cyan([%logger{30}]) - %msg%n</pattern>
+        </encoder>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_HOME}/accsms-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+                <maxFileSize>100MB</maxFileSize>
+            </timeBasedFileNamingAndTriggeringPolicy>
+            <maxHistory>30</maxHistory>
+        </rollingPolicy>
+    </appender>
+ 
+    <logger name="kr.outlook.barunbizit.accsmshandler"  level="debug" additivity="false">
+        <appender-ref ref="ROLLING" />
+    </logger>
+ 
+    <root level="info">
+        <appender-ref ref="STDOUT" />
+    </root>
+</configuration>

@@ -1,0 +1,184 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE sqlMap PUBLIC '-//iBATIS.com//DTD SQL Map 2.0//EN' 'http://www.ibatis.com/dtd/sql-map-2.dtd'>
+
+<sqlMap namespace='SktDbSchedule'>
+
+	<typeAlias alias='SktDbScheduleModel' type='com.pkms.batch.sktdb.model.SktDbScheduleModel' />
+	
+	
+	<select id='SktDbScheduleDao.readONSDeptList' resultClass='SktDbScheduleModel'>
+	/*SktDbScheduleDao.readONSDeptList*/
+		SELECT
+			DEPTCODE AS INDEPT
+			,DEPTNAME AS DEPTNM
+			,PARTYTEAMNAME AS SOSOK
+			,'ONS' AS TSOSOK
+			,LEVELCODE AS LEVELCD
+			,PRNTDEPTCODE
+			,DIRECTOR
+			,DEPTORDER
+			,DEPTLEVEL
+			,TEL
+			,CREATEDATE
+			,DESTRUCTDATE
+			,DEPTHROLE
+			,USEYN
+			,ISSYNC
+			,ISELECPOWER
+			,REGTDATE
+			,REGTEMPNO
+			,UPDATEDATE AS SENDDT
+			,UPDATEEMPNO
+			,'U' AS T_FLAG
+		FROM ONS_TB_CM_DEPTCODE@DBM1_LINK
+		WHERE DEPTCODE IS NOT NULL
+	</select>
+
+	<select id='SktDbScheduleDao.readONSPersonList' resultClass='SktDbScheduleModel'>
+	/*SktDbScheduleDao.readONSPersonList*/
+		SELECT 
+			US.EMPNO        
+			,US.NAME AS HNAME
+			,US.ENGNAME AS ENAME
+			,US.EMAIL
+			,US.PASSWORD
+			,US.TELNO
+			,US.FAX
+			,US.MOBILEPHONE AS MOVETELNO
+			,US.WORKADDR
+			,US.PRNTDEPTCODE
+			,US.DEPTCODE AS INDEPT
+			,DE.DEPTNAME AS BOOSER
+			,DE.PARTYTEAMNAME AS SOSOK
+			,'ONS' AS TSOSOK
+			,US.ORGDEPTCODE
+			,US.JOBGRPCODE
+			,US.JOBGDCODE
+			,US.JOBLEVELCODE
+			,US.HIREDDATE
+			,US.RETRDDATE
+			,US.WORKPARTCODE
+			,US.WORKGROUPCODE
+			,US.TASKTYPE
+			,US.OMASJOBLEVEL
+			,US.CHARGEROLE
+			,US.CHARGEREGION
+			,US.PHOTOURL
+			,US.PASS
+			,US.RMKR1
+			,US.RMRK2
+			,US.FISTLOGINYN
+			,US.PWDCHANGEDATE
+			,US.FAILCOUNT
+			,US.BEFOREPWD
+			,US.ISCONSENT
+			,US.USEYN
+			,US.REGTDATE
+			,US.REGTEMPNO
+			,US.UPDATEDATE AS SENDDT
+			,US.UPDATEEMPNO
+			,'U' AS T_FLAG
+		FROM 
+		( SELECT * FROM ONS_TB_ZZ_USER@DBM1_LINK WHERE DEPTCODE IS NOT NULL AND SUBSTR(RETRDDATE,1,4) = '9999') US
+		LEFT JOIN
+		ONS_TB_CM_DEPTCODE@DBM1_LINK DE
+		ON US.DEPTCODE = DE.DEPTCODE
+	
+	</select>
+	
+	<delete id='SktDbScheduleDao.deleteONSDeptList'>
+	/*SktDbScheduleDao.deleteONSDeptList*/
+		DELETE FROM INF_DEPT_INFO_RCV WHERE TSOSOK = 'ONS'
+	</delete>
+	
+	<delete id='SktDbScheduleDao.deleteONSPersonList'>
+	/*SktDbScheduleDao.deleteONSPersonList*/
+		DELETE FROM INF_PERSON_INFO_RCV WHERE TSOSOK = 'ONS'
+	</delete>
+	
+	<insert id='SktDbScheduleDao.createONSDeptList' >
+	/*SktDbScheduleDao.createONSDeptList*/
+		INSERT 	INTO INF_DEPT_INFO_RCV
+		(
+			INDEPT
+			,DEPTNM
+			,SOSOK
+			,TSOSOK
+			,T_FLAG
+			,SENDDT
+		)
+		(	
+			SELECT
+				DEPTCODE AS INDEPT
+				,DEPTNAME AS DEPTNM
+				,PARTYTEAMNAME AS SOSOK
+				,'ONS' AS TSOSOK
+				,'U' AS T_FLAG
+				,SYSDATE AS SENDDT
+			FROM ONS_TB_CM_DEPTCODE@DBM1_LINK
+			WHERE DEPTCODE IS NOT NULL
+		)
+		
+	</insert>
+	
+	
+	<insert id='SktDbScheduleDao.createONSPersonList' >
+	/*SktDbScheduleDao.createONSPersonList*/
+		insert INTO INF_PERSON_INFO_RCV
+		(
+			EMPNO        
+			,HNAME
+           	,ENAME
+           	,INDEPT
+           	,BOOSER
+           	,SOSOK
+           	,TSOSOK
+           	,MOVETELNO
+           	,EMAIL
+           	,T_FLAG
+           	,SENDDT
+		)
+		(
+			SELECT 
+				 US.EMPNO        
+				,US.NAME AS HNAME
+				,US.ENGNAME AS ENAME
+				,US.DEPTCODE AS INDEPT
+				,DE.DEPTNAME AS BOOSER
+				,DE.PARTYTEAMNAME AS SOSOK
+				,'ONS' AS TSOSOK
+				,US.MOBILEPHONE AS MOVETELNO
+				,US.EMAIL
+				,'U' AS T_FLAG
+				,SYSDATE AS SENDDT
+		    FROM 
+		    ( SELECT * FROM ONS_TB_ZZ_USER@DBM1_LINK 
+		    	WHERE DEPTCODE IS NOT NULL 
+		    	AND SUBSTR(RETRDDATE,1,4) = '9999' 
+		    ) US
+		    LEFT JOIN
+		    ONS_TB_CM_DEPTCODE@DBM1_LINK DE
+		    ON US.DEPTCODE = DE.DEPTCODE
+		)
+		
+	</insert>
+	
+	<delete id='SktDbScheduleDao.deleteSYSUserList'>
+	/*SktDbScheduleDao.deleteSYSUserList*/
+		DELETE FROM SYSTEM_USER WHERE USER_ID IN (
+			SELECT USER_ID FROM SYSTEM_USER WHERE USER_ID IN
+				(SELECT EMPNO FROM INF_PERSON_INFO_RCV WHERE T_FLAG='D')
+				AND USER_GUBUN='M'
+			UNION ALL
+			SELECT USER_ID FROM SYSTEM_USER WHERE USER_ID IN
+				(SELECT BP_USER_ID FROM BP_USER WHERE USE_YN = 'N')
+				AND USER_GUBUN='B'
+		)
+	</delete>
+	<delete id='SktDbScheduleDao.deleteEQUserList'>
+	/*SktDbScheduleDao.deleteEQUserList*/
+		DELETE FROM EQUIPMENT_USER WHERE USER_ID IN (SELECT EMPNO FROM INF_PERSON_INFO_RCV WHERE T_FLAG='D')
+	</delete>
+
+</sqlMap>
+	

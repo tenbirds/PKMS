@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beansProjectDescription>
+	<version>1</version>
+	<pluginVersion><![CDATA[3.8.4.201703310634-RELEASE]]></pluginVersion>
+	<configSuffixes>
+		<configSuffix><![CDATA[xml]]></configSuffix>
+	</configSuffixes>
+	<enableImports><![CDATA[false]]></enableImports>
+	<configs>
+		<config>config/spring/pkms-servlet.xml</config>
+		<config>config/spring/spring-aspect.xml</config>
+		<config>config/spring/spring-component.xml</config>
+		<config>config/spring/spring-datasource.xml</config>
+		<config>config/spring/spring-properties.xml</config>
+		<config>config/spring/spring-scheduler.xml</config>
+		<config>config/spring/spring-security.xml</config>
+		<config>config/spring/spring-transaction.xml</config>
+	</configs>
+	<autoconfigs>
+	</autoconfigs>
+	<configSets>
+	</configSets>
+</beansProjectDescription>

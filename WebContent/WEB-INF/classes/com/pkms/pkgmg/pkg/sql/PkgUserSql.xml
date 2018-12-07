@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="PkgUser">
+
+	<typeAlias alias="PkgUserModel" type="com.pkms.pkgmg.pkg.model.PkgUserModel" />
+
+	<insert id="PkgUserDAO.create" parameterClass="PkgUserModel">
+		INSERT INTO PKMS.PKG_USER (
+			PKG_SEQ,
+			CHARGE_GUBUN,
+			USER_ID,
+			ORD,
+			STATUS,
+			USE_YN,
+			REG_USER,
+			REG_DATE
+		) VALUES (
+		   #pkg_seq#,
+		   #charge_gubun#,
+		   #user_id#,
+		   #ord#,
+		   'R',
+		   #use_yn#,
+		   #session_user_id#,
+		   SYSDATE
+		   )
+	</insert>
+
+	<select id="PkgUserDAO.readList" parameterClass="PkgUserModel" resultClass="PkgUserModel">
+        SELECT
+			A.PKG_SEQ,
+			A.CHARGE_GUBUN,
+            A.USER_ID,
+			A.ORD,
+			A.STATUS,
+			A.AU_COMMENT,
+			A.USE_YN,
+			A.REG_USER,
+			B.HNAME AS USER_NAME,
+            B.MOVETELNO AS USER_PHONE,
+			B.EMAIL AS USER_EMAIL,
+			B.SOSOK AS SOSOK,
+			A.UPDATE_USER,
+            TO_CHAR(A.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+            TO_CHAR(A.UPDATE_DATE, 'YYYY-MM-DD hh24:mi:ss') UPDATE_DATE
+        FROM PKMS.PKG_USER A
+             LEFT OUTER JOIN PKMS.INF_PERSON_INFO_RCV B ON A.USER_ID = B.EMPNO
+        WHERE A.USE_YN = 'Y'
+        AND A.CHARGE_GUBUN = #charge_gubun#
+        AND A.PKG_SEQ = #pkg_seq#
+        ORDER BY A.ORD ASC
+	</select>
+
+	<select id="PkgUserDAO.readActive" parameterClass="PkgUserModel" resultClass="PkgUserModel">
+	    SELECT 
+	        A.PKG_SEQ, 
+	        A.ORD, 
+	        A.USER_ID,
+	        TO_CHAR(A.REG_DATE, 'YYYY-MM-DD hh24:mi:ss') REG_DATE,
+	        CASE WHEN B.ORD = 0 THEN 'Y'
+	                       ELSE 'N' END AS FIN
+	    FROM PKMS.PKG_USER A,
+	        (
+	        SELECT
+	        	NVL(MIN(ORD), 0) AS ORD
+	        FROM PKMS.PKG_USER 
+	        WHERE USE_YN = 'Y'
+	        AND CHARGE_GUBUN = #charge_gubun#
+	        AND STATUS = 'R'
+	        AND PKG_SEQ = #pkg_seq#
+	        ) B,
+	        (
+	        SELECT
+	        	NVL(MAX(ORD), 0) AS ORD
+	        FROM PKMS.PKG_USER 
+	        WHERE USE_YN = 'Y'
+	        AND CHARGE_GUBUN = #charge_gubun#
+	        AND PKG_SEQ = #pkg_seq#
+	        ) C
+	    WHERE A.PKG_SEQ = #pkg_seq#
+	      AND A.CHARGE_GUBUN = #charge_gubun#
+	      AND A.ORD = CASE WHEN B.ORD = 0 THEN C.ORD
+	                       ELSE B.ORD END
+	</select>
+
+	<update id="PkgUserDAO.update" parameterClass="PkgUserModel">
+		UPDATE PKMS.PKG_USER SET
+			   STATUS      = 'F',
+			   AU_COMMENT  = #au_comment#,
+			   UPDATE_USER = #session_user_id#,
+			   UPDATE_DATE = sysdate
+		WHERE USE_YN     = 'Y'  
+		AND STATUS       = 'R'
+		AND PKG_SEQ      = #pkg_seq#
+		AND ORD          = #ord#
+		AND CHARGE_GUBUN = #charge_gubun#
+		AND USER_ID      = #session_user_id#
+	</update>
+
+	<delete id="PkgUserDAO.delete" parameterClass="PkgUserModel">
+		DELETE FROM PKMS.PKG_USER
+		WHERE PKG_SEQ = #pkg_seq#
+		<isNotEmpty property="charge_gubun">
+		AND CHARGE_GUBUN = #charge_gubun#
+		</isNotEmpty>
+	</delete>
+
+</sqlMap>

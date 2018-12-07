@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="RequestUser">
+
+	<typeAlias alias="RequestModel" type="com.pkms.board.request.model.RequestModel" />
+	
+	<insert id="RequestUserDao.create" parameterClass="RequestModel">
+		INSERT INTO PKMS.REQUEST_BP_USER
+		(
+			  REQUEST_SEQ
+			, ORD
+			, REQUEST_NAME
+			, REQUEST_PHONE
+			, REG_USER
+		)VALUES
+		(
+			  #request_seq#
+			, (SELECT NVL(MAX(ORD), 0) + 1 FROM PKMS.REQUEST_BP_USER WHERE REQUEST_SEQ = #request_seq#)
+			, #request_name#
+			, #request_phone#
+			, #session_user_id#
+		)
+	</insert>
+	
+	<select id="RequestUserDao.readList" parameterClass="RequestModel" resultClass="RequestModel">
+		SELECT
+		      REQUEST_SEQ
+		    , ORD
+		    , REQUEST_NAME
+		    , REQUEST_PHONE   
+		FROM PKMS.REQUEST_BP_USER
+		WHERE REQUEST_SEQ = #request_seq# AND USE_YN = 'Y'
+		ORDER BY ORD
+	</select>
+	
+	<select id="RequestUserDao.read" parameterClass="RequestModel" resultClass="RequestModel">
+		SELECT
+			  REQUEST_SEQ
+			, ORD
+			, REQUEST_NAME
+			, REQUEST_PHONE
+		FROM PKMS.REQUEST_BP_USER
+		WHERE REQUEST_SEQ = #request_seq#
+		AND ORD = #ord# AND USE_YN = 'Y'
+	</select>
+	
+	<update id="RequestUserDao.update" parameterClass="RequestModel">
+		UPDATE PKMS.REQUEST_BP_USER 
+		SET
+			  REQUEST_NAME = #request_name# 
+			, REQUEST_PHONE = #request_phone#
+			, UPDATE_USER = #session_user_id#
+			, UPDATE_DATE = sysdate
+		WHERE REQUEST_SEQ = #request_seq# AND ORD = #ord# 
+	</update>
+	
+	<update id="RequestUserDao.delete" parameterClass="RequestModel">
+		UPDATE PKMS.REQUEST_BP_USER 
+		SET
+			  USE_YN = 'N'
+			, UPDATE_USER = #session_user_id#
+			, UPDATE_DATE = sysdate
+		WHERE REQUEST_SEQ = #request_seq# AND ORD = #ord# 
+	</update>
+	
+</sqlMap>

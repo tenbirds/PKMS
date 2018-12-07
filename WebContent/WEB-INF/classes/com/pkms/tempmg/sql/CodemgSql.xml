@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Codemg">
+
+	<typeAlias alias="CodemgModel" type="com.pkms.tempmg.model.CodemgModel" />
+	
+	
+	
+	<select id="CodemgDao.AllReadList" parameterClass="CodemgModel" resultClass="CodemgModel">
+		SELECT 
+		  GUBUN
+		  ,COMMON_CODE
+		  ,NAME 
+		  ,COL1
+		  ,COL2
+		  ,COL3
+		  ,COL4
+<!-- 		  ,ORD as ORDER_SEQ -->
+		  ,REMARK
+		  ,USE_YN
+		  ,MODIFY_YN
+		  ,REG_USER_ID
+		  ,REG_DATE
+		  ,UPDATE_USER_ID
+		  ,UPDATE_DATE
+		FROM COMMON_CODE 
+		where GUBUN=#gubun#
+		order by GUBUN asc, ORD asc
+	</select>
+
+
+	<select id="CodemgDao.codeHeaderList" parameterClass="CodemgModel" resultClass="CodemgModel">
+		SELECT 
+			GUBUN 
+			,REMARK
+		FROM COMMON_CODE 
+		group by REMARK, GUBUN
+	</select>
+
+
+
+</sqlMap>

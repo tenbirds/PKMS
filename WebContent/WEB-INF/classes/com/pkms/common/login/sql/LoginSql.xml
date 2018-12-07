@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="Login">
+
+	<typeAlias alias="LoginModel" type="com.pkms.usermg.bp.model.BpModel"/>
+
+	<!-- seq max값 가져오는 쿼리 추가 -->
+	<select id="LoginDao.read_LoginCnt" resultClass="LoginModel" parameterClass="LoginModel">
+		SELECT BP_USER_ID, LOGIN_CNT FROM PKMS.BP_USER WHERE BP_USER_ID = #bp_user_id#
+	</select>
+	
+	<update id="LoginDao.update_loginCnt" parameterClass="LoginModel">
+		UPDATE
+			PKMS.BP_USER
+		SET
+			LOGIN_CNT = #login_cnt#
+	        <isEqual property="login_cnt" compareValue="5">
+				,USE_YN = #use_yn#
+	        </isEqual>
+		WHERE 
+			BP_USER_ID = #bp_user_id#
+	</update>
+	
+</sqlMap>

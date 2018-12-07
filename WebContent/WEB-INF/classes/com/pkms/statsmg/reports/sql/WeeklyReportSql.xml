@@ -1,0 +1,166 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//iBATIS.com//DTD SQL Map 2.0//EN" "http://www.ibatis.com/dtd/sql-map-2.dtd">
+
+<sqlMap namespace="WeeklyReport">
+
+	<typeAlias alias="WeeklyReportModel" type="com.pkms.statsmg.reports.model.WeeklyReportModel" />
+
+
+	<select id="WeeklyReportDAO.readList" remapResults="true" parameterClass="WeeklyReportModel" resultClass="WeeklyReportModel">
+		<![CDATA[
+        SELECT
+          B.GROUP1_SEQ, B.GROUP2_SEQ, B.GROUP3_SEQ, B.SYSTEM_SEQ, 
+          B.GROUP1_NAME, B.GROUP2_NAME, B.GROUP3_NAME, B.SYSTEM_NAME, B.SYSTEM_USER_NAME, B.DOWNTIME,         
+		]]>
+		<isEqual property="item" compareValue="PKG">
+          	B.IDC_SEQ, B.IDC_NAME, TO_CHAR(PE.WORK_DATE, 'YYYY-MM-DD') WORK_DATE,                                 
+			B.EQUIPMENT_SEQ, B.EQUIPMENT_NAME, PE.WORK_GUBUN, A.STATUS, S.STATUS2, A.PKG_SEQ,
+			COUNT(*) COUNT
+		</isEqual>
+		<isEqual property="item" compareValue="PNCR">
+			NPC.NEW_PNCR_GUBUN,
+			COUNT(DISTINCT(NPC.NEW_PN_CR_SEQ)) COUNT
+		</isEqual>
+		<![CDATA[
+        FROM PKMS.PKG_EQUIPMENT PE,
+            PKMS.PKG_MASTER A,
+            (SELECT 
+                G1.GROUP1_SEQ, G1.NAME GROUP1_NAME,
+                G2.GROUP2_SEQ, G2.NAME GROUP2_NAME,
+                G3.GROUP3_SEQ, G3.NAME GROUP3_NAME,
+                S.SYSTEM_SEQ, S.NAME SYSTEM_NAME,
+                E.EQUIPMENT_SEQ, E.NAME EQUIPMENT_NAME,
+                S.BP_NUM, S.BP_NUM1, S.BP_NUM2, S.BP_NUM3, S.BP_NUM4, S.DOWNTIME,
+                (SELECT HNAME FROM PKMS.INF_PERSON_INFO_RCV WHERE  EMPNO=S.SYSTEM_USER_ID) SYSTEM_USER_NAME,
+                I.IDC_SEQ, I.CENTRAL_NAME, I.TEAM_NAME, I.IDC_NAME
+            FROM PKMS.GROUP1 G1,
+                PKMS.GROUP2 G2,
+                PKMS.GROUP3 G3,
+                PKMS.SYSTEM S,
+                PKMS.EQUIPMENT E,
+                PKMS.IDC I
+            WHERE G1.GROUP1_SEQ = G2.GROUP1_SEQ
+                AND G2.GROUP2_SEQ = G3.GROUP2_SEQ
+                AND G3.GROUP3_SEQ = S.GROUP3_SEQ
+                AND S.SYSTEM_SEQ = E.SYSTEM_SEQ
+                AND E.IDC_SEQ = I.IDC_SEQ
+                AND G1.USE_YN = 'Y'
+                AND G2.USE_YN = 'Y'
+                AND G3.USE_YN = 'Y'
+                AND S.USE_YN = 'Y'
+                AND E.USE_YN = 'Y'
+                AND I.USE_YN = 'Y'
+            ) B,
+            PKMS.COMMON_CODE C,
+            PKMS.BP_USER D,
+            PKMS.INF_PERSON_INFO_RCV E
+		]]>
+		<isEqual property="item" compareValue="PKG">
+			,(SELECT PKG_SEQ, MAX(STATUS) STATUS2 FROM PKG_STATUS GROUP BY PKG_SEQ) S
+		</isEqual>
+		<isEqual property="item" compareValue="PNCR">
+			,PKMS.PKG_DETAIL PD, PKMS.NEW_PN_CR NPC
+		</isEqual>
+		<![CDATA[
+        WHERE A.SYSTEM_SEQ = B.SYSTEM_SEQ(+)
+            AND PE.EQUIPMENT_SEQ = B.EQUIPMENT_SEQ
+            AND A.PKG_SEQ = PE.PKG_SEQ
+		]]>
+		<isEqual prepend="AND" property="item" compareValue="PKG">
+			A.PKG_SEQ = S.PKG_SEQ
+		</isEqual>
+		<isEqual prepend="AND" property="item" compareValue="PNCR">
+			A.PKG_SEQ = PD.PKG_SEQ AND PD.NEW_PN_CR_SEQ = NPC.NEW_PN_CR_SEQ
+		</isEqual>
+			<isEqual property="session_user_type" compareValue="M">
+		        <isEqual prepend="AND" property="userCondition" compareValue="0">
+				  ((SELECT count(1) 
+				      FROM PKMS.SYSTEM_USER SU
+				      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				      AND SU.USER_GUBUN = 'M' 
+				      AND SU.USER_ID = #session_user_id#)
+				      + 
+				    (SELECT count(1) 
+				      FROM PKMS.EQUIPMENT PE, PKMS.EQUIPMENT_USER EU
+				      WHERE B.SYSTEM_SEQ = PE.SYSTEM_SEQ(+)
+				      AND PE.EQUIPMENT_SEQ = EU.EQUIPMENT_SEQ(+)
+				      AND EU.USER_ID = #session_user_id#)) 
+				      > 0
+		        </isEqual>
+			</isEqual>
+			<isEqual property="session_user_type" compareValue="B">
+		        <isEqual prepend="AND" property="userCondition" compareValue="0">
+				   (SELECT count(1) 
+				      FROM PKMS.SYSTEM_USER SU
+				      WHERE B.SYSTEM_SEQ = SU.SYSTEM_SEQ(+)
+				      AND SU.USER_GUBUN = 'B' 
+				      AND SU.USER_ID = #session_user_id#)
+				      > 0
+		        </isEqual>
+		        <isEqual prepend="AND" property="userCondition" compareValue="1">
+					((SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM1 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM2 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM3 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                        +
+                     (SELECT count(1) 
+                        FROM PKMS.BP_MASTER BM
+                        WHERE B.BP_NUM4 = BM.BP_NUM(+)
+                        AND BM.BP_NUM = #session_user_group_id#)
+                     ) > 0
+		        </isEqual>
+			</isEqual>
+			<![CDATA[
+            AND A.STATUS = C.COMMON_CODE(+)
+            AND A.REG_USER = D.BP_USER_ID(+)
+            AND A.REG_USER = E.EMPNO(+)
+            AND C.GUBUN = 'PKS'
+            AND PE.WORK_DATE >= TO_DATE(#start_date#, 'YYYY-MM-DD')
+            AND PE.WORK_DATE <= TO_DATE(#end_date#, 'YYYY-MM-DD')
+            GROUP BY
+            B.GROUP1_SEQ, B.GROUP2_SEQ, B.GROUP3_SEQ, B.SYSTEM_SEQ, 
+            B.GROUP1_NAME, B.GROUP2_NAME, B.GROUP3_NAME, B.SYSTEM_NAME, B.SYSTEM_USER_NAME, B.DOWNTIME
+		]]>
+		<isEqual property="item" compareValue="PKG">
+            ,B.IDC_SEQ, B.IDC_NAME, PE.WORK_DATE
+			,B.EQUIPMENT_SEQ, B.EQUIPMENT_NAME, PE.WORK_GUBUN, A.STATUS, S.STATUS2, A.PKG_SEQ
+		</isEqual>
+		<isEqual property="item" compareValue="PNCR">
+			,NPC.NEW_PNCR_GUBUN
+		</isEqual>
+	</select>
+
+	<select id="WeeklyReportDAO.readListPkgVerify" parameterClass="WeeklyReportModel" resultClass="WeeklyReportModel">
+        SELECT
+			PDV.CONTENT PKG_VERIFY_COUNT
+        FROM 
+			PKMS.PKG_MASTER PM,
+			PKMS.PKG_DETAIL PD,
+			PKMS.PKG_DETAIL_VARIABLE PDV
+        WHERE 
+			PM.PKG_SEQ = PD.PKG_SEQ
+			AND PD.PKG_DETAIL_SEQ = PDV.PKG_DETAIL_SEQ
+			AND PDV.ORD='13'
+			AND PM.PKG_SEQ IN
+           	<iterate property="pkg_seq_list" open="(" conjunction="," close=")">
+                 #pkg_seq_list[]#
+            </iterate>
+	</select>	
+
+
+</sqlMap>
